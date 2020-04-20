@@ -1,4 +1,10 @@
-# Github's default Python .gitignore
+# ### Project specific things to ignore
+
+# The test database file
+tests/test.sqlite
+
+
+# ### Github's default Python .gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
