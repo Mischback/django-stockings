@@ -22,13 +22,13 @@ django:
 django/check:
 	$(MAKE) django django_cmd="check"
 
-# django-admin createsuperuser
-django/createsuperuser: django/migrate
-	$(MAKE) django django_cmd="createsuperuser"
+# django-admin makemigrations
+django/makemigrations:
+	$(MAKE) django django_cmd="makemigrations stockings"
 
 # django-admin migrate -v 0
 django/migrate:
-	$(MAKE) django django_cmd="migrate -v 0"
+	$(MAKE) django django_cmd="migrate"
 
 # django-admin runserver 0:8080
 host_port ?= 0:8080
@@ -42,6 +42,5 @@ django/shell:
 .PHONY: \
 	run \
 	django \
-	django/check django/createsuperuser django/migrate django/runserver \
-	django/shell
+	django/check django/migrate django/runserver django/shell
 .SILENT:
