@@ -1,6 +1,18 @@
 
 run: django/runserver
 
+# ##### utility commands
+flake:
+	tox -q -e util -- flake8 .
+
+isort:
+	tox -q -e util -- isort . --recursive --diff
+
+isort/full:
+	tox -q -e util -- isort . --recursive
+
+# ##### Django commands
+
 # Runs commands using a tox environment
 django_cmd ?= version
 django:
