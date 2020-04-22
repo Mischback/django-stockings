@@ -1,1 +1,1 @@
-from .stock import StockItem
+from .stock import StockItem  # noqa isort:skip

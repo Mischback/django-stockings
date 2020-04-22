@@ -2,8 +2,6 @@
 
 # Django imports
 from django.db import models
-
-# Python
 from django.utils.translation import ugettext_lazy as _
 
 
