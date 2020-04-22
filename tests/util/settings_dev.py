@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'stockings.apps.StockingsConfig'
+    'stockings.apps.StockingsConfig',
 ]
 
 MIDDLEWARE = [
@@ -54,7 +54,7 @@ STATIC_URL = '/static/'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(TEST_ROOT, 'utils', 'templates'), ],
+        'DIRS': [os.path.join(TEST_ROOT, 'utils', 'templates'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

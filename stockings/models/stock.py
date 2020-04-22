@@ -14,10 +14,7 @@ class StockItem(models.Model):
     # This should be set to the item's official name.
     # TODO: Can this be determined automatically, if the ISIN is given? See
     # ``get_fullname_by_isin()``.
-    full_name = models.CharField(
-        blank=True,
-        max_length=255,
-    )
+    full_name = models.CharField(blank=True, max_length=255,)
 
     # The International Securities Identification Number (ISIN) is used as the
     # primary identifier of any StockItem.
@@ -26,36 +23,23 @@ class StockItem(models.Model):
     # See: https://en.wikipedia.org/wiki/International_Securities_Identification_Number
     # TODO: Is a validator required?
     isin = models.CharField(
-        db_index=True,
-        max_length=12,
-        primary_key=True,
-        unique=True,
+        db_index=True, max_length=12, primary_key=True, unique=True,
     )
 
     # A short version of the item's ``full_name`` attribute.
     # This is the object's main representation in the front end.
-    name = models.CharField(
-        blank=True,
-        max_length=100,
-    )
+    name = models.CharField(blank=True, max_length=100,)
 
     # The latest price information for the item.
     _latest_price_value = models.DecimalField(
-        blank=True,
-        decimal_places=4,
-        max_digits=19,
+        blank=True, decimal_places=4, max_digits=19,
     )
 
     # The currency of the latest price.
-    _latest_price_currency = models.CharField(
-        blank=True,
-        max_length=3,
-    )
+    _latest_price_currency = models.CharField(blank=True, max_length=3,)
 
     # The timestamp of the latest price.
-    _latest_price_timestamp = models.DateTimeField(
-        null=True,
-    )
+    _latest_price_timestamp = models.DateTimeField(null=True,)
 
     class Meta:
         app_label = 'stockings'
@@ -64,21 +48,14 @@ class StockItem(models.Model):
 
     def __str__(self):
         if self.name != '':
-            return '{} ({})'.format(
-                self.name,
-                self.isin,
-            )
+            return '{} ({})'.format(self.name, self.isin,)
         else:
-            return '{}'.format(
-                self.isin,
-            )
+            return '{}'.format(self.isin,)
 
     def get_fullname_by_isin(self):
         """Fetch the ``full_name`` of an item using a data provider."""
 
-        raise NotImplementedError(
-            'Needs an implementation of automatic data providers'
-        )
+        raise NotImplementedError('Needs an implementation of automatic data providers')
 
     def get_latest_price(self):
         """Return the latest price information of this item."""
