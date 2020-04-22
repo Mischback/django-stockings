@@ -3,10 +3,10 @@ run: django/runserver
 
 # ##### utility commands
 black:
-	tox -q -e util -- black . --diff -S
+	tox -q -e black -- --diff
 
 black/full:
-	tox -q -e util -- black . -S
+	tox -q -e black
 
 flake:
 	tox -q -e util -- flake8 .
