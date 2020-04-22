@@ -2,7 +2,7 @@
 
 # Django imports
 from django.db import models
-from django.utils.timezone import now
+
 # Python
 from django.utils.translation import ugettext_lazy as _
 
