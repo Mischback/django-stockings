@@ -39,6 +39,24 @@ class StockItem(models.Model):
         max_length=100,
     )
 
+    # The latest price information for the item.
+    _latest_price_value = models.DecimalField(
+        blank=True,
+        decimal_places=4,
+        max_digits=19,
+    )
+
+    # The currency of the latest price.
+    _latest_price_currency = models.CharField(
+        blank=True,
+        max_length=3,
+    )
+
+    # The timestamp of the latest price.
+    _latest_price_timestamp = models.DateTimeField(
+        null=True,
+    )
+
     class Meta:
         app_label = 'stockings'
         verbose_name = _('Stock Item')
@@ -61,3 +79,11 @@ class StockItem(models.Model):
         raise NotImplementedError(
             'Needs an implementation of automatic data providers'
         )
+
+    def get_latest_price(self):
+        """Return the latest price information of this item."""
+        raise NotImplementedError('Not yet implemented!')
+
+    def set_latest_price(self, value, currency, timestamp=None):
+        """Update the latest price information of this item."""
+        raise NotImplementedError('Not yet implemented!')
