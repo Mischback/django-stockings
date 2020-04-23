@@ -4,6 +4,10 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+# app imports
+from stockings.data import StockingsMoney
+from stockings.exceptions import StockingsCurrencyConversionError
+
 
 class StockItem(models.Model):
     """Represents one distinct tradeable item, most likely a stock."""
@@ -32,11 +36,7 @@ class StockItem(models.Model):
     _latest_price_value = models.DecimalField(
         blank=True, decimal_places=4, max_digits=19,
     )
-
-    # The currency of the latest price.
     _latest_price_currency = models.CharField(blank=True, max_length=3,)
-
-    # The timestamp of the latest price.
     _latest_price_timestamp = models.DateTimeField(null=True,)
 
     class Meta:
@@ -55,10 +55,27 @@ class StockItem(models.Model):
 
         raise NotImplementedError('Needs an implementation of automatic data providers')
 
-    def get_latest_price(self):
-        """Return the latest price information of this item."""
-        raise NotImplementedError('Not yet implemented!')
+    @property
+    def latest_price(self):
+        return StockingsMoney(
+            self._latest_price_value,
+            self._latest_price_currency,
+            self._latest_price_timestamp,
+        )
 
-    def set_latest_price(self, value, currency, timestamp=None):
-        """Update the latest price information of this item."""
-        raise NotImplementedError('Not yet implemented!')
+    @latest_price.setter
+    def latest_price(self, new_price):
+        """Set the different parts of the object's ``latest_price``.
+
+        As of now, this only works, if the currency doesn't change."""
+
+        if (self._latest_price_currency != new_price.currency) and (
+            self._latest_price_currency != ''
+        ):
+            raise StockingsCurrencyConversionError(
+                'currency mismatch in {} {}'.format(type(self).__name__, self)
+            )
+
+        self._latest_price_value = new_price.value
+        self._latest_price_currency = new_price.currency
+        self._latest_price_timestamp = new_price.timestamp
