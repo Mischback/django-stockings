@@ -32,6 +32,9 @@ class Portfolio(models.Model):
         verbose_name = _('Portfolio')
         verbose_name_plural = _('Portfolios')
 
+    def __str__(self):
+        return '{} ({})'.format(self.name, self.user)
+
 
 class PortfolioItem(models.Model):
     """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
