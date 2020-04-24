@@ -69,12 +69,9 @@ class StockItem(models.Model):
 
         As of now, this only works, if the currency doesn't change."""
 
-        if (self._latest_price_currency != new_price.currency) and (
-            self._latest_price_currency != ''
-        ):
-            raise StockingsCurrencyConversionError(
-                'currency mismatch in {} {}'.format(type(self).__name__, self)
-            )
+        if self._latest_price_currency != new_price.currency:
+            new_price.amount = new_price.convert(self._latest_price_currency)
+            new_price.currency = self._latest_price_currency
 
         self._latest_price_amount = new_price.amount
         self._latest_price_currency = new_price.currency
