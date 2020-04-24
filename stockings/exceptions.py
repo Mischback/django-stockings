@@ -12,3 +12,10 @@ class StockingsCurrencyConversionError(StockingsException):
     required."""
 
     pass
+
+
+class StockingsInterfaceError(StockingsException):
+    """This exception is raised, if an operation is performed, that is not
+    intended."""
+
+    pass

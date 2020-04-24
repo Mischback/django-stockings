@@ -5,6 +5,10 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+# app imports
+from stockings.exceptions import StockingsInterfaceError
+from stockings.models.stock import StockItem
+
 
 class Portfolio(models.Model):
     """Represents a portolio of stocks."""
@@ -26,3 +30,61 @@ class Portfolio(models.Model):
         unique_together = ['name', 'user']
         verbose_name = _('Portfolio')
         verbose_name_plural = _('Portfolios')
+
+
+class PortfolioItem(models.Model):
+    """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
+
+    # Reference to the ``Portfolio``.
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+
+    # Reference to the ``StockItem``.
+    # The deletion of ``StockItem``s must be prevented, if a ``PortfolioItem``
+    # is still referencing them. That's the reason for ``on_delete=models.PROTECT``.
+    # The referenced ``StockItem`` does not have to know, which portoflios
+    # referenced it, so ``related_name='+'`` disables the backwards relation.
+    stock_item = models.ForeignKey(
+        StockItem, on_delete=models.PROTECT, related_name='+'
+    )
+
+    # Stores the details of the ``deposit``, which tracks the current value of
+    # the tracked ``StockItem``s.
+    _deposit_amount = models.DecimalField(blank=True, decimal_places=4, max_digits=19,)
+    _deposit_currency = models.CharField(blank=True, max_length=3,)
+    _deposit_timestamp = models.DateTimeField(null=True,)
+
+    # Stores the quantity of ``StockItem`` in this ``Portfolio``.
+    # This directly influences the ``deposit``, specifically the
+    # ``_deposit_amount``. See ``update_deposit()`` for details.
+    _stock_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        app_label = 'stockings'
+        unique_together = ['portfolio', 'stock_item']
+        verbose_name = _('Portoflio Item')
+        verbose_name_plural = _('Portfolio Items')
+
+    def __str__(self):
+        return '{} - {}'.format(self.portfolio, self.stock_item)
+
+    @property
+    def deposit(self):
+        return StockingsMoney(
+            self._deposit_amount, self._deposit_currency, self._deposit_timestamp,
+        )
+
+    @deposit.setter
+    def deposit(self, value):
+        raise StockingsInterfaceError('This attribute may not be set directly.')
+
+    @property
+    def stock_count(self):
+        return self._stock_count
+
+    @stock_count.setter
+    def stock_count(self, value):
+        self._stock_count = value
+        self.update_deposit()
+
+    def update_deposit(self):
+        raise NotImplementedError('This method is not yet implemented.')
