@@ -11,7 +11,7 @@ class StockingsMoney:
     of an actual value, its currency and a timestamp. This class provides a
     mean to pass these information around between different objects."""
 
-    def __init__(self, value, currency, timestamp=None):
+    def __init__(self, amount, currency, timestamp=None):
         """Create a simple app-specific Money object.
 
         No validation/verification is done here, it will probably break, when
@@ -21,9 +21,9 @@ class StockingsMoney:
         ``timestamp`` may be omitted, the object's creation time will be used
         to fill that gap."""
 
-        self.value = value
+        self.amount = amount
         self.currency = currency
         self.timestamp = timestamp or now()
 
     def __str__(self):
-        return '{} {} ({})'.format(self.currency, self.value, self.timestamp)
+        return '{} {} ({})'.format(self.currency, self.amount, self.timestamp)

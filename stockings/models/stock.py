@@ -33,7 +33,7 @@ class StockItem(models.Model):
     name = models.CharField(blank=True, max_length=100,)
 
     # The latest price information for the item.
-    _latest_price_value = models.DecimalField(
+    _latest_price_amount = models.DecimalField(
         blank=True, decimal_places=4, max_digits=19,
     )
     _latest_price_currency = models.CharField(blank=True, max_length=3,)
@@ -58,7 +58,7 @@ class StockItem(models.Model):
     @property
     def latest_price(self):
         return StockingsMoney(
-            self._latest_price_value,
+            self._latest_price_amount,
             self._latest_price_currency,
             self._latest_price_timestamp,
         )
@@ -76,6 +76,6 @@ class StockItem(models.Model):
                 'currency mismatch in {} {}'.format(type(self).__name__, self)
             )
 
-        self._latest_price_value = new_price.value
+        self._latest_price_amount = new_price.amount
         self._latest_price_currency = new_price.currency
         self._latest_price_timestamp = new_price.timestamp
