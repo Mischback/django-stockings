@@ -1,5 +1,6 @@
 
 run: django/runserver
+commit: black isort flake
 
 # ##### utility commands
 black:
