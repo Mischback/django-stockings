@@ -6,6 +6,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
 from stockings.models.stock import StockItem
 

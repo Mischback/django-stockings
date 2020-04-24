@@ -2,7 +2,18 @@
 from django.contrib import admin
 
 # app imports
-from .models.stock import StockItem
+from stockings.models.portfolio import Portfolio, PortfolioItem
+from stockings.models.stock import StockItem
+
+
+@admin.register(Portfolio)
+class PortfolioAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(PortfolioItem)
+class PortfolioItemAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(StockItem)

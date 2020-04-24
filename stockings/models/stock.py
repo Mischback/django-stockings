@@ -6,7 +6,6 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.exceptions import StockingsCurrencyConversionError
 
 
 class StockItem(models.Model):
