@@ -39,7 +39,7 @@ class StockItem(models.Model):
     _latest_price_currency = models.CharField(
         default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
-    _latest_price_timestamp = models.DateTimeField(null=True)
+    _latest_price_timestamp = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         app_label = 'stockings'

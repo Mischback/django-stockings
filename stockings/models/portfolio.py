@@ -58,7 +58,7 @@ class PortfolioItem(models.Model):
     _deposit_currency = models.CharField(
         default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
-    _deposit_timestamp = models.DateTimeField(null=True,)
+    _deposit_timestamp = models.DateTimeField(blank=True, null=True)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
