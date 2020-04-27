@@ -24,7 +24,7 @@ class Portfolio(models.Model):
     # Please note, that Django's ``User`` object (or its substitute) will not
     # have a backwards relation to this object.
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+',
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+'
     )
 
     class Meta:
@@ -54,9 +54,9 @@ class PortfolioItem(models.Model):
 
     # Stores the details of the ``deposit``, which tracks the current value of
     # the tracked ``StockItem``s.
-    _deposit_amount = models.DecimalField(blank=True, decimal_places=4, max_digits=19,)
+    _deposit_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _deposit_currency = models.CharField(
-        blank=True, default=STOCKINGS_DEFAULT_CURRENCY, max_length=3,
+        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
     _deposit_timestamp = models.DateTimeField(null=True,)
 
@@ -77,7 +77,7 @@ class PortfolioItem(models.Model):
     @property
     def deposit(self):
         return StockingsMoney(
-            self._deposit_amount, self._deposit_currency, self._deposit_timestamp,
+            self._deposit_amount, self._deposit_currency, self._deposit_timestamp
         )
 
     @deposit.setter

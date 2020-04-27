@@ -16,7 +16,7 @@ class StockItem(models.Model):
     # This should be set to the item's official name.
     # TODO: Can this be determined automatically, if the ISIN is given? See
     # ``get_fullname_by_isin()``.
-    full_name = models.CharField(blank=True, max_length=255,)
+    full_name = models.CharField(blank=True, max_length=255)
 
     # The International Securities Identification Number (ISIN) is used as the
     # primary identifier of any StockItem.
@@ -24,24 +24,22 @@ class StockItem(models.Model):
     # for database representation.
     # See: https://en.wikipedia.org/wiki/International_Securities_Identification_Number
     # TODO: Is a validator required?
-    isin = models.CharField(
-        db_index=True, max_length=12, primary_key=True, unique=True,
-    )
+    isin = models.CharField(db_index=True, max_length=12, primary_key=True, unique=True)
 
     # A short version of the item's ``full_name`` attribute.
     # This is the object's main representation in the front end.
-    name = models.CharField(blank=True, max_length=100,)
+    name = models.CharField(blank=True, max_length=100)
 
     # The latest price information for the item.
     # TODO: provide defaults for all these fields or let them be blank!
     # TODO: this is releveant in PortfolioItem, too!
     _latest_price_amount = models.DecimalField(
-        blank=True, decimal_places=4, max_digits=19,
+        decimal_places=4, default=0, max_digits=19
     )
     _latest_price_currency = models.CharField(
-        blank=True, default=STOCKINGS_DEFAULT_CURRENCY, max_length=3,
+        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
-    _latest_price_timestamp = models.DateTimeField(null=True,)
+    _latest_price_timestamp = models.DateTimeField(null=True)
 
     class Meta:
         app_label = 'stockings'
