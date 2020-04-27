@@ -76,5 +76,5 @@ class StockItem(models.Model):
             new_price.currency = self._latest_price_currency
 
         self._latest_price_amount = new_price.amount
-        self._latest_price_currency = new_price.currency
+        #self._latest_price_currency = new_price.currency
         self._latest_price_timestamp = new_price.timestamp
