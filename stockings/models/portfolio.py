@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
 from stockings.models.stock import StockItem
+from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
 class Portfolio(models.Model):
@@ -54,7 +55,9 @@ class PortfolioItem(models.Model):
     # Stores the details of the ``deposit``, which tracks the current value of
     # the tracked ``StockItem``s.
     _deposit_amount = models.DecimalField(blank=True, decimal_places=4, max_digits=19,)
-    _deposit_currency = models.CharField(blank=True, max_length=3,)
+    _deposit_currency = models.CharField(
+        blank=True, default=STOCKINGS_DEFAULT_CURRENCY, max_length=3,
+    )
     _deposit_timestamp = models.DateTimeField(null=True,)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.

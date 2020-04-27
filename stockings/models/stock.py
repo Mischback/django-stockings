@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
+from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
 class StockItem(models.Model):
@@ -32,10 +33,14 @@ class StockItem(models.Model):
     name = models.CharField(blank=True, max_length=100,)
 
     # The latest price information for the item.
+    # TODO: provide defaults for all these fields or let them be blank!
+    # TODO: this is releveant in PortfolioItem, too!
     _latest_price_amount = models.DecimalField(
         blank=True, decimal_places=4, max_digits=19,
     )
-    _latest_price_currency = models.CharField(blank=True, max_length=3,)
+    _latest_price_currency = models.CharField(
+        blank=True, default=STOCKINGS_DEFAULT_CURRENCY, max_length=3,
+    )
     _latest_price_timestamp = models.DateTimeField(null=True,)
 
     class Meta:
