@@ -7,7 +7,7 @@ class StockingsConfig(AppConfig):
     """App-specific configuration class."""
 
     name = 'stockings'
-    verbose_name = 'stockings'
+    verbose_name = 'Stockings'
 
     def ready(self):
         """Executed when application loading is completed."""
