@@ -118,5 +118,31 @@ class PortfolioItem(models.Model):
             new_price.currency = self._deposit_currency
 
         self._deposit_amount = new_price.amount * self.stock_count
-        #self._deposit_currency = new_price.currency
+        # self._deposit_currency = new_price.currency
         self._deposit_timestamp = new_price.timestamp
+
+    @classmethod
+    def callback_price_update(
+        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+    ):
+        """Update the objects ``deposit`` value, based on latest price
+        information.
+
+        This is a signal handler, that is attached as a post_save handler in
+        the app's ``StockingsConfig``'s ``ready`` method."""
+
+        # Do nothing, if this is a raw save-operation.
+        if raw:
+            return None
+
+        # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
+        # instance stock item.
+        portfolio_item_set = cls.objects.filter(stock_item=instance)
+
+        # Store the new price outside of the loop.
+        new_price = instance.latest_price
+
+        # Update all relevant ``PortfolioItem`` objects.
+        for item in portfolio_item_set.iterator():
+            item.update_deposit(new_price)
+            item.save()
