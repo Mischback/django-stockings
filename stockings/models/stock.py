@@ -56,6 +56,22 @@ class StockItem(models.Model):
 
         raise NotImplementedError('Needs an implementation of automatic data providers')
 
+    @classmethod
+    def get_sentinel_item(cls):
+        """Return a sentinel / placeholder object to maintain database integrity."""
+
+        # ``get_or_create`` returns a tuple, consisting of the (fetched or
+        # created) object and a boolean flag (indicating, if the object was
+        # created *freshly*). Only the first item of that tuple (the object)
+        # is returned.
+        return cls.object.get_or_create(
+            isin='XX0000000000',
+            defaults={
+                'full_name': 'The referenced item got deleted!',
+                'name': 'Deleted Item',
+            },
+        )[0]
+
     @property
     def latest_price(self):
         return StockingsMoney(
