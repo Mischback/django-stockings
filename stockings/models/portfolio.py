@@ -3,6 +3,7 @@
 # Django imports
 from django.conf import settings
 from django.db import models
+from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
@@ -58,7 +59,7 @@ class PortfolioItem(models.Model):
     _deposit_currency = models.CharField(
         default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
-    _deposit_timestamp = models.DateTimeField(blank=True, null=True)
+    _deposit_timestamp = models.DateTimeField(default=now)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
