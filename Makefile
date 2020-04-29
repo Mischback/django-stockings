@@ -29,6 +29,10 @@ django:
 django/check:
 	$(MAKE) django django_cmd="check"
 
+# django-admin createsuperuser
+django/createsuperuser:
+	$(MAKE) django django_cmd="createsuperuser"
+
 # django-admin makemigrations
 django/makemigrations:
 	$(MAKE) django django_cmd="makemigrations stockings"
