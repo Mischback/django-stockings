@@ -51,13 +51,35 @@ class PortfolioItem(models.Model):
     # referenced it, so ``related_name='+'`` disables the backwards relation.
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
+    # Stores the details of ``costs``, which represents the accumulated costs
+    # spent for buying or selling stock items.
+    _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _costs_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    _costs_timestamp = models.DateTimeField(default=now)
+
     # Stores the details of the ``deposit``, which tracks the current value of
-    # the tracked ``StockItem``s.
+    # the associated ``StockItem``s.
     _deposit_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _deposit_currency = models.CharField(
         default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
     )
     _deposit_timestamp = models.DateTimeField(default=now)
+
+    # Stores the details of ``expenses``, which represents the accumulated
+    # prices of stocks, at the time of buying them.
+    _expenses_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _expenses_currency = models.CharField(
+        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
+    )
+    _expenses_timestamp = models.DateTimeField(default=now)
+
+    # Stores the details of ``proceeds``, which represents the accumulated
+    # prices of stocks, at the time of selling them.
+    _proceeds_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _proceeds_currency = models.CharField(
+        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
+    )
+    _proceeds_timestamp = models.DateTimeField(default=now)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
@@ -74,6 +96,17 @@ class PortfolioItem(models.Model):
         return '{} - {}'.format(self.portfolio, self.stock_item)
 
     @property
+    def costs(self):
+        return StockingsMoney(
+            self._costs_amount, self._costs_currency, self._costs_timestamp
+        )
+
+    @costs.setter
+    def costs(self, value):
+        """The value of costs may not be set directly."""
+        raise StockingsInterfaceError('This attribute may not be set directly.')
+
+    @property
     def deposit(self):
         return StockingsMoney(
             self._deposit_amount, self._deposit_currency, self._deposit_timestamp
@@ -81,13 +114,18 @@ class PortfolioItem(models.Model):
 
     @deposit.setter
     def deposit(self, value):
-        """The value of deposit may not be set directly.
+        """The value of deposit may not be set directly."""
+        raise StockingsInterfaceError('This attribute may not be set directly.')
 
-        ``deposit``, with its parts ``_deposit_value``, ``_deposit_currency``
-        and ``_deposit_timestamp`` depends on (recent) price information (of
-        the tracked stock) and the ``stock_count``.
-        To set ``deposit``, either provide a new ``stock_count`` or use
-        ``update_deposit`` to provide new price information."""
+    @property
+    def expenses(self):
+        return StockingsMoney(
+            self._expenses_amount, self._expenses_currency, self._expenses_timestamp
+        )
+
+    @expenses.setter
+    def expenses(self, value):
+        """The value of expenses may not be set directly."""
         raise StockingsInterfaceError('This attribute may not be set directly.')
 
     @property
@@ -96,6 +134,23 @@ class PortfolioItem(models.Model):
 
         A PortfolioItem is considered 'active', if the stock count is > 0."""
         return self._stock_count > 0
+
+    def perform_buy(self, trade_stock_count, trade_price, trade_costs):
+        raise NotImplementedError('to be done')
+
+    def perform_sell(self, trade_stock_count, trade_price, trade_costs):
+        raise NotImplementedError('to be done')
+
+    @property
+    def proceeds(self):
+        return StockingsMoney(
+            self._proceeds_amount, self._proceeds_currency, self._proceeds_timestamp
+        )
+
+    @proceeds.setter
+    def proceeds(self, value):
+        """The value of expenses may not be set directly."""
+        raise StockingsInterfaceError('This attribute may not be set directly.')
 
     @property
     def stock_count(self):
