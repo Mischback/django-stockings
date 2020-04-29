@@ -58,7 +58,11 @@ class StockItem(models.Model):
 
     @classmethod
     def get_sentinel_item(cls):
-        """Return a sentinel / placeholder object to maintain database integrity."""
+        """Return a sentinel / placeholder object to maintain database integrity.
+
+        Currently, this is not actively used, because all ForeignKey relations
+        to StockItem are set to 'PROTECTED'. Anyway, this might be useful, if
+        deletion of StockItem should be enabled in future releases."""
 
         # ``get_or_create`` returns a tuple, consisting of the (fetched or
         # created) object and a boolean flag (indicating, if the object was
@@ -71,6 +75,24 @@ class StockItem(models.Model):
                 'name': 'Deleted Item',
             },
         )[0]
+
+    @property
+    def is_active(self):
+        """Return bool to indicate, that this StockItem is active.
+
+        A StockItem is considered active, if it is referenced by at least one
+        PortfolioItem, that is active itsself."""
+
+        # Here is a nasty and ugly workaround, which couples StockItems very
+        # closely to PortfolioItems.
+        # PortfolioItem's ``is_active`` can't be used here, because Django's
+        # queryset filter works on database level and not on the Python
+        # objects, thus, the ``property`` is not available.
+        # Instead, the ``property`` is re-implemented here (checking
+        # PortfolioItem's ``_stock_count``), which is not elegant, not DRY and
+        # not loosely coupled.
+        # But it works.
+        return self.portfolioitem_set.filter(_stock_count__gt=0).count() > 0
 
     @property
     def latest_price(self):

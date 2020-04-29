@@ -28,7 +28,7 @@ class Trade(models.Model):
 
     # Reference to the traded StockItem.
     stock_item = models.ForeignKey(
-        StockItem, on_delete=models.SET(StockItem.get_sentinel_item), related_name='+'
+        StockItem, on_delete=models.PROTECT, related_name='+'
     )
 
     # Number of traded items.

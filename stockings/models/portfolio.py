@@ -49,9 +49,7 @@ class PortfolioItem(models.Model):
     # is still referencing them. That's the reason for ``on_delete=models.PROTECT``.
     # The referenced ``StockItem`` does not have to know, which portoflios
     # referenced it, so ``related_name='+'`` disables the backwards relation.
-    stock_item = models.ForeignKey(
-        StockItem, on_delete=models.PROTECT, related_name='+'
-    )
+    stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
     # Stores the details of the ``deposit``, which tracks the current value of
     # the tracked ``StockItem``s.
@@ -91,6 +89,13 @@ class PortfolioItem(models.Model):
         To set ``deposit``, either provide a new ``stock_count`` or use
         ``update_deposit`` to provide new price information."""
         raise StockingsInterfaceError('This attribute may not be set directly.')
+
+    @property
+    def is_active(self):
+        """Return bool to indicate status of the object.
+
+        A PortfolioItem is considered 'active', if the stock count is > 0."""
+        return self._stock_count > 0
 
     @property
     def stock_count(self):
