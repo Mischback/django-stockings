@@ -1,11 +1,13 @@
 # Django imports
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.models.portfolio import Portfolio
+from stockings.models.portfolio import Portfolio, PortfolioItem
 from stockings.models.stock import StockItem
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
@@ -34,8 +36,9 @@ class Trade(models.Model):
     # Number of traded items.
     # This number is always positive. The semantic difference of *buy* and *sell*
     # trades is handled in the respective classes' methods.
-    # TODO: Add a custom validator! MAY NOT BE ZERO!
-    item_count = models.PositiveIntegerField(default=0)
+    item_count = models.PositiveIntegerField(
+        default=0, validators=[MinValueValidator(1)]
+    )
 
     # Date and time of the trade.
     timestamp = models.DateTimeField(default=now)
@@ -62,12 +65,35 @@ class Trade(models.Model):
         )
 
     def clean(self):
-        # TODO: Things to implement here:
-        #     - ensure, that a `Sell` Trade can not be done for a `stock_item`,
-        #       that is not represented by a `PortfolioItem` in `portfolio`
-        #     - ensure, that a `Sell` Trade can not have `item_count` > The
-        #       `PortfolioItem`'s `count`
-        raise NotImplementedError('Provide model specific cleaning here!')
+        """Provide some validation, before actually 'performing' the trade.
+
+        These validations are not strictly tied to one specific field. In
+        particular, they require data from other models."""
+
+        # There are some restrictions for 'SELL' trades:
+        # 1. The ``stock_item`` must have a corresponding ``PortfolioItem``
+        #   object in ``portfolio``.
+        # 2. You are not able to sell more items than available in your
+        #   portfolio.
+        if self.trade_type == 'SELL':
+            # Get the ``PortfolioItem``...
+            try:
+                portfolio_item = self.portfolio.portfolioitem_set.get(
+                    stock_item=self.stock_item
+                )
+            except PortfolioItem.DoesNotExist:
+                raise ValidationError(
+                    _(
+                        'You are trying to sell stock, that is not present in your portfolio!'
+                    ),
+                    code='invalid',
+                )
+
+            # Trying to sell more items than available. Setting a maximum value
+            # for this trade.
+            # TODO: Add a notification of some sort... django messages?
+            if self.item_count > portfolio_item.stock_count:
+                self.item_count = portfolio_item.stock_count
 
     @property
     def costs(self):
