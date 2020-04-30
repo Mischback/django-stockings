@@ -199,8 +199,32 @@ class PortfolioItem(models.Model):
         # update stock_count
         self.stock_count += count
 
-    def perform_sell(self, trade_stock_count, trade_price, trade_costs):
-        raise NotImplementedError('to be done')
+    def perform_sell(self, count, price, costs):
+        """Perform a sell operation.
+
+        This method is called by ``callback_perform_trade()`` to actually
+        modify the object's attributes.
+
+        To handle the sale of stock items, the actual value of the stock is
+        calculated (price per item * count of stock) and added to the
+        ``proceeds``. The costs of the sale (whatever the bank charges) are
+        tracked by calling ``update_costs()``. Finally, the ``stock_count`` is
+        adjusted to reflect the sold items (this triggers the update of
+        re-calculating the ``deposit`` automatically)."""
+
+        # track the costs
+        self.update_costs(costs)
+
+        if self._proceeds_currency != price.currency:
+            price.amount = price.convert(self._proceeds_currency)
+            price.currency = self._proceeds_currency
+
+        # update proceeds
+        self._proceeds_amount += price.amount * count
+        self._proceeds_timestamp = price.timestamp
+
+        # update stock_count
+        self.stock_count -= count
 
     @property
     def proceeds(self):
@@ -226,8 +250,8 @@ class PortfolioItem(models.Model):
         """Update the value of costs, by adding the costs of a trade."""
 
         if self._costs_currency != costs.currency:
-            trade_costs.amount = costs.convert(self._costs_currency)
-            trade_costs.currency = self._costs_currency
+            costs.amount = costs.convert(self._costs_currency)
+            costs.currency = self._costs_currency
 
         self._costs_amount += costs.amount
         self._costs_timestamp = costs.timestamp
@@ -285,8 +309,21 @@ class PortfolioItem(models.Model):
             item.perform_buy(instance.item_count, instance.price, instance.costs)
             item.save()
 
+        # SELLing stock
         if instance.trade_type == 'SELL':
-            raise NotImplementedError('next')
+            # This try/catch is *very* defensive! It should not be possible to
+            # save a ``Trade`` item of type ``SELL``, that is not backed by a
+            # ``PortfolioItem``, see ``clean()`` in ``Trade``.
+            try:
+                item = cls.objects.get(
+                    portfolio=instance.portfolio, stock_item=instance.stock_item
+                )
+            except cls.DoesNotExist:
+                raise RuntimeError(
+                    'Trying to sell stock, that are not in the portfolio! Something went terribly wrong!'
+                )
+            item.perform_sell(instance.item_count, instance.price, instance.costs)
+            item.save()
 
     @classmethod
     def callback_price_update(
