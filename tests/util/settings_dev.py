@@ -66,3 +66,27 @@ TEMPLATES = [
         },
     },
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'dev': {
+            'format': '[{levelname}] {name}:{lineno}:{funcName} - {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'dev',
+        },
+    },
+    'loggers': {
+        'stockings': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
+    }
+}
