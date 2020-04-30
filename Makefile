@@ -31,7 +31,7 @@ django/check:
 
 # django-admin createsuperuser
 django/createsuperuser:
-	$(MAKE) django django_cmd="createsuperuser"
+	tox -q -e djangosuperuser
 
 # django-admin makemigrations
 django/makemigrations:
