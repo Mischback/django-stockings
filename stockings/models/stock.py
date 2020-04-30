@@ -83,16 +83,7 @@ class StockItem(models.Model):
         A StockItem is considered active, if it is referenced by at least one
         PortfolioItem, that is active itsself."""
 
-        # Here is a nasty and ugly workaround, which couples StockItems very
-        # closely to PortfolioItems.
-        # PortfolioItem's ``is_active`` can't be used here, because Django's
-        # queryset filter works on database level and not on the Python
-        # objects, thus, the ``property`` is not available.
-        # Instead, the ``property`` is re-implemented here (checking
-        # PortfolioItem's ``_stock_count``), which is not elegant, not DRY and
-        # not loosely coupled.
-        # But it works.
-        return self.portfolioitem_set.filter(_stock_count__gt=0).count() > 0
+        return self.portfolioitem_set.filter(is_active=True).count() > 0
 
     @property
     def latest_price(self):

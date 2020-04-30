@@ -38,8 +38,33 @@ class Portfolio(models.Model):
         return '{} ({})'.format(self.name, self.user)
 
 
+class PortfolioItemManager(models.Manager):
+    """Custom manager to provide custom properties for Django querysets."""
+
+    def get_queryset(self):
+        """Return a modified queryset.
+
+        The original queryset is annotated with additional fields to provide
+        ``PortfolioItem``'s properties in Django querysets."""
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                is_active=models.Case(
+                    models.When(_stock_count=0, then=models.Value(False)),
+                    default=models.Value(True),
+                    output_field=models.BooleanField(),
+                )
+            )
+        )
+
+
 class PortfolioItem(models.Model):
     """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
+
+    # Use the custom manager as default
+    # TODO: Should Meta.default_manager_name be set aswell?
+    objects = PortfolioItemManager()
 
     # Reference to the ``Portfolio``.
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
@@ -134,6 +159,18 @@ class PortfolioItem(models.Model):
 
         A PortfolioItem is considered 'active', if the stock count is > 0."""
         return self._stock_count > 0
+
+    @is_active.setter
+    def is_active(self, value):
+        """Required dummy function.
+
+        The property ``is_active`` is based on a logical operation. Properties
+        are not accessible in Django querysets by default.
+        The custom ``PortfolioItemManager`` makes the property accessible in
+        querysets, by emulating its logical implementation. But if the
+        ``PortfolioItemManager`` is used as the default manager, retrieving
+        objects from the database requires a setter for the property."""
+        pass
 
     def perform_buy(self, trade_stock_count, trade_price, trade_costs):
         raise NotImplementedError('to be done')
