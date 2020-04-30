@@ -72,8 +72,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'dev': {
-            'format': '[{levelname}] {name}:{lineno}:{funcName} - {message}',
-            'style': '{',
+            'format': '[%(levelname)s] %(name)s:%(lineno)d:%(funcName)s \n\t %(message)s',
         },
     },
     'handlers': {
