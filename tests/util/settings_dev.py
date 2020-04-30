@@ -71,19 +71,19 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'dev': {
+        'dev_f': {
             'format': '[%(levelname)s] %(name)s:%(lineno)d:%(funcName)s \n\t %(message)s',
         },
     },
     'handlers': {
-        'console': {
+        'def_h': {
             'class': 'logging.StreamHandler',
-            'formatter': 'dev',
+            'formatter': 'dev_f',
         },
     },
     'loggers': {
         'stockings': {
-            'handlers': ['console'],
+            'handlers': ['def_h'],
             'level': 'DEBUG',
             'propagate': False,
         }
