@@ -172,8 +172,32 @@ class PortfolioItem(models.Model):
         objects from the database requires a setter for the property."""
         pass
 
-    def perform_buy(self, trade_stock_count, trade_price, trade_costs):
-        raise NotImplementedError('to be done')
+    def perform_buy(self, count, price, costs):
+        """Perform a buy operation.
+
+        This method is called by ``callback_perform_trade()`` to actually
+        modify the object's attributes.
+
+        To handle the purchase of stock items, the actual price of the stock
+        is calculated (price per item * count of stock) and added to the
+        ``expenses``. The costs of the purchase (whatever the bank charges)
+        are tracked by calling ``update_costs()``. Finally, the ``stock_count``
+        is adjusted to reflect the newly purchased items (this triggers the
+        update of re-calculating the ``deposit`` automatically)."""
+
+        # track the costs
+        self.update_costs(costs)
+
+        if self._expenses_currency != price.currency:
+            price.amount = price.convert(self._expenses_currency)
+            price.currency = self._expenses_currency
+
+        # update expenses
+        self._expenses_amount += price.amount * count
+        self._expenses_timestamp = price.timestamp
+
+        # update stock_count
+        self.stock_count += count
 
     def perform_sell(self, trade_stock_count, trade_price, trade_costs):
         raise NotImplementedError('to be done')
@@ -198,8 +222,18 @@ class PortfolioItem(models.Model):
         self._stock_count = value
         self.update_deposit()
 
+    def update_costs(self, costs):
+        """Update the value of costs, by adding the costs of a trade."""
+
+        if self._costs_currency != costs.currency:
+            trade_costs.amount = costs.convert(self._costs_currency)
+            trade_costs.currency = self._costs_currency
+
+        self._costs_amount += costs.amount
+        self._costs_timestamp = costs.timestamp
+
     def update_deposit(self, new_price=None):
-        """Updates the value of the deposit, by recalculating the value based
+        """Update the value of the deposit, by recalculating the value based
         on a new price information.
 
         If no new price is given, the method will fetch the latest price
@@ -218,6 +252,41 @@ class PortfolioItem(models.Model):
         self._deposit_amount = new_price.amount * self.stock_count
         # self._deposit_currency = new_price.currency
         self._deposit_timestamp = new_price.timestamp
+
+    @classmethod
+    def callback_perform_trade(
+        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+    ):
+        """Handle trade operations.
+
+        The callback only works on newly created Trade objects. It determines
+        the correct PortfolioItem (or creates a new one) and calls the method
+        to either handle a buy or sell of stocks.
+        See ``perform_buy()`` / ``perform_sell()`` for details.
+
+        This is a singal handler, that is attached as a post_save handler in
+        the apps's ``StockingsConfig``'s ``ready`` method."""
+
+        # Do nothing, if this is a raw save-operation.
+        if raw:
+            return None
+
+        # Do nothing, if this is an edit of an existing trade.
+        if not created:
+            return None
+
+        # BUYing stock
+        if instance.trade_type == 'BUY':
+            item = cls.objects.get_or_create(
+                portfolio=instance.portfolio,
+                stock_item=instance.stock_item,
+                # defaults={},
+            )[0]
+            item.perform_buy(instance.item_count, instance.price, instance.costs)
+            item.save()
+
+        if instance.trade_type == 'SELL':
+            raise NotImplementedError('next')
 
     @classmethod
     def callback_price_update(
