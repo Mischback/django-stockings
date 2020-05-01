@@ -9,6 +9,16 @@ black:
 black/full:
 	tox -q -e black
 
+clean:
+	- tox -q -e util -- coverage erase
+	find . -iname "*.pyc" -delete
+	find . -iname "__pycache__" -delete
+	find . -iname ".coverage.*" -delete
+
+coverage: clean test
+	- tox -q -e util -- coverage combine
+	tox -q -e util -- coverage report
+
 flake:
 	tox -q -e util -- flake8 .
 
@@ -17,6 +27,17 @@ isort:
 
 isort/full:
 	tox -q -e util -- isort . --recursive
+
+test_cmd ?= ""
+test:
+	tox -q -e testing -- $(test_cmd)
+
+test_tag ?= current
+test/tag:
+	$(MAKE) test test_cmd="-t $(test_tag)"
+
+test/time:
+	$(MAKE) test test_cmd="--time"
 
 # ##### Django commands
 
