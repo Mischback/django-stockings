@@ -49,10 +49,13 @@ def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
         settings.ALLOWED_HOSTS = []
 
         # only use one password hasher (and the fastest one)
-        settings.PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher', ]
+        settings.PASSWORD_HASHERS = [
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+        ]
 
         # turn off logging
         import logging
+
         logging.disable(logging.CRITICAL)
 
         # disable migrations during tests
@@ -78,7 +81,9 @@ def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
         def tearDown(self):
             total = time.time() - self.start_time
             if total > 0.5:
-                print("\n\t\033[91m{:.3f}s\t{}\033[0m".format(total, self._testMethodName))
+                print(
+                    "\n\t\033[91m{:.3f}s\t{}\033[0m".format(total, self._testMethodName)
+                )
 
         test.TestCase.setUp = setUp
         test.TestCase.tearDown = tearDown
@@ -98,10 +103,7 @@ def app_tests(disable_optimisation, enable_migrations, enable_timing, tags, verb
         settings.TEST_RUNNER = 'django.test.runner.DiscoverRunner'
     TestRunner = get_runner(settings)
 
-    test_runner = TestRunner(
-        verbosity=verbosity,
-        tags=tags,
-    )
+    test_runner = TestRunner(verbosity=verbosity, tags=tags,)
 
     failures = test_runner.run_tests(['.'])
 
@@ -110,31 +112,46 @@ def app_tests(disable_optimisation, enable_migrations, enable_timing, tags, verb
 
 if __name__ == '__main__':
     # set up the argument parser
-    parser = argparse.ArgumentParser(description='Run the django-auth_enhanced test suite')
-    parser.add_argument(
-        '--disable-optimisation', action='store_true', dest='disable_optimisation',
-        help="Disables the test specific optimisations."
+    parser = argparse.ArgumentParser(
+        description='Run the django-auth_enhanced test suite'
     )
     parser.add_argument(
-        '--enable-migrations', action='store_true', dest='enable_migrations',
-        help="Enables the usage of migrations during tests."
+        '--disable-optimisation',
+        action='store_true',
+        dest='disable_optimisation',
+        help="Disables the test specific optimisations.",
+    )
+    parser.add_argument(
+        '--enable-migrations',
+        action='store_true',
+        dest='enable_migrations',
+        help="Enables the usage of migrations during tests.",
     )
     parser.add_argument(
         '--settings',
         help="Python path to settings module, e.g. 'myproject.settings'. If "
-             "this is not provided, 'tests.util.settings_dev' will be used."
+        "this is not provided, 'tests.util.settings_dev' will be used.",
     )
     parser.add_argument(
-        '-t', '--tag', dest='tags', action='append',
-        help="Run only tests with the specified tags. Can be used multiple times."
+        '-t',
+        '--tag',
+        dest='tags',
+        action='append',
+        help="Run only tests with the specified tags. Can be used multiple times.",
     )
     parser.add_argument(
-        '--time', action='store_true', dest='enable_timing',
-        help="Enables time measurements for all tests."
+        '--time',
+        action='store_true',
+        dest='enable_timing',
+        help="Enables time measurements for all tests.",
     )
     parser.add_argument(
-        '-v', '--verbosity', default=1, type=int, choices=[0, 1, 2, 3],
-        help="Verbosity level; 0=minimal, 3=maximal; default=1"
+        '-v',
+        '--verbosity',
+        default=1,
+        type=int,
+        choices=[0, 1, 2, 3],
+        help="Verbosity level; 0=minimal, 3=maximal; default=1",
     )
 
     # actually get the options

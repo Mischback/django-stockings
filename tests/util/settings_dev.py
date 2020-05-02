@@ -75,17 +75,8 @@ LOGGING = {
             'format': '[%(levelname)s] %(name)s:%(lineno)d:%(funcName)s \n\t %(message)s',
         },
     },
-    'handlers': {
-        'def_h': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'dev_f',
-        },
-    },
+    'handlers': {'def_h': {'class': 'logging.StreamHandler', 'formatter': 'dev_f',},},
     'loggers': {
-        'stockings': {
-            'handlers': ['def_h'],
-            'level': 'DEBUG',
-            'propagate': False,
-        }
-    }
+        'stockings': {'handlers': ['def_h'], 'level': 'DEBUG', 'propagate': False,}
+    },
 }
