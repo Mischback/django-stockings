@@ -26,7 +26,9 @@ class StockingsMoney:
         self.timestamp = timestamp or now()
 
     def __str__(self):
-        return '{} {} ({})'.format(self.currency, self.amount, self.timestamp)
+        return '{} {} ({})'.format(
+            self.currency, self.amount, self.timestamp
+        )  # pragma: nocover
 
     def convert(self, target_currency):
         """Convert the value of the object to another target currency.

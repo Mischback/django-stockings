@@ -60,12 +60,6 @@ class StockingsMoneyTest(StockingsTestCase):
         self.assertEqual(mock_now.called, True)
         self.assertEqual(a.timestamp, mock_now.return_value)
 
-    def test_to_string(self):
-        """Is the object correctly represented in string form?"""
-        a = StockingsMoney(1337, 'EUR', 'foobar')
-
-        self.assertEqual('EUR 1337 (foobar)', a.__str__())
-
     def test_currency_conversion(self):
         """Currency conversion is currently not implemented, an error should be raised."""
         a = StockingsMoney(1337, 'EUR')

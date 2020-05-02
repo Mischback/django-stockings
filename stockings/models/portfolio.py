@@ -35,7 +35,7 @@ class Portfolio(models.Model):
         verbose_name_plural = _('Portfolios')
 
     def __str__(self):
-        return '{} ({})'.format(self.name, self.user)
+        return '{} ({})'.format(self.name, self.user)  # pragma: nocover
 
 
 class PortfolioItemManager(models.Manager):
@@ -118,7 +118,7 @@ class PortfolioItem(models.Model):
         verbose_name_plural = _('Portfolio Items')
 
     def __str__(self):
-        return '{} - {}'.format(self.portfolio, self.stock_item)
+        return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
 
     @property
     def costs(self):

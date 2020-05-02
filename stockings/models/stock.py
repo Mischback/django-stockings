@@ -54,7 +54,9 @@ class StockItem(models.Model):
     def get_fullname_by_isin(self):
         """Fetch the ``full_name`` of an item using a data provider."""
 
-        raise NotImplementedError('Needs an implementation of automatic data providers')
+        raise NotImplementedError(
+            'Needs an implementation of automatic data providers'
+        )  # pragma: nocover
 
     @classmethod
     def get_sentinel_item(cls):

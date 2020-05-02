@@ -62,7 +62,7 @@ class Trade(models.Model):
     def __str__(self):
         return '[{}] {} - {} ({})'.format(
             self.trade_type, self.portfolio, self.stock_item, self.timestamp
-        )
+        )  # pragma: nocover
 
     def clean(self):
         """Provide some validation, before actually 'performing' the trade.
