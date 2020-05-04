@@ -115,6 +115,16 @@ class PortfolioItem(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
 
+    def update_cash_in(self, new_cash_flow):
+        # calculate new value (old value + new cash flow)
+        # Currency conversion is implicitly provided, because
+        # `StockingsMoney.add()` ensures a target currency.
+        new_value = self.cash_in.add(new_cash_flow)
+
+        # update with new value
+        self._cash_in_amount = new_value.amount
+        self._cash_in_timestamp = new_value.timestamp
+
     def update_costs(self, new_costs):
         """Update the value of costs, by adding the costs of a trade."""
 
