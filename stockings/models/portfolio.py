@@ -76,6 +76,11 @@ class PortfolioItem(models.Model):
     # referenced it, so ``related_name='+'`` disables the backwards relation.
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
+    # Stores the details of ``cash_in``, which represents the accumulated
+    # prices of stocks, at the time of buying them.
+    _cash_in_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _cash_in_timestamp = models.DateTimeField(default=now)
+
     # Stores the details of ``costs``, which represents the accumulated costs
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
@@ -90,11 +95,6 @@ class PortfolioItem(models.Model):
         decimal_places=4, default=0, max_digits=19
     )
     _stock_value_timestamp = models.DateTimeField(default=now)
-
-    # Stores the details of ``expenses``, which represents the accumulated
-    # prices of stocks, at the time of buying them.
-    _expenses_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _expenses_timestamp = models.DateTimeField(default=now)
 
     # Stores the details of ``proceeds``, which represents the accumulated
     # prices of stocks, at the time of selling them.
@@ -114,6 +114,11 @@ class PortfolioItem(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
+
+    def _get_cash_in(self):
+        return self._return_money(
+            self._cash_in_amount, timestamp=self._cash_in_timestamp
+        )
 
     def _get_costs(self):
         return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
@@ -135,6 +140,12 @@ class PortfolioItem(models.Model):
             timestamp,
         )
 
+    def _set_cash_in(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_in()'."
+        )
+
     def _set_costs(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
@@ -153,28 +164,6 @@ class PortfolioItem(models.Model):
 
     def __del_attribute(self):
         raise StockingsInterfaceError('This attribute may not be deleted!')
-
-    @property
-    def deposit(self):
-        return StockingsMoney(
-            self._deposit_amount, self._deposit_currency, self._deposit_timestamp
-        )
-
-    @deposit.setter
-    def deposit(self, value):
-        """The value of deposit may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
-
-    @property
-    def expenses(self):
-        return StockingsMoney(
-            self._expenses_amount, self._expenses_currency, self._expenses_timestamp
-        )
-
-    @expenses.setter
-    def expenses(self, value):
-        """The value of expenses may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
 
     @property
     def is_active(self):
@@ -373,6 +362,10 @@ class PortfolioItem(models.Model):
         for item in portfolio_item_set.iterator():
             item.update_deposit(new_price)
             item.save()
+
+    cash_in = property(
+        _get_cash_in, _set_cash_in, __del_attribute, 'TODO: Add docstring here'
+    )
 
     costs = property(
         _get_costs, _set_costs, __del_attribute, 'TODO: Add docstring here'
