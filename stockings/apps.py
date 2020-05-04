@@ -12,8 +12,11 @@ class StockingsConfig(AppConfig):
     def ready(self):
         """Executed when application loading is completed."""
 
+        # Connect PortfolioItem with Trade.
+        # The callback applies the trade operation to the PortfolioItem by
+        # updating various attributes to track cash flows and costs.
         post_save.connect(
-            self.get_model('PortfolioItem').callback_perform_trade,
+            self.get_model('PortfolioItem').callback_trade_apply_trade,
             sender=self.get_model('Trade'),
             dispatch_uid='STOCKINGS_portfolioitem_trade',
         )

@@ -186,6 +186,52 @@ class PortfolioItem(models.Model):
             item.update_stock_value(item_price=new_price)
             item.save()
 
+    @classmethod
+    def callback_trade_apply_trade(
+        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+    ):
+        """Update several of PortfolioItem's fields to track the trade operation."""
+
+        # Do nothing, if this is a raw save-operation.
+        if raw:
+            return None
+
+        # Do nothing, if this is an edit of an existing trade.
+        if not created:
+            return None
+
+        fetch_item = cls.objects.get_or_create(
+            portfolio=instance.portfolio,
+            stock_item=instance.stock_item,
+            # defaults={},
+        )
+        item = fetch_item[0]
+        item_state = fetch_item[1]
+
+        item.update_costs(instance.costs)
+
+        if instance.trade_type == 'BUY':
+            item.update_cash_in(instance.price.multiply(instance.item_count))
+            item.update_stock_value(
+                item_price=instance.price,
+                item_count=item.stock_count + instance.item_count,
+            )
+
+        if instance.trade_type == 'SELL':
+            if item_state is True:
+                raise RuntimeError(
+                    "Trying to sell stock, that are not in the portfolio! "
+                    "Something went terribly wrong!"
+                )
+
+            item.update_cash_out(instance.price.multiply(instance.item_count))
+            item.update_stock_value(
+                item_price=instance.price,
+                item_count=item.stock_count - instance.item_count,
+            )
+
+        item.save()
+
     def _get_cash_in(self):
         return self._return_money(
             self._cash_in_amount, timestamp=self._cash_in_timestamp
@@ -270,108 +316,6 @@ class PortfolioItem(models.Model):
         manager, these properties need a setter, but the setter may not perform
         any action and should be set to this method."""
         pass
-
-    def perform_buy(self, count, price, costs):
-        """Perform a buy operation.
-
-        This method is called by ``callback_perform_trade()`` to actually
-        modify the object's attributes.
-
-        To handle the purchase of stock items, the actual price of the stock
-        is calculated (price per item * count of stock) and added to the
-        ``expenses``. The costs of the purchase (whatever the bank charges)
-        are tracked by calling ``update_costs()``. Finally, the ``stock_count``
-        is adjusted to reflect the newly purchased items (this triggers the
-        update of re-calculating the ``deposit`` automatically)."""
-
-        # track the costs
-        self.update_costs(costs)
-
-        if self._expenses_currency != price.currency:
-            price.amount = price.convert(self._expenses_currency)
-            price.currency = self._expenses_currency
-
-        # update expenses
-        self._expenses_amount += price.amount * count
-        self._expenses_timestamp = price.timestamp
-
-        # update stock_count
-        self.stock_count += count
-
-    def perform_sell(self, count, price, costs):
-        """Perform a sell operation.
-
-        This method is called by ``callback_perform_trade()`` to actually
-        modify the object's attributes.
-
-        To handle the sale of stock items, the actual value of the stock is
-        calculated (price per item * count of stock) and added to the
-        ``proceeds``. The costs of the sale (whatever the bank charges) are
-        tracked by calling ``update_costs()``. Finally, the ``stock_count`` is
-        adjusted to reflect the sold items (this triggers the update of
-        re-calculating the ``deposit`` automatically)."""
-
-        # track the costs
-        self.update_costs(costs)
-
-        if self._proceeds_currency != price.currency:
-            price.amount = price.convert(self._proceeds_currency)
-            price.currency = self._proceeds_currency
-
-        # update proceeds
-        self._proceeds_amount += price.amount * count
-        self._proceeds_timestamp = price.timestamp
-
-        # update stock_count
-        self.stock_count -= count
-
-    @classmethod
-    def callback_perform_trade(
-        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
-    ):
-        """Handle trade operations.
-
-        The callback only works on newly created Trade objects. It determines
-        the correct PortfolioItem (or creates a new one) and calls the method
-        to either handle a buy or sell of stocks.
-        See ``perform_buy()`` / ``perform_sell()`` for details.
-
-        This is a singal handler, that is attached as a post_save handler in
-        the apps's ``StockingsConfig``'s ``ready`` method."""
-
-        # Do nothing, if this is a raw save-operation.
-        if raw:
-            return None
-
-        # Do nothing, if this is an edit of an existing trade.
-        if not created:
-            return None
-
-        # BUYing stock
-        if instance.trade_type == 'BUY':
-            item = cls.objects.get_or_create(
-                portfolio=instance.portfolio,
-                stock_item=instance.stock_item,
-                # defaults={},
-            )[0]
-            item.perform_buy(instance.item_count, instance.price, instance.costs)
-            item.save()
-
-        # SELLing stock
-        if instance.trade_type == 'SELL':
-            # This try/catch is *very* defensive! It should not be possible to
-            # save a ``Trade`` item of type ``SELL``, that is not backed by a
-            # ``PortfolioItem``, see ``clean()`` in ``Trade``.
-            try:
-                item = cls.objects.get(
-                    portfolio=instance.portfolio, stock_item=instance.stock_item
-                )
-            except cls.DoesNotExist:
-                raise RuntimeError(
-                    'Trying to sell stock, that are not in the portfolio! Something went terribly wrong!'
-                )
-            item.perform_sell(instance.item_count, instance.price, instance.costs)
-            item.save()
 
     cash_in = property(
         _get_cash_in, _set_cash_in, __del_attribute, 'TODO: Add docstring here'
