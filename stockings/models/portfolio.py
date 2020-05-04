@@ -76,34 +76,27 @@ class PortfolioItem(models.Model):
     # referenced it, so ``related_name='+'`` disables the backwards relation.
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
+    # The currency for all money-related fields.
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+
     # Stores the details of ``costs``, which represents the accumulated costs
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _costs_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
     _costs_timestamp = models.DateTimeField(default=now)
 
     # Stores the details of the ``deposit``, which tracks the current value of
     # the associated ``StockItem``s.
     _deposit_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _deposit_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
     _deposit_timestamp = models.DateTimeField(default=now)
 
     # Stores the details of ``expenses``, which represents the accumulated
     # prices of stocks, at the time of buying them.
     _expenses_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _expenses_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
     _expenses_timestamp = models.DateTimeField(default=now)
 
     # Stores the details of ``proceeds``, which represents the accumulated
     # prices of stocks, at the time of selling them.
     _proceeds_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _proceeds_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
     _proceeds_timestamp = models.DateTimeField(default=now)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
@@ -119,6 +112,16 @@ class PortfolioItem(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
+
+    def _get_currency(self):
+        return self._currency
+
+    def _set_currency(self):
+        # TODO: Has to be done when all attributes have been adjusted
+        raise NotImplementedError('to be done...')
+
+    def __del_attribute(self):
+        raise StockingsInterfaceError('This attribute may not be deleted!')
 
     @property
     def costs(self):
@@ -350,3 +353,7 @@ class PortfolioItem(models.Model):
         for item in portfolio_item_set.iterator():
             item.update_deposit(new_price)
             item.save()
+
+    currency = property(
+        _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
+    )
