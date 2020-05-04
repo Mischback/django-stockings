@@ -76,35 +76,30 @@ class PortfolioItem(models.Model):
     # referenced it, so ``related_name='+'`` disables the backwards relation.
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
+    # Stores the details of ``cash_in``, which represents the accumulated
+    # prices of stocks, at the time of buying them.
+    _cash_in_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _cash_in_timestamp = models.DateTimeField(default=now)
+
+    # Stores the details of ``cash_out``, which represents the accumulated
+    # prices of stocks, at the time of selling them.
+    _cash_out_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _cash_out_timestamp = models.DateTimeField(default=now)
+
     # Stores the details of ``costs``, which represents the accumulated costs
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _costs_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
     _costs_timestamp = models.DateTimeField(default=now)
 
-    # Stores the details of the ``deposit``, which tracks the current value of
-    # the associated ``StockItem``s.
-    _deposit_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _deposit_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
-    _deposit_timestamp = models.DateTimeField(default=now)
+    # The currency for all money-related fields.
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
-    # Stores the details of ``expenses``, which represents the accumulated
-    # prices of stocks, at the time of buying them.
-    _expenses_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _expenses_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
+    # Stores the details of the ``stock_value``, which tracks the current value
+    # of the associated ``StockItem``s.
+    _stock_value_amount = models.DecimalField(
+        decimal_places=4, default=0, max_digits=19
     )
-    _expenses_timestamp = models.DateTimeField(default=now)
-
-    # Stores the details of ``proceeds``, which represents the accumulated
-    # prices of stocks, at the time of selling them.
-    _proceeds_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _proceeds_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
-    _proceeds_timestamp = models.DateTimeField(default=now)
+    _stock_value_timestamp = models.DateTimeField(default=now)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
@@ -120,217 +115,57 @@ class PortfolioItem(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
 
-    @property
-    def costs(self):
-        return StockingsMoney(
-            self._costs_amount, self._costs_currency, self._costs_timestamp
-        )
+    def update_cash_in(self, new_cash_flow):
+        # calculate new value (old value + new cash flow)
+        # Currency conversion is implicitly provided, because
+        # `StockingsMoney.add()` ensures a target currency.
+        new_value = self.cash_in.add(new_cash_flow)
 
-    @costs.setter
-    def costs(self, value):
-        """The value of costs may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
+        # update with new value
+        self._cash_in_amount = new_value.amount
+        self._cash_in_timestamp = new_value.timestamp
 
-    @property
-    def deposit(self):
-        return StockingsMoney(
-            self._deposit_amount, self._deposit_currency, self._deposit_timestamp
-        )
+    def update_cash_out(self, new_cash_flow):
+        # calculate new value (old value + new cash flow)
+        # currency changes are implicitly prohibited, because
+        # `StockingsMoney.add()` ensures a target currency.
+        new_value = self.cash_out.add(new_cash_flow)
 
-    @deposit.setter
-    def deposit(self, value):
-        """The value of deposit may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
+        # update with new value
+        self._cash_out_amount = new_value.amount
+        self._cash_out_timestamp = new_value.timestamp
 
-    @property
-    def expenses(self):
-        return StockingsMoney(
-            self._expenses_amount, self._expenses_currency, self._expenses_timestamp
-        )
-
-    @expenses.setter
-    def expenses(self, value):
-        """The value of expenses may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
-
-    @property
-    def is_active(self):
-        """Return bool to indicate status of the object.
-
-        A PortfolioItem is considered 'active', if the stock count is > 0."""
-        return self._stock_count > 0
-
-    @is_active.setter
-    def is_active(self, value):
-        """Required dummy function.
-
-        The property ``is_active`` is based on a logical operation. Properties
-        are not accessible in Django querysets by default.
-        The custom ``PortfolioItemManager`` makes the property accessible in
-        querysets, by emulating its logical implementation. But if the
-        ``PortfolioItemManager`` is used as the default manager, retrieving
-        objects from the database requires a setter for the property."""
-        pass
-
-    def perform_buy(self, count, price, costs):
-        """Perform a buy operation.
-
-        This method is called by ``callback_perform_trade()`` to actually
-        modify the object's attributes.
-
-        To handle the purchase of stock items, the actual price of the stock
-        is calculated (price per item * count of stock) and added to the
-        ``expenses``. The costs of the purchase (whatever the bank charges)
-        are tracked by calling ``update_costs()``. Finally, the ``stock_count``
-        is adjusted to reflect the newly purchased items (this triggers the
-        update of re-calculating the ``deposit`` automatically)."""
-
-        # track the costs
-        self.update_costs(costs)
-
-        if self._expenses_currency != price.currency:
-            price.amount = price.convert(self._expenses_currency)
-            price.currency = self._expenses_currency
-
-        # update expenses
-        self._expenses_amount += price.amount * count
-        self._expenses_timestamp = price.timestamp
-
-        # update stock_count
-        self.stock_count += count
-
-    def perform_sell(self, count, price, costs):
-        """Perform a sell operation.
-
-        This method is called by ``callback_perform_trade()`` to actually
-        modify the object's attributes.
-
-        To handle the sale of stock items, the actual value of the stock is
-        calculated (price per item * count of stock) and added to the
-        ``proceeds``. The costs of the sale (whatever the bank charges) are
-        tracked by calling ``update_costs()``. Finally, the ``stock_count`` is
-        adjusted to reflect the sold items (this triggers the update of
-        re-calculating the ``deposit`` automatically)."""
-
-        # track the costs
-        self.update_costs(costs)
-
-        if self._proceeds_currency != price.currency:
-            price.amount = price.convert(self._proceeds_currency)
-            price.currency = self._proceeds_currency
-
-        # update proceeds
-        self._proceeds_amount += price.amount * count
-        self._proceeds_timestamp = price.timestamp
-
-        # update stock_count
-        self.stock_count -= count
-
-    @property
-    def proceeds(self):
-        return StockingsMoney(
-            self._proceeds_amount, self._proceeds_currency, self._proceeds_timestamp
-        )
-
-    @proceeds.setter
-    def proceeds(self, value):
-        """The value of expenses may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
-
-    @property
-    def stock_count(self):
-        return self._stock_count
-
-    @stock_count.setter
-    def stock_count(self, value):
-        self._stock_count = value
-        self.update_deposit()
-
-    def update_costs(self, costs):
+    def update_costs(self, new_costs):
         """Update the value of costs, by adding the costs of a trade."""
 
-        if self._costs_currency != costs.currency:
-            costs.amount = costs.convert(self._costs_currency)
-            costs.currency = self._costs_currency
+        # calculate new value (old value + new costs)
+        # Currency conversion is implicitly provided, because
+        # `StockingsMoney.add()` ensures the target currency.
+        new_value = self.costs.add(new_costs)
 
-        self._costs_amount += costs.amount
-        self._costs_timestamp = costs.timestamp
+        self._costs_amount = new_value.amount
+        self._costs_timestamp = new_value.timestamp
 
-    def update_deposit(self, new_price=None):
-        """Update the value of the deposit, by recalculating the value based
-        on a new price information.
+    def update_stock_value(self, item_price=None, item_count=None):
 
-        If no new price is given, the method will fetch the latest price
-        information from the associated ``stock_item``.
+        if item_price is None:
+            item_price = self.stock_item.latest_price
 
-        ``_deposit_value`` = ``new_price.amount`` * ``stock_item``
-        """
+        if item_count is None:
+            item_count = self._stock_count
 
-        if new_price is None:
-            new_price = self.stock_item.latest_price
+        # calculate new value (item_price * item_count)
+        new_value = item_price.multiply(item_count)
 
-        if self._deposit_currency != new_price.currency:
-            new_price.amount = new_price.convert(self._deposit_currency)
-            new_price.currency = self._deposit_currency
-
-        self._deposit_amount = new_price.amount * self.stock_count
-        # self._deposit_currency = new_price.currency
-        self._deposit_timestamp = new_price.timestamp
+        self._stock_value_amount = new_value.amount
+        self._stock_value_timestamp = new_value.timestamp
+        self._stock_count = item_count
 
     @classmethod
-    def callback_perform_trade(
+    def callback_stockitem_update_stock_value(
         cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
     ):
-        """Handle trade operations.
-
-        The callback only works on newly created Trade objects. It determines
-        the correct PortfolioItem (or creates a new one) and calls the method
-        to either handle a buy or sell of stocks.
-        See ``perform_buy()`` / ``perform_sell()`` for details.
-
-        This is a singal handler, that is attached as a post_save handler in
-        the apps's ``StockingsConfig``'s ``ready`` method."""
-
-        # Do nothing, if this is a raw save-operation.
-        if raw:
-            return None
-
-        # Do nothing, if this is an edit of an existing trade.
-        if not created:
-            return None
-
-        # BUYing stock
-        if instance.trade_type == 'BUY':
-            item = cls.objects.get_or_create(
-                portfolio=instance.portfolio,
-                stock_item=instance.stock_item,
-                # defaults={},
-            )[0]
-            item.perform_buy(instance.item_count, instance.price, instance.costs)
-            item.save()
-
-        # SELLing stock
-        if instance.trade_type == 'SELL':
-            # This try/catch is *very* defensive! It should not be possible to
-            # save a ``Trade`` item of type ``SELL``, that is not backed by a
-            # ``PortfolioItem``, see ``clean()`` in ``Trade``.
-            try:
-                item = cls.objects.get(
-                    portfolio=instance.portfolio, stock_item=instance.stock_item
-                )
-            except cls.DoesNotExist:
-                raise RuntimeError(
-                    'Trying to sell stock, that are not in the portfolio! Something went terribly wrong!'
-                )
-            item.perform_sell(instance.item_count, instance.price, instance.costs)
-            item.save()
-
-    @classmethod
-    def callback_price_update(
-        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
-    ):
-        """Update the objects ``deposit`` value, based on latest price
-        information.
+        """Update PortfolioItem's `stock_value` with new price information.
 
         This is a signal handler, that is attached as a post_save handler in
         the app's ``StockingsConfig``'s ``ready`` method."""
@@ -348,5 +183,162 @@ class PortfolioItem(models.Model):
 
         # Update all relevant ``PortfolioItem`` objects.
         for item in portfolio_item_set.iterator():
-            item.update_deposit(new_price)
+            item.update_stock_value(item_price=new_price)
             item.save()
+
+    @classmethod
+    def callback_trade_apply_trade(
+        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+    ):
+        """Update several of PortfolioItem's fields to track the trade operation."""
+
+        # Do nothing, if this is a raw save-operation.
+        if raw:
+            return None
+
+        # Do nothing, if this is an edit of an existing trade.
+        if not created:
+            return None
+
+        fetch_item = cls.objects.get_or_create(
+            portfolio=instance.portfolio,
+            stock_item=instance.stock_item,
+            # defaults={},
+        )
+        item = fetch_item[0]
+        item_state = fetch_item[1]
+
+        item.update_costs(instance.costs)
+
+        if instance.trade_type == 'BUY':
+            item.update_cash_in(instance.price.multiply(instance.item_count))
+            item.update_stock_value(
+                item_price=instance.price,
+                item_count=item.stock_count + instance.item_count,
+            )
+
+        if instance.trade_type == 'SELL':
+            if item_state is True:
+                raise RuntimeError(
+                    "Trying to sell stock, that are not in the portfolio! "
+                    "Something went terribly wrong!"
+                )
+
+            item.update_cash_out(instance.price.multiply(instance.item_count))
+            item.update_stock_value(
+                item_price=instance.price,
+                item_count=item.stock_count - instance.item_count,
+            )
+
+        item.save()
+
+    def _get_cash_in(self):
+        return self._return_money(
+            self._cash_in_amount, timestamp=self._cash_in_timestamp
+        )
+
+    def _get_cash_out(self):
+        return self._return_money(
+            self._cash_out_amount, timestamp=self._cash_out_timestamp
+        )
+
+    def _get_costs(self):
+        return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
+
+    def _get_currency(self):
+        return self._currency
+
+    def _get_stock_count(self):
+        return self._stock_count
+
+    def _get_stock_value(self):
+        return self._return_money(
+            self._stock_value_amount, timestamp=self._stock_value_timestamp
+        )
+
+    def _is_active(self):
+        """Return bool to indicate status of the object.
+
+        A PortfolioItem is considered 'active', if the stock count is > 0."""
+        return self._stock_count > 0
+
+    def _return_money(self, amount, currency=None, timestamp=None):
+        return StockingsMoney(
+            amount,
+            currency or self._currency,
+            # `StockingsMoney` will set the timestamp to `now()`, if no
+            # timestamp is provided.
+            timestamp,
+        )
+
+    def _set_cash_in(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_in()'."
+        )
+
+    def _set_cash_out(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_out()'."
+        )
+
+    def _set_costs(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_costs()'."
+        )
+
+    def _set_currency(self, value):
+        # TODO: Has to be done when all attributes have been adjusted
+        raise NotImplementedError('to be done...')
+
+    def _set_stock_count(self, value):
+        raise NotImplementedError('to be done...')
+
+    def _set_stock_value(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_stock_value()'."
+        )
+
+    def __del_attribute(self):
+        raise StockingsInterfaceError('This attribute may not be deleted!')
+
+    def __noop(self, value):
+        """Required dummy function.
+
+        Some functions, that are implemented as Python properties should be
+        accessible in Django querysets aswell. They are provided as annotations
+        in `PortfolioItemManager`'s `get_queryset()`.
+
+        Because `PortfolioItemManager` is used as the primary and default
+        manager, these properties need a setter, but the setter may not perform
+        any action and should be set to this method."""
+        pass
+
+    cash_in = property(
+        _get_cash_in, _set_cash_in, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    cash_out = property(
+        _get_cash_out, _set_cash_out, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    costs = property(
+        _get_costs, _set_costs, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    currency = property(
+        _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    is_active = property(_is_active, __noop, 'TODO: Add docstring here')
+
+    stock_count = property(
+        _get_stock_count, _set_stock_count, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    stock_value = property(
+        _get_stock_value, _set_stock_value, __del_attribute, 'TODO: Add docstring here'
+    )
