@@ -131,6 +131,9 @@ class PortfolioItem(models.Model):
     def _get_currency(self):
         return self._currency
 
+    def _get_stock_count(self):
+        return self._stock_count
+
     def _get_stock_value(self):
         return self._return_money(
             self._stock_value_amount, timestamp=self._stock_value_timestamp
@@ -165,6 +168,9 @@ class PortfolioItem(models.Model):
 
     def _set_currency(self, value):
         # TODO: Has to be done when all attributes have been adjusted
+        raise NotImplementedError('to be done...')
+
+    def _set_stock_count(self, value):
         raise NotImplementedError('to be done...')
 
     def _set_stock_value(self, value):
@@ -248,15 +254,6 @@ class PortfolioItem(models.Model):
 
         # update stock_count
         self.stock_count -= count
-
-    @property
-    def stock_count(self):
-        return self._stock_count
-
-    @stock_count.setter
-    def stock_count(self, value):
-        self._stock_count = value
-        self.update_deposit()
 
     def update_costs(self, costs):
         """Update the value of costs, by adding the costs of a trade."""
@@ -377,6 +374,10 @@ class PortfolioItem(models.Model):
 
     currency = property(
         _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    stock_count = property(
+        _get_stock_count, _set_stock_count, __del_attribute, 'TODO: Add docstring here'
     )
 
     stock_value = property(
