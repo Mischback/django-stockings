@@ -115,6 +115,17 @@ class PortfolioItem(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
 
+    def update_costs(self, new_costs):
+        """Update the value of costs, by adding the costs of a trade."""
+
+        # calculate new value (old value + new costs)
+        # Currency conversion is implicitly provided, because
+        # `StockingsMoney.add()` ensures the target currency.
+        new_value = self.costs.add(new_costs)
+
+        self._costs_amount = new_value.amount
+        self._costs_timestamp = new_value.timestamp
+
     def _get_cash_in(self):
         return self._return_money(
             self._cash_in_amount, timestamp=self._cash_in_timestamp
@@ -253,16 +264,6 @@ class PortfolioItem(models.Model):
 
         # update stock_count
         self.stock_count -= count
-
-    def update_costs(self, costs):
-        """Update the value of costs, by adding the costs of a trade."""
-
-        if self._costs_currency != costs.currency:
-            costs.amount = costs.convert(self._costs_currency)
-            costs.currency = self._costs_currency
-
-        self._costs_amount += costs.amount
-        self._costs_timestamp = costs.timestamp
 
     def update_deposit(self, new_price=None):
         """Update the value of the deposit, by recalculating the value based

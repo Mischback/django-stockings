@@ -30,6 +30,27 @@ class StockingsMoney:
             self.currency, self.amount, self.timestamp
         )  # pragma: nocover
 
+    def add(self, summand):
+        """Add `summand` to this `StockingsMoney` object and updates the timestamp."""
+
+        # TODO: 'summand' should be a StockingsMoney instance, but it doesn't have to.
+        # Add try/catch, but accept Python dict {'amount': 3, 'currency': 'EUR'}
+        # or any other object aswell.
+        # 'summand.amount' has to be some sort of number, 'summand.currency'
+        # has to be some sort of string
+
+        # perform currency conversion, if necessary
+        if self.currency != summand.currency:
+            summand = summand.convert(self.currency)
+
+        # actually add the amounts
+        self.amount += summand.amount
+
+        # update the timestamp
+        self.timestamp = now()
+
+        return self
+
     def convert(self, target_currency):
         """Convert the value of the object to another target currency.
 
