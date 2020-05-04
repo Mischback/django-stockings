@@ -84,10 +84,12 @@ class PortfolioItem(models.Model):
     # The currency for all money-related fields.
     _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
-    # Stores the details of the ``deposit``, which tracks the current value of
-    # the associated ``StockItem``s.
-    _deposit_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _deposit_timestamp = models.DateTimeField(default=now)
+    # Stores the details of the ``stock_value``, which tracks the current value
+    # of the associated ``StockItem``s.
+    _stock_value_amount = models.DecimalField(
+        decimal_places=4, default=0, max_digits=19
+    )
+    _stock_value_timestamp = models.DateTimeField(default=now)
 
     # Stores the details of ``expenses``, which represents the accumulated
     # prices of stocks, at the time of buying them.
@@ -119,6 +121,11 @@ class PortfolioItem(models.Model):
     def _get_currency(self):
         return self._currency
 
+    def _get_stock_value(self):
+        return self._return_money(
+            self._stock_value_amount, timestamp=self._stock_value_timestamp
+        )
+
     def _return_money(self, amount, currency=None, timestamp=None):
         return StockingsMoney(
             amount,
@@ -137,6 +144,12 @@ class PortfolioItem(models.Model):
     def _set_currency(self, value):
         # TODO: Has to be done when all attributes have been adjusted
         raise NotImplementedError('to be done...')
+
+    def _set_stock_value(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_stock_value()'."
+        )
 
     def __del_attribute(self):
         raise StockingsInterfaceError('This attribute may not be deleted!')
@@ -367,4 +380,8 @@ class PortfolioItem(models.Model):
 
     currency = property(
         _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    stock_value = property(
+        _get_stock_value, _set_stock_value, __del_attribute, 'TODO: Add docstring here'
     )
