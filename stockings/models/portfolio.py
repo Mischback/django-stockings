@@ -125,6 +125,16 @@ class PortfolioItem(models.Model):
         self._cash_in_amount = new_value.amount
         self._cash_in_timestamp = new_value.timestamp
 
+    def update_cash_out(self, new_cash_flow):
+        # calculate new value (old value + new cash flow)
+        # currency changes are implicitly prohibited, because
+        # `StockingsMoney.add()` ensures a target currency.
+        new_value = self.cash_out.add(new_cash_flow)
+
+        # update with new value
+        self._cash_out_amount = new_value.amount
+        self._cash_out_timestamp = new_value.timestamp
+
     def update_costs(self, new_costs):
         """Update the value of costs, by adding the costs of a trade."""
 
