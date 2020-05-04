@@ -139,6 +139,12 @@ class PortfolioItem(models.Model):
             self._stock_value_amount, timestamp=self._stock_value_timestamp
         )
 
+    def _is_active(self):
+        """Return bool to indicate status of the object.
+
+        A PortfolioItem is considered 'active', if the stock count is > 0."""
+        return self._stock_count > 0
+
     def _return_money(self, amount, currency=None, timestamp=None):
         return StockingsMoney(
             amount,
@@ -182,23 +188,16 @@ class PortfolioItem(models.Model):
     def __del_attribute(self):
         raise StockingsInterfaceError('This attribute may not be deleted!')
 
-    @property
-    def is_active(self):
-        """Return bool to indicate status of the object.
-
-        A PortfolioItem is considered 'active', if the stock count is > 0."""
-        return self._stock_count > 0
-
-    @is_active.setter
-    def is_active(self, value):
+    def __noop(self, value):
         """Required dummy function.
 
-        The property ``is_active`` is based on a logical operation. Properties
-        are not accessible in Django querysets by default.
-        The custom ``PortfolioItemManager`` makes the property accessible in
-        querysets, by emulating its logical implementation. But if the
-        ``PortfolioItemManager`` is used as the default manager, retrieving
-        objects from the database requires a setter for the property."""
+        Some functions, that are implemented as Python properties should be
+        accessible in Django querysets aswell. They are provided as annotations
+        in `PortfolioItemManager`'s `get_queryset()`.
+
+        Because `PortfolioItemManager` is used as the primary and default
+        manager, these properties need a setter, but the setter may not perform
+        any action and should be set to this method."""
         pass
 
     def perform_buy(self, count, price, costs):
@@ -375,6 +374,8 @@ class PortfolioItem(models.Model):
     currency = property(
         _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
     )
+
+    is_active = property(_is_active, __noop, 'TODO: Add docstring here')
 
     stock_count = property(
         _get_stock_count, _set_stock_count, __del_attribute, 'TODO: Add docstring here'
