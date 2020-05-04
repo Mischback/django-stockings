@@ -76,13 +76,13 @@ class PortfolioItem(models.Model):
     # referenced it, so ``related_name='+'`` disables the backwards relation.
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
 
-    # The currency for all money-related fields.
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
-
     # Stores the details of ``costs``, which represents the accumulated costs
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _costs_timestamp = models.DateTimeField(default=now)
+
+    # The currency for all money-related fields.
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     # Stores the details of the ``deposit``, which tracks the current value of
     # the associated ``StockItem``s.
@@ -113,26 +113,33 @@ class PortfolioItem(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
 
+    def _get_costs(self):
+        return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
+
     def _get_currency(self):
         return self._currency
 
-    def _set_currency(self):
+    def _return_money(self, amount, currency=None, timestamp=None):
+        return StockingsMoney(
+            amount,
+            currency or self._currency,
+            # `StockingsMoney` will set the timestamp to `now()`, if no
+            # timestamp is provided.
+            timestamp,
+        )
+
+    def _set_costs(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_costs()'."
+        )
+
+    def _set_currency(self, value):
         # TODO: Has to be done when all attributes have been adjusted
         raise NotImplementedError('to be done...')
 
     def __del_attribute(self):
         raise StockingsInterfaceError('This attribute may not be deleted!')
-
-    @property
-    def costs(self):
-        return StockingsMoney(
-            self._costs_amount, self._costs_currency, self._costs_timestamp
-        )
-
-    @costs.setter
-    def costs(self, value):
-        """The value of costs may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
 
     @property
     def deposit(self):
@@ -353,6 +360,10 @@ class PortfolioItem(models.Model):
         for item in portfolio_item_set.iterator():
             item.update_deposit(new_price)
             item.save()
+
+    costs = property(
+        _get_costs, _set_costs, __del_attribute, 'TODO: Add docstring here'
+    )
 
     currency = property(
         _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
