@@ -18,11 +18,11 @@ class StockingsConfig(AppConfig):
             dispatch_uid='STOCKINGS_portfolioitem_trade',
         )
 
-        # Connects ``PortfolioItem`` with ``StockItem``, to update the
-        # ``PortfolioItem``'s ``deposit`` value with the latest price
-        # information from ``StockItem``.
+        # Connect PortfolioItem with StockItem.
+        # The callback updates `PortfolioItem`'s `stock_value` based on recent
+        # price information.
         post_save.connect(
-            self.get_model('PortfolioItem').callback_price_update,
+            self.get_model('PortfolioItem').callback_stockitem_update_stock_value,
             sender=self.get_model('StockItem'),
-            dispatch_uid='STOCKINGS_portfolioitem_price',
+            dispatch_uid='STOCKINGS_portfolioitem_stock_value',
         )
