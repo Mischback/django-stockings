@@ -81,6 +81,11 @@ class PortfolioItem(models.Model):
     _cash_in_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _cash_in_timestamp = models.DateTimeField(default=now)
 
+    # Stores the details of ``cash_out``, which represents the accumulated
+    # prices of stocks, at the time of selling them.
+    _cash_out_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _cash_out_timestamp = models.DateTimeField(default=now)
+
     # Stores the details of ``costs``, which represents the accumulated costs
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
@@ -95,11 +100,6 @@ class PortfolioItem(models.Model):
         decimal_places=4, default=0, max_digits=19
     )
     _stock_value_timestamp = models.DateTimeField(default=now)
-
-    # Stores the details of ``proceeds``, which represents the accumulated
-    # prices of stocks, at the time of selling them.
-    _proceeds_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _proceeds_timestamp = models.DateTimeField(default=now)
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
@@ -118,6 +118,11 @@ class PortfolioItem(models.Model):
     def _get_cash_in(self):
         return self._return_money(
             self._cash_in_amount, timestamp=self._cash_in_timestamp
+        )
+
+    def _get_cash_out(self):
+        return self._return_money(
+            self._cash_out_amount, timestamp=self._cash_out_timestamp
         )
 
     def _get_costs(self):
@@ -144,6 +149,12 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_in()'."
+        )
+
+    def _set_cash_out(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_out()'."
         )
 
     def _set_costs(self, value):
@@ -237,17 +248,6 @@ class PortfolioItem(models.Model):
 
         # update stock_count
         self.stock_count -= count
-
-    @property
-    def proceeds(self):
-        return StockingsMoney(
-            self._proceeds_amount, self._proceeds_currency, self._proceeds_timestamp
-        )
-
-    @proceeds.setter
-    def proceeds(self, value):
-        """The value of expenses may not be set directly."""
-        raise StockingsInterfaceError('This attribute may not be set directly.')
 
     @property
     def stock_count(self):
@@ -365,6 +365,10 @@ class PortfolioItem(models.Model):
 
     cash_in = property(
         _get_cash_in, _set_cash_in, __del_attribute, 'TODO: Add docstring here'
+    )
+
+    cash_out = property(
+        _get_cash_out, _set_cash_out, __del_attribute, 'TODO: Add docstring here'
     )
 
     costs = property(
