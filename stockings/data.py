@@ -57,3 +57,13 @@ class StockingsMoney:
         Currency conversion 'should be' implemented, but is highly dependent
         on the availability of exchange rates between the currencies."""
         raise NotImplementedError('Currency conversion is currently not implemented!')
+
+    def multiply(self, multiplier):
+        """Multiply this object's amount with `multiplier` and updates the timestamp."""
+
+        # TODO: 'multiplier' should be some sort of number
+
+        self.amount *= multiplier
+        self.timestamp = now()
+
+        return self

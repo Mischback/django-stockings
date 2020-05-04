@@ -126,6 +126,21 @@ class PortfolioItem(models.Model):
         self._costs_amount = new_value.amount
         self._costs_timestamp = new_value.timestamp
 
+    def update_stock_value(self, item_price=None, item_count=None):
+
+        if item_price is None:
+            item_price = self.stock_item.latest_price
+
+        if item_count is None:
+            item_count = self._stock_count
+
+        # calculate new value (item_price * item_count)
+        new_value = item_price.multiply(item_count)
+
+        self._stock_value_amount = new_value.amount
+        self._stock_value_timestamp = new_value.timestamp
+        self._stock_count = item_count
+
     def _get_cash_in(self):
         return self._return_money(
             self._cash_in_amount, timestamp=self._cash_in_timestamp
@@ -264,27 +279,6 @@ class PortfolioItem(models.Model):
 
         # update stock_count
         self.stock_count -= count
-
-    def update_deposit(self, new_price=None):
-        """Update the value of the deposit, by recalculating the value based
-        on a new price information.
-
-        If no new price is given, the method will fetch the latest price
-        information from the associated ``stock_item``.
-
-        ``_deposit_value`` = ``new_price.amount`` * ``stock_item``
-        """
-
-        if new_price is None:
-            new_price = self.stock_item.latest_price
-
-        if self._deposit_currency != new_price.currency:
-            new_price.amount = new_price.convert(self._deposit_currency)
-            new_price.currency = self._deposit_currency
-
-        self._deposit_amount = new_price.amount * self.stock_count
-        # self._deposit_currency = new_price.currency
-        self._deposit_timestamp = new_price.timestamp
 
     @classmethod
     def callback_perform_trade(
