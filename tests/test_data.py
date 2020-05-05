@@ -38,30 +38,24 @@ class StockingsMoneyTest(StockingsTestCase):
         self.assertEqual(a.currency, 'EUR')
 
     @mock.patch('stockings.data.now')
-    def test_constructor_accepts_timestamp(self, mock_now):
-        """Does the constructor accepts the provided timestamp?
-
-        Please note the patch: Actually, no timestamp is provided!"""
+    def test_constructor_handles_timestamp(self, mock_now):
+        """Does the constructor correctly handle timestamps?"""
 
         a = StockingsMoney(1337, 'EUR', timestamp='foobar')
 
-        # The mocked `now()` isn't called.
+        # Note: the mocked `now()` isn't actually called.
         self.assertEqual(mock_now.called, False)
         self.assertEqual(a.timestamp, 'foobar')
 
-    @mock.patch('stockings.data.now')
-    def test_constructor_provide_timestamp(self, mock_now):
-        """Does the constructor automatically provide a timestamp?
-
-        Please note the patch: Actually, no timestamp is provided!"""
-
         a = StockingsMoney(1337, 'EUR')
 
+        # Note: the mocked `now()` is used to provide the timestamp.
         self.assertEqual(mock_now.called, True)
         self.assertEqual(a.timestamp, mock_now.return_value)
 
     def test_currency_conversion(self):
         """Currency conversion is currently not implemented, an error should be raised."""
+
         a = StockingsMoney(1337, 'EUR')
         with self.assertRaises(NotImplementedError):
             a.convert('USD')
