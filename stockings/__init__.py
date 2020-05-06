@@ -1,1 +1,1 @@
-default_app_config = 'stockings.apps.StockingsConfig'
+default_app_config = "stockings.apps.StockingsConfig"

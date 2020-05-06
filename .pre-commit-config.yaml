@@ -1,0 +1,53 @@
+default_language_version:
+    python: python3.7
+
+exclude: '^.*/migrations/.*$'
+
+minimum_pre_commit_version: '1.14.0'
+
+repos:
+  - repo: local
+    hooks:
+     - id: tests
+       name: run unittests
+       entry: make test
+       language: system
+       types: [python]
+       stages: [push]
+  # bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.6.2
+    hooks:
+     - id: bandit
+  # black (formats Python source files without any configuration)
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+     - id: black
+  # flake8 (checks Python source files for compliance with PEP8)
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.9
+    hooks:
+     - id: flake8
+       additional_dependencies: [flake8-bugbear, flake8-docstrings]
+  # isort (automatically sort Python import statements)
+  - repo: https://github.com/timothycrosley/isort
+    rev: 4.3.21-2
+    hooks:
+     - id: isort
+  # pre-commit (various hooks)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+       # let all files end with a single new line (this *should be ensured by
+       # .editorconf already)
+     - id: end-of-file-fixer
+       # remove all trailing whitespaces (this *should* be ensured by
+       # .editorconf already)
+     - id: trailing-whitespace
+       # provide uniform line endings for the project ('lf')
+     - id: mixed-line-ending
+       args: [--fix, lf]
+       # do not allow direct commits to branch 'master'
+     - id: no-commit-to-branch
+       args: [--branch, master]

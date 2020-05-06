@@ -25,17 +25,17 @@ class Portfolio(models.Model):
     # Please note, that Django's ``User`` object (or its substitute) will not
     # have a backwards relation to this object.
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
     )
 
     class Meta:
-        app_label = 'stockings'
-        unique_together = ['name', 'user']
-        verbose_name = _('Portfolio')
-        verbose_name_plural = _('Portfolios')
+        app_label = "stockings"
+        unique_together = ["name", "user"]
+        verbose_name = _("Portfolio")
+        verbose_name_plural = _("Portfolios")
 
     def __str__(self):
-        return '{} ({})'.format(self.name, self.user)  # pragma: nocover
+        return "{} ({})".format(self.name, self.user)  # pragma: nocover
 
 
 class PortfolioItemManager(models.Manager):
@@ -107,13 +107,13 @@ class PortfolioItem(models.Model):
     _stock_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        app_label = 'stockings'
-        unique_together = ['portfolio', 'stock_item']
-        verbose_name = _('Portoflio Item')
-        verbose_name_plural = _('Portfolio Items')
+        app_label = "stockings"
+        unique_together = ["portfolio", "stock_item"]
+        verbose_name = _("Portoflio Item")
+        verbose_name_plural = _("Portfolio Items")
 
     def __str__(self):
-        return '{} - {}'.format(self.portfolio, self.stock_item)  # pragma: nocover
+        return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
 
     def update_cash_in(self, new_cash_flow):
         # calculate new value (old value + new cash flow)
@@ -210,14 +210,14 @@ class PortfolioItem(models.Model):
 
         item.update_costs(instance.costs)
 
-        if instance.trade_type == 'BUY':
+        if instance.trade_type == "BUY":
             item.update_cash_in(instance.price.multiply(instance.item_count))
             item.update_stock_value(
                 item_price=instance.price,
                 item_count=item.stock_count + instance.item_count,
             )
 
-        if instance.trade_type == 'SELL':
+        if instance.trade_type == "SELL":
             if item_state is True:
                 raise RuntimeError(
                     "Trying to sell stock, that are not in the portfolio! "
@@ -291,10 +291,10 @@ class PortfolioItem(models.Model):
 
     def _set_currency(self, value):
         # TODO: Has to be done when all attributes have been adjusted
-        raise NotImplementedError('to be done...')
+        raise NotImplementedError("to be done...")
 
     def _set_stock_count(self, value):
-        raise NotImplementedError('to be done...')
+        raise NotImplementedError("to be done...")
 
     def _set_stock_value(self, value):
         raise StockingsInterfaceError(
@@ -303,7 +303,7 @@ class PortfolioItem(models.Model):
         )
 
     def __del_attribute(self):
-        raise StockingsInterfaceError('This attribute may not be deleted!')
+        raise StockingsInterfaceError("This attribute may not be deleted!")
 
     def __noop(self, value):
         """Required dummy function.
@@ -318,27 +318,27 @@ class PortfolioItem(models.Model):
         pass
 
     cash_in = property(
-        _get_cash_in, _set_cash_in, __del_attribute, 'TODO: Add docstring here'
+        _get_cash_in, _set_cash_in, __del_attribute, "TODO: Add docstring here"
     )
 
     cash_out = property(
-        _get_cash_out, _set_cash_out, __del_attribute, 'TODO: Add docstring here'
+        _get_cash_out, _set_cash_out, __del_attribute, "TODO: Add docstring here"
     )
 
     costs = property(
-        _get_costs, _set_costs, __del_attribute, 'TODO: Add docstring here'
+        _get_costs, _set_costs, __del_attribute, "TODO: Add docstring here"
     )
 
     currency = property(
-        _get_currency, _set_currency, __del_attribute, 'TODO: Add docstring here'
+        _get_currency, _set_currency, __del_attribute, "TODO: Add docstring here"
     )
 
-    is_active = property(_is_active, __noop, 'TODO: Add docstring here')
+    is_active = property(_is_active, __noop, "TODO: Add docstring here")
 
     stock_count = property(
-        _get_stock_count, _set_stock_count, __del_attribute, 'TODO: Add docstring here'
+        _get_stock_count, _set_stock_count, __del_attribute, "TODO: Add docstring here"
     )
 
     stock_value = property(
-        _get_stock_value, _set_stock_value, __del_attribute, 'TODO: Add docstring here'
+        _get_stock_value, _set_stock_value, __del_attribute, "TODO: Add docstring here"
     )
