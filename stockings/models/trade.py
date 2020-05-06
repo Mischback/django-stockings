@@ -20,8 +20,8 @@ class Trade(models.Model):
     # Don't use this, if it is the only 3.0 feature to keep backwards compatibility,
     # but DO use this, if there are other 3.0 features, that *must* be used!
     TRADE_TYPES = [
-        ('BUY', _('Buy')),
-        ('SELL', _('Sell')),
+        ("BUY", _("Buy")),
+        ("SELL", _("Sell")),
     ]
 
     # Reference to the Portfolio.
@@ -30,7 +30,7 @@ class Trade(models.Model):
 
     # Reference to the traded StockItem.
     stock_item = models.ForeignKey(
-        StockItem, on_delete=models.PROTECT, related_name='+'
+        StockItem, on_delete=models.PROTECT, related_name="+"
     )
 
     # Number of traded items.
@@ -55,12 +55,12 @@ class Trade(models.Model):
     _price_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     class Meta:
-        app_label = 'stockings'
-        verbose_name = _('Trade')
-        verbose_name_plural = _('Trades')
+        app_label = "stockings"
+        verbose_name = _("Trade")
+        verbose_name_plural = _("Trades")
 
     def __str__(self):
-        return '[{}] {} - {} ({})'.format(
+        return "[{}] {} - {} ({})".format(
             self.trade_type, self.portfolio, self.stock_item, self.timestamp
         )  # pragma: nocover
 
@@ -75,7 +75,7 @@ class Trade(models.Model):
         #   object in ``portfolio``.
         # 2. You are not able to sell more items than available in your
         #   portfolio.
-        if self.trade_type == 'SELL':
+        if self.trade_type == "SELL":
             # Get the ``PortfolioItem``...
             try:
                 portfolio_item = self.portfolio.portfolioitem_set.get(
@@ -84,9 +84,9 @@ class Trade(models.Model):
             except PortfolioItem.DoesNotExist:
                 raise ValidationError(
                     _(
-                        'You are trying to sell stock, that is not present in your portfolio!'
+                        "You are trying to sell stock, that is not present in your portfolio!"
                     ),
-                    code='invalid',
+                    code="invalid",
                 )
 
             # Trying to sell more items than available. Setting a maximum value

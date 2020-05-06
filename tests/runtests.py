@@ -50,7 +50,7 @@ def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
 
         # only use one password hasher (and the fastest one)
         settings.PASSWORD_HASHERS = [
-            'django.contrib.auth.hashers.MD5PasswordHasher',
+            "django.contrib.auth.hashers.MD5PasswordHasher",
         ]
 
         # turn off logging
@@ -63,13 +63,13 @@ def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
             # see https://simpleisbetterthancomplex.com/tips/2016/08/19/django-tip-12-disabling-migrations-to-speed-up-unit-tests.html  # noqa
             settings.MIGRATION_MODULES = DisableMigrations()
             if verbosity >= 2:
-                print('Testing without applied migrations.')
+                print("Testing without applied migrations.")
         else:
             if verbosity >= 2:
-                print('Testing with applied migrations.')
+                print("Testing with applied migrations.")
     else:
         if verbosity >= 2:
-            print('Testing without any test-specific optimisations.')
+            print("Testing without any test-specific optimisations.")
 
     if enable_timing:
         from django import test
@@ -99,55 +99,55 @@ def app_tests(disable_optimisation, enable_migrations, enable_timing, tags, verb
     setup(disable_optimisation, enable_migrations, enable_timing, verbosity)
 
     # reuse Django's DiscoverRunner
-    if not hasattr(settings, 'TEST_RUNNER'):
-        settings.TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+    if not hasattr(settings, "TEST_RUNNER"):
+        settings.TEST_RUNNER = "django.test.runner.DiscoverRunner"
     TestRunner = get_runner(settings)
 
     test_runner = TestRunner(verbosity=verbosity, tags=tags,)
 
-    failures = test_runner.run_tests(['.'])
+    failures = test_runner.run_tests(["."])
 
     return failures
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # set up the argument parser
     parser = argparse.ArgumentParser(
-        description='Run the django-auth_enhanced test suite'
+        description="Run the django-auth_enhanced test suite"
     )
     parser.add_argument(
-        '--disable-optimisation',
-        action='store_true',
-        dest='disable_optimisation',
+        "--disable-optimisation",
+        action="store_true",
+        dest="disable_optimisation",
         help="Disables the test specific optimisations.",
     )
     parser.add_argument(
-        '--enable-migrations',
-        action='store_true',
-        dest='enable_migrations',
+        "--enable-migrations",
+        action="store_true",
+        dest="enable_migrations",
         help="Enables the usage of migrations during tests.",
     )
     parser.add_argument(
-        '--settings',
+        "--settings",
         help="Python path to settings module, e.g. 'myproject.settings'. If "
         "this is not provided, 'tests.util.settings_dev' will be used.",
     )
     parser.add_argument(
-        '-t',
-        '--tag',
-        dest='tags',
-        action='append',
+        "-t",
+        "--tag",
+        dest="tags",
+        action="append",
         help="Run only tests with the specified tags. Can be used multiple times.",
     )
     parser.add_argument(
-        '--time',
-        action='store_true',
-        dest='enable_timing',
+        "--time",
+        action="store_true",
+        dest="enable_timing",
         help="Enables time measurements for all tests.",
     )
     parser.add_argument(
-        '-v',
-        '--verbosity',
+        "-v",
+        "--verbosity",
         default=1,
         type=int,
         choices=[0, 1, 2, 3],
@@ -159,10 +159,10 @@ if __name__ == '__main__':
 
     # run tests according to the options
     if options.settings:
-        os.environ['DJANGO_SETTINGS_MODULE'] = options.settings
+        os.environ["DJANGO_SETTINGS_MODULE"] = options.settings
     else:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'util.settings_dev')
-        options.settings = os.environ['DJANGO_SETTINGS_MODULE']
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "util.settings_dev")
+        options.settings = os.environ["DJANGO_SETTINGS_MODULE"]
 
     failures = app_tests(
         options.disable_optimisation,

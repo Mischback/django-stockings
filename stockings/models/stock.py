@@ -41,21 +41,21 @@ class StockItem(models.Model):
     _latest_price_timestamp = models.DateTimeField(default=now)
 
     class Meta:
-        app_label = 'stockings'
-        verbose_name = _('Stock Item')
-        verbose_name_plural = _('Stock Items')
+        app_label = "stockings"
+        verbose_name = _("Stock Item")
+        verbose_name_plural = _("Stock Items")
 
     def __str__(self):
-        if self.name != '':
-            return '{} ({})'.format(self.name, self.isin,)
+        if self.name != "":
+            return "{} ({})".format(self.name, self.isin,)
         else:
-            return '{}'.format(self.isin,)
+            return "{}".format(self.isin,)
 
     def get_fullname_by_isin(self):
         """Fetch the ``full_name`` of an item using a data provider."""
 
         raise NotImplementedError(
-            'Needs an implementation of automatic data providers'
+            "Needs an implementation of automatic data providers"
         )  # pragma: nocover
 
     @classmethod
@@ -71,10 +71,10 @@ class StockItem(models.Model):
         # created *freshly*). Only the first item of that tuple (the object)
         # is returned.
         return cls.object.get_or_create(
-            isin='XX0000000000',
+            isin="XX0000000000",
             defaults={
-                'full_name': 'The referenced item got deleted!',
-                'name': 'Deleted Item',
+                "full_name": "The referenced item got deleted!",
+                "name": "Deleted Item",
             },
         )[0]
 

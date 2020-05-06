@@ -32,23 +32,23 @@ class StockingsMoneyTest(StockingsTestCase):
             a = StockingsMoney(amount=1337)
 
         with self.assertRaises(TypeError):
-            a = StockingsMoney(currency='EUR')
+            a = StockingsMoney(currency="EUR")
 
-        a = StockingsMoney(1337, 'EUR')
+        a = StockingsMoney(1337, "EUR")
         self.assertEqual(a.amount, 1337)
-        self.assertEqual(a.currency, 'EUR')
+        self.assertEqual(a.currency, "EUR")
 
-    @mock.patch('stockings.data.now')
+    @mock.patch("stockings.data.now")
     def test_constructor_handles_timestamp(self, mock_now):
         """Does the constructor correctly handle timestamps?"""
 
-        a = StockingsMoney(1337, 'EUR', timestamp='foobar')
+        a = StockingsMoney(1337, "EUR", timestamp="foobar")
 
         # Note: the mocked `now()` isn't actually called.
         self.assertEqual(mock_now.called, False)
-        self.assertEqual(a.timestamp, 'foobar')
+        self.assertEqual(a.timestamp, "foobar")
 
-        a = StockingsMoney(1337, 'EUR')
+        a = StockingsMoney(1337, "EUR")
 
         # Note: the mocked `now()` is used to provide the timestamp.
         self.assertEqual(mock_now.called, True)
@@ -65,7 +65,7 @@ class StockingsMoneyTest(StockingsTestCase):
         Instead, this will have to be done in `convert()`."""
 
         # create a (valid) `StockingsMoney` object
-        a = StockingsMoney(1337, 'EUR')
+        a = StockingsMoney(1337, "EUR")
 
         # will not work with INT
         with self.assertRaises(StockingsInterfaceError):
@@ -73,60 +73,60 @@ class StockingsMoneyTest(StockingsTestCase):
 
         # will not work with STRING
         with self.assertRaises(StockingsInterfaceError):
-            a.add('5')
+            a.add("5")
 
         # will not work with TUPLE
         with self.assertRaises(StockingsInterfaceError):
-            a.add((5, 'foo'))
+            a.add((5, "foo"))
 
         # will not work with DICT
         with self.assertRaises(StockingsInterfaceError):
-            a.add({'foo': 'bar', 'bar': 'foo'})
+            a.add({"foo": "bar", "bar": "foo"})
 
         # will not work with DICT, even if the keys are right
         with self.assertRaises(StockingsInterfaceError):
-            a.add({'amount': 5, 'currency': 'EUR'})
+            a.add({"amount": 5, "currency": "EUR"})
 
         # `amount` has to be a number
         with self.assertRaises(StockingsInterfaceError):
-            a.add(StockingsMoney('foo', 'EUR'))
+            a.add(StockingsMoney("foo", "EUR"))
 
         # `amount` has to be a number
         with self.assertRaises(StockingsInterfaceError):
-            a.add(StockingsMoney('5', 'EUR'))
+            a.add(StockingsMoney("5", "EUR"))
 
         # `amount` is INT
-        b = a.add(StockingsMoney(5, 'EUR'))
+        b = a.add(StockingsMoney(5, "EUR"))
         self.assertEqual(b.amount, 1337 + 5)
 
         # `amount` is FLOAT
-        b = a.add(StockingsMoney(1.337, 'EUR'))
+        b = a.add(StockingsMoney(1.337, "EUR"))
         self.assertEqual(b.amount, 1337 + 1.337)
 
-    @mock.patch('stockings.data.StockingsMoney.convert')
+    @mock.patch("stockings.data.StockingsMoney.convert")
     def test_add_converts_summand(self, mock_convert):
         """Does `add()` correctly apply currency conversion while adding?"""
 
         # set up the mock
-        mock_convert.return_value = StockingsMoney(6, 'EUR')
+        mock_convert.return_value = StockingsMoney(6, "EUR")
 
         # create a (valid) `StockingsMoney` object
-        a = StockingsMoney(1337, 'EUR')
+        a = StockingsMoney(1337, "EUR")
 
         # conversion is required; the actual call is mocked
-        b = a.add(StockingsMoney(5, 'FOO'))
+        b = a.add(StockingsMoney(5, "FOO"))
 
         self.assertEqual(mock_convert.called, True)
         self.assertEqual(b.amount, 1337 + 6)
 
-    @mock.patch('stockings.data.now')
+    @mock.patch("stockings.data.now")
     def test_add_updates_timestamp(self, mock_now):
         """Does `add()` updates the timestamp?"""
 
         # create a (valid) `StockingsMoney` object
-        a = StockingsMoney(1337, 'EUR', timestamp='foo')
+        a = StockingsMoney(1337, "EUR", timestamp="foo")
 
-        b = a.add(StockingsMoney(5, 'EUR', timestamp='bar'))
+        b = a.add(StockingsMoney(5, "EUR", timestamp="bar"))
 
         self.assertEqual(mock_now.called, True)
         self.assertEqual(b.timestamp, mock_now.return_value)
@@ -134,6 +134,6 @@ class StockingsMoneyTest(StockingsTestCase):
     def test_currency_conversion(self):
         """Currency conversion is currently not implemented, an error should be raised."""
 
-        a = StockingsMoney(1337, 'EUR')
+        a = StockingsMoney(1337, "EUR")
         with self.assertRaises(NotImplementedError):
-            a.convert('USD')
+            a.convert("USD")

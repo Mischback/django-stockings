@@ -14,17 +14,17 @@ class StockingsTestCaseBase(TestCase):
         """Disconnect all signal callbacks for testing."""
 
         post_save.disconnect(
-            apps.get_model('stockings.PortfolioItem').callback_trade_apply_trade,
-            sender=apps.get_model('stockings.Trade'),
-            dispatch_uid='STOCKINGS_portfolioitem_trade',
+            apps.get_model("stockings.PortfolioItem").callback_trade_apply_trade,
+            sender=apps.get_model("stockings.Trade"),
+            dispatch_uid="STOCKINGS_portfolioitem_trade",
         )
 
         post_save.disconnect(
             apps.get_model(
-                'stockings.PortfolioItem'
+                "stockings.PortfolioItem"
             ).callback_stockitem_update_stock_value,
-            sender=apps.get_model('stockings.StockItem'),
-            dispatch_uid='STOCKINGS_portfolioitem_stock_value',
+            sender=apps.get_model("stockings.StockItem"),
+            dispatch_uid="STOCKINGS_portfolioitem_stock_value",
         )
 
     @classmethod
@@ -32,17 +32,17 @@ class StockingsTestCaseBase(TestCase):
         """Reconnect all signal callbacks for testing."""
 
         post_save.connect(
-            apps.get_model('stockings.PortfolioItem').callback_trade_apply_trade,
-            sender=apps.get_model('stockings.Trade'),
-            dispatch_uid='STOCKINGS_portfolioitem_trade',
+            apps.get_model("stockings.PortfolioItem").callback_trade_apply_trade,
+            sender=apps.get_model("stockings.Trade"),
+            dispatch_uid="STOCKINGS_portfolioitem_trade",
         )
 
         post_save.connect(
             apps.get_model(
-                'stockings.PortfolioItem'
+                "stockings.PortfolioItem"
             ).callback_stockitem_update_stock_value,
-            sender=apps.get_model('stockings.StockItem'),
-            dispatch_uid='STOCKINGS_portfolioitem_stock_value',
+            sender=apps.get_model("stockings.StockItem"),
+            dispatch_uid="STOCKINGS_portfolioitem_stock_value",
         )
 
 

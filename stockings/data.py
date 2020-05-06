@@ -29,7 +29,7 @@ class StockingsMoney:
         self.timestamp = timestamp or now()
 
     def __str__(self):
-        return '{} {} ({})'.format(
+        return "{} {} ({})".format(
             self.currency, self.amount, self.timestamp
         )  # pragma: nocover
 
@@ -47,7 +47,7 @@ class StockingsMoney:
                 summand = summand.convert(self.currency)
         except AttributeError:
             raise StockingsInterfaceError(
-                'StockingsMoney.add() was called with an incompatible summand.'
+                "StockingsMoney.add() was called with an incompatible summand."
             )
 
         # This block ensures, that `summand` has a `amount` attribute (this is
@@ -58,7 +58,7 @@ class StockingsMoney:
             return StockingsMoney(self.amount + summand.amount, self.currency)
         except (AttributeError, TypeError):
             raise StockingsInterfaceError(
-                'StockingsMoney.add() was called with an incompatible summand.'
+                "StockingsMoney.add() was called with an incompatible summand."
             )
 
     def convert(self, target_currency):
@@ -66,7 +66,7 @@ class StockingsMoney:
 
         Currency conversion 'should be' implemented, but is highly dependent
         on the availability of exchange rates between the currencies."""
-        raise NotImplementedError('Currency conversion is currently not implemented!')
+        raise NotImplementedError("Currency conversion is currently not implemented!")
 
     def multiply(self, multiplier):
         """Multiply this object's amount with `multiplier` and updates the timestamp."""
