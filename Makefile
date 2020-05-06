@@ -1,13 +1,12 @@
 
 run: django/runserver
-commit: black isort flake
 
 # ##### utility commands
-black:
-	tox -q -e black -- --diff
+bandit:
+	$(MAKE) pre-commit pre-commit_id="bandit"
 
-black/full:
-	tox -q -e black
+black:
+	$(MAKE) pre-commit pre-commit_id="black"
 
 clean:
 	- tox -q -e util -- coverage erase
@@ -19,14 +18,16 @@ coverage: clean test
 	- tox -q -e util -- coverage combine
 	tox -q -e util -- coverage report
 
-flake:
-	tox -q -e util -- flake8 .
+flake: flake8
+flake8:
+	$(MAKE) pre-commit pre-commit_id="flake8"
 
 isort:
-	tox -q -e util -- isort . --recursive --diff
+	$(MAKE) pre-commit pre-commit_id="isort"
 
-isort/full:
-	tox -q -e util -- isort . --recursive
+pre-commit_id ?= ""
+pre-commit:
+	tox -q -e util -- pre-commit run $(pre-commit_id)
 
 test_cmd ?= ""
 test:
@@ -38,9 +39,6 @@ test/tag:
 
 test/time:
 	$(MAKE) test test_cmd="--time"
-
-pre-commit:
-	tox -q -e util -- pre-commit run
 
 # ##### Django commands
 
@@ -76,6 +74,8 @@ django/shell:
 
 .PHONY: \
 	run \
+	bandit black clean coverage flake flake8 isort pre-commit test test/tag test/time \
 	django \
-	django/check django/migrate django/runserver django/shell
+	django/check django/createsuperuser django/makemigrations django/migrate \
+	django/runserver django/shell
 .SILENT:
