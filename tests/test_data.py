@@ -69,31 +69,31 @@ class StockingsMoneyTest(StockingsTestCase):
 
         # will not work with INT
         with self.assertRaises(StockingsInterfaceError):
-            a.add(5)
+            b = a.add(5)
 
         # will not work with STRING
         with self.assertRaises(StockingsInterfaceError):
-            a.add("5")
+            b = a.add("5")
 
         # will not work with TUPLE
         with self.assertRaises(StockingsInterfaceError):
-            a.add((5, "foo"))
+            b = a.add((5, "foo"))
 
         # will not work with DICT
         with self.assertRaises(StockingsInterfaceError):
-            a.add({"foo": "bar", "bar": "foo"})
+            b = a.add({"foo": "bar", "bar": "foo"})
 
         # will not work with DICT, even if the keys are right
         with self.assertRaises(StockingsInterfaceError):
-            a.add({"amount": 5, "currency": "EUR"})
+            b = a.add({"amount": 5, "currency": "EUR"})
 
         # `amount` has to be a number
         with self.assertRaises(StockingsInterfaceError):
-            a.add(StockingsMoney("foo", "EUR"))
+            b = a.add(StockingsMoney("foo", "EUR"))
 
         # `amount` has to be a number
         with self.assertRaises(StockingsInterfaceError):
-            a.add(StockingsMoney("5", "EUR"))
+            b = a.add(StockingsMoney("5", "EUR"))
 
         # `amount` is INT
         b = a.add(StockingsMoney(5, "EUR"))
@@ -137,3 +137,25 @@ class StockingsMoneyTest(StockingsTestCase):
         a = StockingsMoney(1337, "EUR")
         with self.assertRaises(NotImplementedError):
             a.convert("USD")
+
+    @mock.patch("stockings.data.now")
+    def test_multiply(self, mock_now):
+        """asdf"""
+
+        # create a (valid) `StockingsMoney` object
+        a = StockingsMoney(1337, "EUR")
+
+        with self.assertRaises(StockingsInterfaceError):
+            b = a.multiply("foo")
+
+        with self.assertRaises(StockingsInterfaceError):
+            b = a.multiply((5, 1))
+
+        with self.assertRaises(StockingsInterfaceError):
+            b = a.multiply(StockingsMoney(5, "EUR"))
+
+        b = a.multiply(5)
+
+        self.assertEqual(b.amount, 1337 * 5)
+        self.assertEqual(mock_now.called, True)
+        self.assertEqual(b.timestamp, mock_now.return_value)

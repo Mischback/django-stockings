@@ -71,9 +71,9 @@ class StockingsMoney:
     def multiply(self, multiplier):
         """Multiply this object's amount with `multiplier` and updates the timestamp."""
 
-        # TODO: 'multiplier' should be some sort of number
-
-        self.amount *= multiplier
-        self.timestamp = now()
-
-        return self
+        try:
+            return StockingsMoney(self.amount * float(multiplier), self.currency)
+        except (ValueError, TypeError):
+            raise StockingsInterfaceError(
+                "StockingsMoney.multiply() was called with an incompatible summand."
+            )
