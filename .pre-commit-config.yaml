@@ -14,6 +14,11 @@ repos:
        language: system
        types: [python]
        stages: [push]
+  # bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.6.2
+    hooks:
+     - id: bandit
   # black (formats Python source files without any configuration)
   - repo: https://github.com/psf/black
     rev: stable
