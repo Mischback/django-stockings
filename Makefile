@@ -39,6 +39,9 @@ test/tag:
 test/time:
 	$(MAKE) test test_cmd="--time"
 
+pre-commit:
+	tox -q -e util -- pre-commit run
+
 # ##### Django commands
 
 # Runs commands using a tox environment
