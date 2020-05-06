@@ -6,6 +6,11 @@ default_language_version:
 minimum_pre_commit_version: '1.14.0'
 
 repos:
+  # black (formats Python source files without any configuration)
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+     - id: black
   # pre-commit (various hooks)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.5.0
