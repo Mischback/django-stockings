@@ -17,6 +17,11 @@ repos:
     hooks:
      - id: flake8
        additional_dependencies: [flake8-bugbear, flake8-docstrings]
+  # isort (automatically sort Python import statements)
+  - repo: https://github.com/timothycrosley/isort
+    rev: 4.3.21-2
+    hooks:
+     - id: isort
   # pre-commit (various hooks)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.5.0
