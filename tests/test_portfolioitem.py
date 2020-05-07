@@ -17,6 +17,23 @@ class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    def test_get_cash_in(self, mock_return_money):
+        """Calls `_return_money()` with correct arguments."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        b = a._get_stock_value()
+        self.assertEqual(mock_return_money.called, True)
+        self.assertTrue(
+            mock_return_money.called_with(
+                a._cash_in_amount, timestamp=a._cash_in_timestamp
+            ),
+            True,
+        )
+        self.assertEqual(b, mock_return_money.return_value)
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_cash_out(self, mock_return_money):
         """Calls `_return_money()` with correct arguments."""
 
