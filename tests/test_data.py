@@ -12,11 +12,12 @@ from stockings.exceptions import StockingsInterfaceError
 from .util.testcases import StockingsTestCase
 
 
+@tag("data", "utility")
 class StockingsMoneyTest(StockingsTestCase):
     """Provides tests for the ``StockingsMoney`` class."""
 
     def test_constructor_requires_amount_currency(self):
-        """Does the constructor enforce required values?
+        """Constructor enforces `amount` and `currency`.
 
         Yeah, this is kind of redundant, because it should be a given fact,
         that Python works. But for the sake of completeness and to be prepared
@@ -40,7 +41,10 @@ class StockingsMoneyTest(StockingsTestCase):
 
     @mock.patch("stockings.data.now")
     def test_constructor_handles_timestamp(self, mock_now):
-        """Does the constructor correctly handle timestamps?"""
+        """Constructor receives or provides timestamp.
+
+        This test case includes receiving a `timestamp` at creation aswell as
+        providing a `timestamp` (set to the current date/time)."""
 
         a = StockingsMoney(1337, "EUR", timestamp="foobar")
 
@@ -55,7 +59,7 @@ class StockingsMoneyTest(StockingsTestCase):
         self.assertEqual(a.timestamp, mock_now.return_value)
 
     def test_add_validates_summand(self):
-        """Does `add()` correctly fail for unsupported input?
+        """Validates input to `add()`.
 
         This test case checks various object types as input for `summand` and
         then checks, if strings are rejected for `summand.amount`.
@@ -105,7 +109,7 @@ class StockingsMoneyTest(StockingsTestCase):
 
     @mock.patch("stockings.data.StockingsMoney.convert")
     def test_add_converts_summand(self, mock_convert):
-        """Does `add()` correctly apply currency conversion while adding?"""
+        """`add()` applies currency conversion."""
 
         # set up the mock
         mock_convert.return_value = StockingsMoney(6, "EUR")
@@ -121,7 +125,7 @@ class StockingsMoneyTest(StockingsTestCase):
 
     @mock.patch("stockings.data.now")
     def test_add_updates_timestamp(self, mock_now):
-        """Does `add()` updates the timestamp?"""
+        """`add()` updates the timestamp."""
 
         # create a (valid) `StockingsMoney` object
         a = StockingsMoney(1337, "EUR", timestamp="foo")
@@ -140,7 +144,7 @@ class StockingsMoneyTest(StockingsTestCase):
 
     @mock.patch("stockings.data.now")
     def test_multiply(self, mock_now):
-        """asdf"""
+        """Validates input to `multiply()` and correctly perform operation."""
 
         # create a (valid) `StockingsMoney` object
         a = StockingsMoney(1337, "EUR")
