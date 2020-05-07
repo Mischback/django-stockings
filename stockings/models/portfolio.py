@@ -275,19 +275,19 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_in()'."
-        )
+        )  # pragma: nocover
 
     def _set_cash_out(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_out()'."
-        )
+        )  # pragma: nocover
 
     def _set_costs(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_costs()'."
-        )
+        )  # pragma: nocover
 
     def _set_currency(self, value):
         # TODO: Has to be done when all attributes have been adjusted
@@ -300,10 +300,12 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_stock_value()'."
-        )
+        )  # pragma: nocover
 
     def __del_attribute(self):
-        raise StockingsInterfaceError("This attribute may not be deleted!")
+        raise StockingsInterfaceError(
+            "This attribute may not be deleted!"
+        )  # pragma: nocover
 
     def __noop(self, value):
         """Required dummy function.
@@ -315,7 +317,7 @@ class PortfolioItem(models.Model):
         Because `PortfolioItemManager` is used as the primary and default
         manager, these properties need a setter, but the setter may not perform
         any action and should be set to this method."""
-        pass
+        pass  # pragma: nocover
 
     cash_in = property(
         _get_cash_in, _set_cash_in, __del_attribute, "TODO: Add docstring here"
