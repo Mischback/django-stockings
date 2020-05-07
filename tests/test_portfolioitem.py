@@ -23,13 +23,10 @@ class PortfolioItemTest(StockingsTestCase):
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        b = a._get_stock_value()
-        self.assertEqual(mock_return_money.called, True)
-        self.assertTrue(
-            mock_return_money.called_with(
-                a._cash_in_amount, timestamp=a._cash_in_timestamp
-            ),
-            True,
+        b = a._get_cash_in()
+        self.assertTrue(mock_return_money.called)
+        mock_return_money.assert_called_with(
+            a._cash_in_amount, timestamp=a._cash_in_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
@@ -40,13 +37,10 @@ class PortfolioItemTest(StockingsTestCase):
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        b = a._get_stock_value()
-        self.assertEqual(mock_return_money.called, True)
-        self.assertTrue(
-            mock_return_money.called_with(
-                a._cash_out_amount, timestamp=a._cash_out_timestamp
-            ),
-            True,
+        b = a._get_cash_out()
+        self.assertTrue(mock_return_money.called)
+        mock_return_money.assert_called_with(
+            a._cash_out_amount, timestamp=a._cash_out_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
@@ -57,13 +51,10 @@ class PortfolioItemTest(StockingsTestCase):
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        b = a._get_stock_value()
-        self.assertEqual(mock_return_money.called, True)
-        self.assertTrue(
-            mock_return_money.called_with(
-                a._costs_amount, timestamp=a._costs_timestamp
-            ),
-            True,
+        b = a._get_costs()
+        self.assertTrue(mock_return_money.called)
+        mock_return_money.assert_called_with(
+            a._costs_amount, timestamp=a._costs_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
@@ -75,12 +66,9 @@ class PortfolioItemTest(StockingsTestCase):
         a = PortfolioItem()
 
         b = a._get_stock_value()
-        self.assertEqual(mock_return_money.called, True)
-        self.assertTrue(
-            mock_return_money.called_with(
-                a._stock_value_amount, timestamp=a._stock_value_timestamp
-            ),
-            True,
+        self.assertTrue(mock_return_money.called)
+        mock_return_money.assert_called_with(
+            a._stock_value_amount, timestamp=a._stock_value_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
@@ -109,7 +97,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertIsInstance(b, StockingsMoney)
         self.assertEqual(b.amount, 1337)
         self.assertEqual(b.currency, a._currency)
-        self.assertEqual(mock_now.called, True)
+        self.assertTrue(mock_now.called)
         self.assertEqual(b.timestamp, mock_now.return_value)
         mock_now.reset_mock()
 
@@ -119,7 +107,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(b.amount, 1338)
         self.assertNotEqual(b.currency, a._currency)
         self.assertEqual(b.currency, "FOO")
-        self.assertEqual(mock_now.called, True)
+        self.assertTrue(mock_now.called)
         self.assertEqual(b.timestamp, mock_now.return_value)
         mock_now.reset_mock()
 
@@ -128,5 +116,5 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertIsInstance(b, StockingsMoney)
         self.assertEqual(b.amount, 1339)
         self.assertEqual(b.currency, a._currency)
-        self.assertEqual(mock_now.called, False)
+        self.assertFalse(mock_now.called)
         self.assertEqual(b.timestamp, "bar")
