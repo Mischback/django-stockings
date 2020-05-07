@@ -36,6 +36,26 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._cash_in_amount, 5)
         self.assertEqual(a._cash_in_timestamp, "foo")
 
+    @mock.patch("stockings.models.portfolio.StockingsMoney.add")
+    def test_update_cash_out(self, mock_add):
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        # Set up the mock
+        # Please note, that `timestamp` is set to an illegal value, that may
+        # not be stored into the database. But it should be sufficient for
+        # testing.
+        mock_add.return_value = StockingsMoney(5, "EUR", timestamp="foo")
+
+        # Actually it is assumed, that the method is called with a `StockingsMoney`
+        # instance, but for this test, that part is mocked out anyway...
+        a.update_cash_out("StockingsMoney")
+
+        self.assertTrue(mock_add.called)
+        self.assertEqual(a._cash_out_amount, 5)
+        self.assertEqual(a._cash_out_timestamp, "foo")
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_cash_in(self, mock_return_money):
         """Calls `_return_money()` with correct arguments."""
