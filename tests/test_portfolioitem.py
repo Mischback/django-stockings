@@ -58,6 +58,30 @@ class PortfolioItemTest(StockingsTestCase):
         )
         self.assertEqual(b, mock_return_money.return_value)
 
+    def test_get_currency(self):
+        """Returns the object's `_currency`."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        self.assertEqual(a._get_currency(), a._currency)
+
+        a._currency = "FOO"
+
+        self.assertEqual(a._get_currency(), a._currency)
+
+    def test_get_stock_count(self):
+        """Returns the object's `_stock_count`."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        self.assertEqual(a._get_stock_count(), a._stock_count)
+
+        a._stock_count = 1337
+
+        self.assertEqual(a._get_stock_count(), a._stock_count)
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_stock_value(self, mock_return_money):
         """Calls `_return_money()` with correct arguments."""
