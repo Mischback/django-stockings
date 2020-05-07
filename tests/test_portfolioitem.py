@@ -18,6 +18,7 @@ class PortfolioItemTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
     def test_update_cash_in(self, mock_add):
+        """Adds provided `StockingsMoney` to `cash_in`."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -38,6 +39,7 @@ class PortfolioItemTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
     def test_update_cash_out(self, mock_add):
+        """Adds provided `StockingsMoney` to `cash_out`."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -58,6 +60,7 @@ class PortfolioItemTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
     def test_update_costs(self, mock_add):
+        """Adds provided `StockingsMoney` to `costs`."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
