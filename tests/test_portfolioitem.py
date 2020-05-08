@@ -278,3 +278,38 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(b.currency, a._currency)
         self.assertFalse(mock_now.called)
         self.assertEqual(b.timestamp, "bar")
+
+    @mock.patch("stockings.models.portfolio.StockingsMoney.convert")
+    def test_set_currency(self, mock_convert):
+        """Setting the object's currency converts all money-related attributes."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        # Set up the mock object.
+        mock_convert.return_value = StockingsMoney(1337, "FOO", timestamp="bar")
+
+        a._set_currency("FOO")
+
+        self.assertTrue(mock_convert.called)
+        # `call_count` should be 4: cash_in, cash_out, costs, stock_value
+        self.assertEqual(mock_convert.call_count, 4)
+        # the object's attributes are actually updated
+        self.assertEqual(a._cash_in_amount, mock_convert.return_value.amount)
+        self.assertEqual(a._cash_in_amount, 1337)
+        self.assertEqual(a._cash_in_timestamp, mock_convert.return_value.timestamp)
+        self.assertEqual(a._cash_in_timestamp, "bar")
+        self.assertEqual(a._cash_out_amount, mock_convert.return_value.amount)
+        self.assertEqual(a._cash_out_amount, 1337)
+        self.assertEqual(a._cash_out_timestamp, mock_convert.return_value.timestamp)
+        self.assertEqual(a._cash_out_timestamp, "bar")
+        self.assertEqual(a._costs_amount, mock_convert.return_value.amount)
+        self.assertEqual(a._costs_amount, 1337)
+        self.assertEqual(a._costs_timestamp, mock_convert.return_value.timestamp)
+        self.assertEqual(a._costs_timestamp, "bar")
+        self.assertEqual(a._stock_value_amount, mock_convert.return_value.amount)
+        self.assertEqual(a._stock_value_amount, 1337)
+        self.assertEqual(a._stock_value_timestamp, mock_convert.return_value.timestamp)
+        self.assertEqual(a._stock_value_timestamp, "bar")
+        self.assertEqual(a._currency, mock_convert.return_value.currency)
+        self.assertEqual(a._currency, "FOO")

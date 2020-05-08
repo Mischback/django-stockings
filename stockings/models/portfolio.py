@@ -290,8 +290,30 @@ class PortfolioItem(models.Model):
         )  # pragma: nocover
 
     def _set_currency(self, value):
-        # TODO: Has to be done when all attributes have been adjusted
-        raise NotImplementedError("to be done...")
+        """Set a new currency for the object and update all money-related fields."""
+
+        # cash_in
+        new_value = self.cash_in.convert(value)
+        self._cash_in_amount = new_value.amount
+        self._cash_in_timestamp = new_value.timestamp
+
+        # cash_out
+        new_value = self.cash_out.convert(value)
+        self._cash_out_amount = new_value.amount
+        self._cash_out_timestamp = new_value.timestamp
+
+        # costs
+        new_value = self.costs.convert(value)
+        self._costs_amount = new_value.amount
+        self._costs_timestamp = new_value.timestamp
+
+        # stock_value
+        new_value = self.stock_value.convert(value)
+        self._stock_value_amount = new_value.amount
+        self._stock_value_timestamp = new_value.timestamp
+
+        # actually update the object's attribute
+        self._currency = value
 
     def _set_stock_count(self, value):
         raise NotImplementedError("to be done...")
