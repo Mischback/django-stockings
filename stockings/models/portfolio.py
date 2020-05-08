@@ -316,7 +316,9 @@ class PortfolioItem(models.Model):
         self._currency = value
 
     def _set_stock_count(self, value):
-        raise NotImplementedError("to be done...")
+        """Set a new `stock_count` and recalculate the object's `stock_value`."""
+
+        self.update_stock_value(item_count=value)
 
     def _set_stock_value(self, value):
         raise StockingsInterfaceError(

@@ -313,3 +313,15 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._stock_value_timestamp, "bar")
         self.assertEqual(a._currency, mock_convert.return_value.currency)
         self.assertEqual(a._currency, "FOO")
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
+    def test_set_stock_count(self, mock_update):
+        """Setting the `stock_count` updates the `stock_value`."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        a._set_stock_count(5)
+
+        self.assertTrue(mock_update.called)
+        mock_update.assert_called_with(item_count=5)
