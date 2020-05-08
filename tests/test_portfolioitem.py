@@ -79,6 +79,79 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._costs_amount, 5)
         self.assertEqual(a._costs_timestamp, "foo")
 
+    @mock.patch("stockings.models.portfolio.StockingsMoney.multiply")
+    @mock.patch("stockings.models.portfolio.PortfolioItem.stock_item")
+    def test_update_stock_value(self, mock_stock_item, mock_multiply):
+        """Updates `stock_value` while automatically retrieving required parameters."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+        a._stock_count = 1
+
+        # Set up the mock object.
+        mock_latest_price = mock.PropertyMock(return_value=StockingsMoney(5, "EUR"))
+        type(mock_stock_item).latest_price = mock_latest_price
+
+        # call `update_stock_value()` without any parameter
+        a.update_stock_value()
+
+        # `latest_price` is determined internally
+        self.assertTrue(mock_latest_price.called)
+        # `multiply()` is called with the current `_stock_count` (=1)
+        self.assertTrue(mock_multiply.called)
+        mock_multiply.assert_called_with(1)
+        # the object's attributes are actually updated
+        self.assertEqual(a._stock_value_amount, mock_multiply.return_value.amount)
+        self.assertEqual(a._stock_value_timestamp, mock_multiply.return_value.timestamp)
+        # `_stock_count` did not change (still =1)
+        self.assertEqual(a._stock_count, 1)
+        mock_latest_price.reset_mock()
+        mock_multiply.reset_mock()
+
+        # call `update_stock_value()` with parameter `item_price`
+        a.update_stock_value(item_price=StockingsMoney(5, "EUR"))
+
+        # `latest_price` is provided as parameter
+        self.assertFalse(mock_latest_price.called)
+        # `multiply()` is called with the current `_stock_count` (=1)
+        self.assertTrue(mock_multiply.called)
+        mock_multiply.assert_called_with(1)
+        # the object's attributes are actually updated
+        self.assertEqual(a._stock_value_amount, mock_multiply.return_value.amount)
+        self.assertEqual(a._stock_value_timestamp, mock_multiply.return_value.timestamp)
+        # `_stock_count` did not change (still =1)
+        self.assertEqual(a._stock_count, 1)
+        mock_latest_price.reset_mock()
+        mock_multiply.reset_mock()
+
+        # call `update_stock_value()` with parameter `item_count`
+        a.update_stock_value(item_count=5)
+
+        # `latest_price` is determined internally
+        self.assertTrue(mock_latest_price.called)
+        # `multiply()` is called with the provided `item_count` (=5)
+        self.assertTrue(mock_multiply.called)
+        mock_multiply.assert_called_with(5)
+        # the object's attributes are actually updated
+        self.assertEqual(a._stock_value_amount, mock_multiply.return_value.amount)
+        self.assertEqual(a._stock_value_timestamp, mock_multiply.return_value.timestamp)
+        self.assertEqual(a._stock_count, 5)
+        mock_latest_price.reset_mock()
+        mock_multiply.reset_mock()
+
+        # call `update_stock_value()` with parameters `item_price` and `item_count`
+        a.update_stock_value(item_price=StockingsMoney(5, "EUR"), item_count=3)
+
+        # `latest_price` is provided as parameter
+        self.assertFalse(mock_latest_price.called)
+        # `multiply()` is called with the provided `item_count` (=3)
+        self.assertTrue(mock_multiply.called)
+        mock_multiply.assert_called_with(3)
+        # the object's attributes are actually updated
+        self.assertEqual(a._stock_value_amount, mock_multiply.return_value.amount)
+        self.assertEqual(a._stock_value_timestamp, mock_multiply.return_value.timestamp)
+        self.assertEqual(a._stock_count, 3)
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_cash_in(self, mock_return_money):
         """Calls `_return_money()` with correct arguments."""
