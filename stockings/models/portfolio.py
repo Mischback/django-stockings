@@ -163,7 +163,7 @@ class PortfolioItem(models.Model):
 
     @classmethod
     def callback_stockitem_update_stock_value(
-        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+        cls, sender, instance, created, raw, *args, **kwargs
     ):
         """Update PortfolioItem's `stock_value` with new price information.
 
