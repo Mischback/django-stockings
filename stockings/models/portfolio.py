@@ -188,7 +188,7 @@ class PortfolioItem(models.Model):
 
     @classmethod
     def callback_trade_apply_trade(
-        cls, sender, instance, created, raw, using, update_fields, *args, **kwargs
+        cls, sender, instance, created, raw, *args, **kwargs
     ):
         """Update several of PortfolioItem's fields to track the trade operation."""
 

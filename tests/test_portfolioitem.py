@@ -332,7 +332,7 @@ class PortfolioItemTest(StockingsTestCase):
         # fourth parameter is `raw`
         self.assertIsNone(
             PortfolioItem.callback_stockitem_update_stock_value(
-                None, None, None, True,  # sender  # instance  # created  # raw
+                None, None, None, True,  # sender, instance, created, raw
             )
         )
 
@@ -367,8 +367,8 @@ class PortfolioItemTest(StockingsTestCase):
 
         # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
         # and basically intercepts all Django database ORM stuff.
-        # The following code basically provides the `queryset`'s `iterator()`
-        # and returns one single MagicMock (`mock_item`) on iteration.
+        # The following code provides the `queryset`'s `iterator()` and returns
+        # one single MagicMock (`mock_item`) on iteration.
         mock_objects.filter.return_value.iterator.return_value.__iter__.return_value = iter(
             [mock_item]
         )
@@ -384,3 +384,153 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_instance_latest_price.called)
         self.assertTrue(mock_item.update_stock_value.called)
         self.assertTrue(mock_item.save.called)
+
+    def test_callback_trade_apply_trade_noop(self):
+        """Callback does not execute when called with `raw` = `True` or `created` = `False`."""
+
+        # Fourth parameter is `raw`... Always returns `None`
+        self.assertIsNone(
+            PortfolioItem.callback_trade_apply_trade(
+                None, None, None, True,  # sender, instance, created, raw
+            )
+        )
+        self.assertIsNone(
+            PortfolioItem.callback_trade_apply_trade(
+                None, None, False, True,  # sender, instance, created, raw
+            )
+        )
+        self.assertIsNone(
+            PortfolioItem.callback_trade_apply_trade(
+                None, None, True, True,  # sender, instance, created, raw
+            )
+        )
+
+        # Third parameter is `created`... Returns `None` if `created` = `False`
+        self.assertIsNone(
+            PortfolioItem.callback_trade_apply_trade(
+                None, None, False, True,  # sender, instance, created, raw
+            )
+        )
+        self.assertIsNone(
+            PortfolioItem.callback_trade_apply_trade(
+                None, None, False, False,  # sender, instance, created, raw
+            )
+        )
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    def test_callback_trade_apply_trade_buy(self, mock_objects):
+        """Callback updates attributes of `PortfolioItem` for buy operations.
+
+        While this unittest does hit all code lines of the method, actually
+        nothing is done, because really everything is mocked.
+
+        The test method checks, if all functions are called as required, but
+        because all of Django's ORM database stuff is mocked aswell, it can
+        not be determined, if the correct objects are retrieved from database
+        and updated consequently.
+
+        A functional / integration test should be used with an appropriate
+        fixture to actually test the signal handler."""
+
+        # Set up the mocks:
+        # `mock_cls_stock_item` (is not actually used for assertions)
+        mock_cls_stock_item = mock.MagicMock()
+
+        # `mock_instance` needs a property `trade_type`
+        mock_instance = mock.MagicMock()
+        type(mock_instance).trade_type = mock.PropertyMock(return_value="BUY")
+
+        # This item will be returned from all Django database layer related functions.
+        # See `mock_objects` for details.
+        mock_item = mock.MagicMock()
+
+        # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
+        # and basically intercepts all Django database ORM stuff.
+        mock_objects.get_or_create.return_value = (mock_item, True)
+
+        PortfolioItem.callback_trade_apply_trade(
+            mock_cls_stock_item, mock_instance, True, False,
+        )
+
+        self.assertTrue(mock_item.update_costs.called)
+        self.assertTrue(mock_item.update_cash_in.called)
+        self.assertFalse(mock_item.update_cash_out.called)
+        self.assertTrue(mock_item.update_stock_value.called)
+        self.assertTrue(mock_item.save.called)
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    def test_callback_trade_apply_trade_sell_valid(self, mock_objects):
+        """Callback updates attributes of `PortfolioItem` for sell operations.
+
+        While this unittest does hit all code lines of the method, actually
+        nothing is done, because really everything is mocked.
+
+        The test method checks, if all functions are called as required, but
+        because all of Django's ORM database stuff is mocked aswell, it can
+        not be determined, if the correct objects are retrieved from database
+        and updated consequently.
+
+        A functional / integration test should be used with an appropriate
+        fixture to actually test the signal handler."""
+
+        # Set up the mocks:
+        # `mock_cls_stock_item` (is not actually used for assertions)
+        mock_cls_stock_item = mock.MagicMock()
+
+        # `mock_instance` needs a property `trade_type`
+        mock_instance = mock.MagicMock()
+        type(mock_instance).trade_type = mock.PropertyMock(return_value="SELL")
+
+        # This item will be returned from all Django database layer related functions.
+        # See `mock_objects` for details.
+        mock_item = mock.MagicMock()
+
+        # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
+        # and basically intercepts all Django database ORM stuff.
+        mock_objects.get_or_create.return_value = (mock_item, False)
+
+        PortfolioItem.callback_trade_apply_trade(
+            mock_cls_stock_item, mock_instance, True, False,
+        )
+
+        self.assertTrue(mock_item.update_costs.called)
+        self.assertFalse(mock_item.update_cash_in.called)
+        self.assertTrue(mock_item.update_cash_out.called)
+        self.assertTrue(mock_item.update_stock_value.called)
+        self.assertTrue(mock_item.save.called)
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    def test_callback_trade_apply_trade_sell_invalid(self, mock_objects):
+        """Callback raises error, if not available stock is sold.
+
+        While this unittest does hit all code lines of the method, actually
+        nothing is done, because really everything is mocked.
+
+        The test method checks, if all functions are called as required, but
+        because all of Django's ORM database stuff is mocked aswell, it can
+        not be determined, if the correct objects are retrieved from database
+        and updated consequently.
+
+        A functional / integration test should be used with an appropriate
+        fixture to actually test the signal handler."""
+
+        # Set up the mocks:
+        # `mock_cls_stock_item` (is not actually used for assertions)
+        mock_cls_stock_item = mock.MagicMock()
+
+        # `mock_instance` needs a property `trade_type`
+        mock_instance = mock.MagicMock()
+        type(mock_instance).trade_type = mock.PropertyMock(return_value="SELL")
+
+        # This item will be returned from all Django database layer related functions.
+        # See `mock_objects` for details.
+        mock_item = mock.MagicMock()
+
+        # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
+        # and basically intercepts all Django database ORM stuff.
+        mock_objects.get_or_create.return_value = (mock_item, True)
+
+        with self.assertRaises(RuntimeError):
+            PortfolioItem.callback_trade_apply_trade(
+                mock_cls_stock_item, mock_instance, True, False,
+            )
