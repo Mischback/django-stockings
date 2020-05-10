@@ -12,7 +12,7 @@ from stockings.models.portfolio import PortfolioItem
 from .util.testcases import StockingsTestCase
 
 
-@tag("models")
+@tag("models", "portfolioitem")
 class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
@@ -326,6 +326,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_update.called)
         mock_update.assert_called_with(item_count=5)
 
+    @tag("signal-handler")
     def test_callback_stockitem_update_stock_value_raw(self):
         """Callback does not execute when called with `raw` = `True`."""
 
@@ -336,6 +337,7 @@ class PortfolioItemTest(StockingsTestCase):
             )
         )
 
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_stockitem_update_stock_value_regular(self, mock_objects):
         """Callback determines `PortfolioItems` to update and calls `update_stock_value()`.
@@ -385,6 +387,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.update_stock_value.called)
         self.assertTrue(mock_item.save.called)
 
+    @tag("signal-handler")
     def test_callback_trade_apply_trade_noop(self):
         """Callback does not execute when called with `raw` = `True` or `created` = `False`."""
 
@@ -417,6 +420,7 @@ class PortfolioItemTest(StockingsTestCase):
             )
         )
 
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_buy(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for buy operations.
@@ -458,6 +462,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.update_stock_value.called)
         self.assertTrue(mock_item.save.called)
 
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_valid(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for sell operations.
@@ -499,6 +504,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.update_stock_value.called)
         self.assertTrue(mock_item.save.called)
 
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_invalid(self, mock_objects):
         """Callback raises error, if not available stock is sold.
