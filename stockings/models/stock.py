@@ -31,15 +31,6 @@ class StockItem(models.Model):
     # This is the object's main representation in the front end.
     name = models.CharField(blank=True, max_length=100)
 
-    # The latest price information for the item.
-    _latest_price_amount = models.DecimalField(
-        decimal_places=4, default=0, max_digits=19
-    )
-    _latest_price_currency = models.CharField(
-        default=STOCKINGS_DEFAULT_CURRENCY, max_length=3
-    )
-    _latest_price_timestamp = models.DateTimeField(default=now)
-
     class Meta:
         app_label = "stockings"
         verbose_name = _("Stock Item")
@@ -89,22 +80,57 @@ class StockItem(models.Model):
 
     @property
     def latest_price(self):
-        return StockingsMoney(
-            self._latest_price_amount,
-            self._latest_price_currency,
-            self._latest_price_timestamp,
-        )
+        # TODO: Fetch `StockItemPrice` object and return its `price`
+        raise NotImplementedError("tbd")
 
     @latest_price.setter
     def latest_price(self, new_price):
-        """Set the different parts of the object's ``latest_price``.
+        # TODO: Use `get_or_create` to get a `StockItemPrice` object and set
+        #       its `price`
+        raise NotImplementedError("tbd")
 
-        As of now, this only works, if the currency doesn't change."""
 
-        if self._latest_price_currency != new_price.currency:
-            new_price.amount = new_price.convert(self._latest_price_currency)
-            new_price.currency = self._latest_price_currency
+class StockItemPrice(models.Model):
+    """Tracks the price of a given `StockItem`."""
 
-        self._latest_price_amount = new_price.amount
-        # self._latest_price_currency = new_price.currency
-        self._latest_price_timestamp = new_price.timestamp
+    stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE)
+
+    # The latest price information for the item.
+    _price_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    _price_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    _price_timestamp = models.DateTimeField(default=now)
+
+    class Meta:
+        app_label = "stockings"
+        verbose_name = _("Stock Item Price")
+        verbose_name_plural = _("Stock Item Prices")
+
+    def __str__(self):
+        return "{} - {} {} ({})".format(
+            self.stock_item,
+            self._price_currency,
+            self._price_amount,
+            self._price_timestamp,
+        )
+
+    def _del_price(self):
+        # TODO: this might be used to trigger deletion of these objects...
+        raise NotImplementedError("tbd")
+
+    def _get_price(self):
+        return StockingsMoney(
+            self._price_amount, self._price_currency, self._price_timestamp,
+        )
+
+    def _set_price(self, value):
+        # TODO: Only set a new price, if value.timestamp > self._price_timestamp
+
+        if self._price_currency != value.currency:
+            value.amount = value.convert(self._price_currency)
+            value.currency = self._price_currency
+
+        self._price_amount = value.amount
+        # self._price_currency = value.currency
+        self._price_timestamp = value.timestamp
+
+    price = property(_get_price, _set_price, _del_price, "TODO: Add docstring here!")
