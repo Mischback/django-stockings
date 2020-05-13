@@ -16,6 +16,9 @@ from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 class Portfolio(models.Model):
     """Represents a portolio of stocks."""
 
+    # The currency for all money-related fields.
+    currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+
     # A human-readable name of the ``Portolio`` object.
     name = models.CharField(max_length=50,)
 
@@ -90,9 +93,6 @@ class PortfolioItem(models.Model):
     # spent for buying or selling stock items.
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _costs_timestamp = models.DateTimeField(default=now)
-
-    # The currency for all money-related fields.
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     # Stores the details of the ``stock_value``, which tracks the current value
     # of the associated ``StockItem``s.
@@ -246,7 +246,7 @@ class PortfolioItem(models.Model):
         return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
 
     def _get_currency(self):
-        return self._currency
+        return self.portfolio.currency
 
     def _get_stock_count(self):
         return self._stock_count
@@ -265,7 +265,7 @@ class PortfolioItem(models.Model):
     def _return_money(self, amount, currency=None, timestamp=None):
         return StockingsMoney(
             amount,
-            currency or self._currency,
+            currency or self.currency,
             # `StockingsMoney` will set the timestamp to `now()`, if no
             # timestamp is provided.
             timestamp,
@@ -290,6 +290,12 @@ class PortfolioItem(models.Model):
         )  # pragma: nocover
 
     def _set_currency(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "The currency may only be set on `Portfolio` level."
+        )  # pragma: nocover
+
+    def _set_currency_old(self, value):
         """Set a new currency for the object and update all money-related fields."""
 
         # cash_in

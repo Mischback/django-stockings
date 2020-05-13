@@ -6,6 +6,7 @@ from django.test import override_settings, tag  # noqa
 
 # app imports
 from stockings.data import StockingsMoney
+from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import PortfolioItem
 
 # app imports
@@ -16,9 +17,13 @@ from .util.testcases import StockingsTestCase
 class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
+    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_cash_in(self, mock_add):
+    def test_update_cash_in(self, mock_add, mock_portfolio):
         """Adds provided `StockingsMoney` to `cash_in`."""
+
+        # set up the mock
+        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -37,9 +42,13 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._cash_in_amount, 5)
         self.assertEqual(a._cash_in_timestamp, "foo")
 
+    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_cash_out(self, mock_add):
+    def test_update_cash_out(self, mock_add, mock_portfolio):
         """Adds provided `StockingsMoney` to `cash_out`."""
+
+        # set up the mock
+        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -58,9 +67,13 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._cash_out_amount, 5)
         self.assertEqual(a._cash_out_timestamp, "foo")
 
+    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_costs(self, mock_add):
+    def test_update_costs(self, mock_add, mock_portfolio):
         """Adds provided `StockingsMoney` to `costs`."""
+
+        # set up the mock
+        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -194,17 +207,17 @@ class PortfolioItemTest(StockingsTestCase):
         )
         self.assertEqual(b, mock_return_money.return_value)
 
-    def test_get_currency(self):
-        """Returns the object's `_currency`."""
+    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
+    def test_get_currency(self, mock_portfolio):
+        """Returns the object's `currency`."""
+
+        # set up the mock
+        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        self.assertEqual(a._get_currency(), a._currency)
-
-        a._currency = "FOO"
-
-        self.assertEqual(a._get_currency(), a._currency)
+        self.assertEqual(a._get_currency(), a.currency)
 
     def test_get_stock_count(self):
         """Returns the object's `_stock_count`."""
@@ -244,9 +257,13 @@ class PortfolioItemTest(StockingsTestCase):
         a._stock_count = 1
         self.assertTrue(a._is_active())
 
+    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     @mock.patch("stockings.data.now")
-    def test_return_money(self, mock_now):
+    def test_return_money(self, mock_now, mock_portfolio):
         """Returns correctly populated `StockingsMoney` object."""
+
+        # set up the mock
+        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -256,17 +273,17 @@ class PortfolioItemTest(StockingsTestCase):
         b = a._return_money(1337)
         self.assertIsInstance(b, StockingsMoney)
         self.assertEqual(b.amount, 1337)
-        self.assertEqual(b.currency, a._currency)
+        self.assertEqual(b.currency, a.currency)
         self.assertTrue(mock_now.called)
         self.assertEqual(b.timestamp, mock_now.return_value)
         mock_now.reset_mock()
 
         # Providing a `currency` manually.
-        b = a._return_money(1338, currency="FOO")
+        b = a._return_money(1338, currency="BAR")
         self.assertIsInstance(b, StockingsMoney)
         self.assertEqual(b.amount, 1338)
-        self.assertNotEqual(b.currency, a._currency)
-        self.assertEqual(b.currency, "FOO")
+        self.assertNotEqual(b.currency, a.currency)
+        self.assertEqual(b.currency, "BAR")
         self.assertTrue(mock_now.called)
         self.assertEqual(b.timestamp, mock_now.return_value)
         mock_now.reset_mock()
@@ -275,12 +292,21 @@ class PortfolioItemTest(StockingsTestCase):
         b = a._return_money(1339, timestamp="bar")
         self.assertIsInstance(b, StockingsMoney)
         self.assertEqual(b.amount, 1339)
-        self.assertEqual(b.currency, a._currency)
+        self.assertEqual(b.currency, a.currency)
         self.assertFalse(mock_now.called)
         self.assertEqual(b.timestamp, "bar")
 
+    def test_set_currency(self):
+        """Setting the currency is not possible."""
+
+        a = PortfolioItem()
+
+        with self.assertRaises(StockingsInterfaceError):
+            a._set_currency("FOO")
+
+    @skip
     @mock.patch("stockings.models.portfolio.StockingsMoney.convert")
-    def test_set_currency(self, mock_convert):
+    def test_set_currency_old(self, mock_convert):
         """Setting the object's currency converts all money-related attributes."""
 
         # get a PortfolioItem object
