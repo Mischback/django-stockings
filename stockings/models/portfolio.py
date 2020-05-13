@@ -256,12 +256,6 @@ class PortfolioItem(models.Model):
             self._stock_value_amount, timestamp=self._stock_value_timestamp
         )
 
-    def _is_active(self):
-        """Return bool to indicate status of the object.
-
-        A PortfolioItem is considered 'active', if the stock count is > 0."""
-        return self._stock_count > 0
-
     def _return_money(self, amount, currency=None, timestamp=None):
         return StockingsMoney(
             amount,
@@ -364,8 +358,6 @@ class PortfolioItem(models.Model):
     currency = property(
         _get_currency, _set_currency, __del_attribute, "TODO: Add docstring here"
     )
-
-    is_active = property(_is_active, __noop, "TODO: Add docstring here")
 
     stock_count = property(
         _get_stock_count, _set_stock_count, __del_attribute, "TODO: Add docstring here"

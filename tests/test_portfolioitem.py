@@ -245,18 +245,6 @@ class PortfolioItemTest(StockingsTestCase):
         )
         self.assertEqual(b, mock_return_money.return_value)
 
-    def test_is_active(self):
-        """Returns True/False depending on `_stock_count`."""
-
-        # get a PortfolioItem object
-        a = PortfolioItem()
-
-        self.assertEqual(a._stock_count, 0)
-        self.assertFalse(a._is_active())
-
-        a._stock_count = 1
-        self.assertTrue(a._is_active())
-
     @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     @mock.patch("stockings.data.now")
     def test_return_money(self, mock_now, mock_portfolio):
