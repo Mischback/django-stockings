@@ -166,46 +166,58 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._stock_count, 3)
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
-    def test_get_cash_in(self, mock_return_money):
-        """Calls `_return_money()` with correct arguments."""
+    def test_cash_in(self, mock_return_money):
+        """Property's getter uses `_return_money()`, setter raises exception."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
+        b = a.cash_in
 
-        b = a._get_cash_in()
         self.assertTrue(mock_return_money.called)
         mock_return_money.assert_called_with(
             a._cash_in_amount, timestamp=a._cash_in_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
+        # setting the property is not possible
+        with self.assertRaises(StockingsInterfaceError):
+            a.cash_in = 1337
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
-    def test_get_cash_out(self, mock_return_money):
-        """Calls `_return_money()` with correct arguments."""
+    def test_cash_out(self, mock_return_money):
+        """Property's getter uses `_return_money()`, setter raises exception."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
+        b = a.cash_out
 
-        b = a._get_cash_out()
         self.assertTrue(mock_return_money.called)
         mock_return_money.assert_called_with(
             a._cash_out_amount, timestamp=a._cash_out_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
 
+        # setting the property is not possible
+        with self.assertRaises(StockingsInterfaceError):
+            a.cash_out = 1337
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
-    def test_get_costs(self, mock_return_money):
-        """Calls `_return_money()` with correct arguments."""
+    def test_costs(self, mock_return_money):
+        """Property's getter uses `_return_money()`, setter raises exception."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
+        b = a.costs
 
-        b = a._get_costs()
         self.assertTrue(mock_return_money.called)
         mock_return_money.assert_called_with(
             a._costs_amount, timestamp=a._costs_timestamp
         )
         self.assertEqual(b, mock_return_money.return_value)
+
+        # setting the property is not possible
+        with self.assertRaises(StockingsInterfaceError):
+            a.costs = 1337
 
     @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
     def test_get_currency(self, mock_portfolio):
@@ -218,18 +230,6 @@ class PortfolioItemTest(StockingsTestCase):
         a = PortfolioItem()
 
         self.assertEqual(a._get_currency(), a.currency)
-
-    def test_get_stock_count(self):
-        """Returns the object's `_stock_count`."""
-
-        # get a PortfolioItem object
-        a = PortfolioItem()
-
-        self.assertEqual(a._get_stock_count(), a._stock_count)
-
-        a._stock_count = 1337
-
-        self.assertEqual(a._get_stock_count(), a._stock_count)
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_stock_value(self, mock_return_money):
@@ -336,16 +336,20 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(a._currency, "FOO")
 
     @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
-    def test_set_stock_count(self, mock_update):
+    def test_stock_count(self, mock_update):
         """Setting the `stock_count` updates the `stock_value`."""
 
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        a._set_stock_count(5)
+        # set the stock count
+        a.stock_count = 5
 
         self.assertTrue(mock_update.called)
         mock_update.assert_called_with(item_count=5)
+
+        # get the stock count
+        self.assertEqual(a.stock_count, a._stock_count)
 
     @tag("signal-handler")
     def test_callback_stockitem_update_stock_value_raw(self):
