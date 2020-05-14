@@ -326,43 +326,18 @@ class PortfolioItem(models.Model):
             "You might want to use 'update_stock_value()'."
         )  # pragma: nocover
 
-    def __del_attribute(self):
-        raise StockingsInterfaceError(
-            "This attribute may not be deleted!"
-        )  # pragma: nocover
+    cash_in = property(_get_cash_in, _set_cash_in, doc="TODO: Add docstring here")
 
-    def __noop(self, value):
-        """Required dummy function.
+    cash_out = property(_get_cash_out, _set_cash_out, doc="TODO: Add docstring here")
 
-        Some functions, that are implemented as Python properties should be
-        accessible in Django querysets aswell. They are provided as annotations
-        in `PortfolioItemManager`'s `get_queryset()`.
+    costs = property(_get_costs, _set_costs, doc="TODO: Add docstring here")
 
-        Because `PortfolioItemManager` is used as the primary and default
-        manager, these properties need a setter, but the setter may not perform
-        any action and should be set to this method."""
-        pass  # pragma: nocover
-
-    cash_in = property(
-        _get_cash_in, _set_cash_in, __del_attribute, "TODO: Add docstring here"
-    )
-
-    cash_out = property(
-        _get_cash_out, _set_cash_out, __del_attribute, "TODO: Add docstring here"
-    )
-
-    costs = property(
-        _get_costs, _set_costs, __del_attribute, "TODO: Add docstring here"
-    )
-
-    currency = property(
-        _get_currency, _set_currency, __del_attribute, "TODO: Add docstring here"
-    )
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here")
 
     stock_count = property(
-        _get_stock_count, _set_stock_count, __del_attribute, "TODO: Add docstring here"
+        _get_stock_count, _set_stock_count, doc="TODO: Add docstring here"
     )
 
     stock_value = property(
-        _get_stock_value, _set_stock_value, __del_attribute, "TODO: Add docstring here"
+        _get_stock_value, _set_stock_value, doc="TODO: Add docstring here"
     )
