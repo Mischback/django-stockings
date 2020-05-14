@@ -14,6 +14,10 @@ class StockingsMoney:
     of an actual value, its currency and a timestamp. This class provides a
     mean to pass these information around between different objects."""
 
+    amount = None
+    currency = None
+    timestamp = None
+
     def __init__(self, amount, currency, timestamp=None):
         """Create a simple app-specific Money object.
 

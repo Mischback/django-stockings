@@ -245,13 +245,13 @@ class PortfolioItemTest(StockingsTestCase):
         )
         self.assertEqual(b, mock_return_money.return_value)
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
-    @mock.patch("stockings.data.now")
-    def test_return_money(self, mock_now, mock_portfolio):
+    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_return_money(self, mock_portfolio, mock_stockingsmoney):
         """Returns correctly populated `StockingsMoney` object."""
-
-        # set up the mock
-        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
@@ -259,30 +259,37 @@ class PortfolioItemTest(StockingsTestCase):
         # Only provide `amount`, let `currency` and `timestamp` be provided
         # automatically.
         b = a._return_money(1337)
+
+        # `1337` is the provided value
+        mock_stockingsmoney.assert_called_with(
+            1337, mock_portfolio.return_value.currency, None
+        )
         self.assertIsInstance(b, StockingsMoney)
-        self.assertEqual(b.amount, 1337)
-        self.assertEqual(b.currency, a.currency)
-        self.assertTrue(mock_now.called)
-        self.assertEqual(b.timestamp, mock_now.return_value)
-        mock_now.reset_mock()
+        self.assertEqual(b.amount, mock_stockingsmoney.return_value.amount)
+        self.assertEqual(b.currency, mock_stockingsmoney.return_value.currency)
+        self.assertEqual(b.timestamp, mock_stockingsmoney.return_value.timestamp)
 
         # Providing a `currency` manually.
-        b = a._return_money(1338, currency="BAR")
+        b = a._return_money(1337, currency="BAR")
+
+        # `1337` is the provided value, `"BAR"` is the provided value of `currency`
+        mock_stockingsmoney.assert_called_with(1337, "BAR", None)
         self.assertIsInstance(b, StockingsMoney)
-        self.assertEqual(b.amount, 1338)
-        self.assertNotEqual(b.currency, a.currency)
-        self.assertEqual(b.currency, "BAR")
-        self.assertTrue(mock_now.called)
-        self.assertEqual(b.timestamp, mock_now.return_value)
-        mock_now.reset_mock()
+        self.assertEqual(b.amount, mock_stockingsmoney.return_value.amount)
+        self.assertEqual(b.currency, mock_stockingsmoney.return_value.currency)
+        self.assertEqual(b.timestamp, mock_stockingsmoney.return_value.timestamp)
 
         # Providing a `timestamp` manually
-        b = a._return_money(1339, timestamp="bar")
+        b = a._return_money(1337, timestamp="now")
+
+        # `1337` is the provided value, `"now"` is the provided timestamp
+        mock_stockingsmoney.assert_called_with(
+            1337, mock_portfolio.return_value.currency, "now"
+        )
         self.assertIsInstance(b, StockingsMoney)
-        self.assertEqual(b.amount, 1339)
-        self.assertEqual(b.currency, a.currency)
-        self.assertFalse(mock_now.called)
-        self.assertEqual(b.timestamp, "bar")
+        self.assertEqual(b.amount, mock_stockingsmoney.return_value.amount)
+        self.assertEqual(b.currency, mock_stockingsmoney.return_value.currency)
+        self.assertEqual(b.timestamp, mock_stockingsmoney.return_value.timestamp)
 
     def test_set_currency(self):
         """Setting the currency is not possible."""
