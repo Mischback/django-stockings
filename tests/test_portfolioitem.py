@@ -171,6 +171,8 @@ class PortfolioItemTest(StockingsTestCase):
 
         # get a PortfolioItem object
         a = PortfolioItem()
+
+        # getting the property
         b = a.cash_in
 
         self.assertTrue(mock_return_money.called)
@@ -189,6 +191,8 @@ class PortfolioItemTest(StockingsTestCase):
 
         # get a PortfolioItem object
         a = PortfolioItem()
+
+        # getting the property
         b = a.cash_out
 
         self.assertTrue(mock_return_money.called)
@@ -207,6 +211,8 @@ class PortfolioItemTest(StockingsTestCase):
 
         # get a PortfolioItem object
         a = PortfolioItem()
+
+        # getting the property
         b = a.costs
 
         self.assertTrue(mock_return_money.called)
@@ -219,17 +225,21 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(StockingsInterfaceError):
             a.costs = 1337
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
-    def test_get_currency(self, mock_portfolio):
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_currency(self, mock_portfolio):
         """Returns the object's `currency`."""
-
-        # set up the mock
-        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
 
-        self.assertEqual(a._get_currency(), a.currency)
+        self.assertEqual(a.currency, mock_portfolio.return_value.currency)
+
+        # setting the property is not possible
+        with self.assertRaises(StockingsInterfaceError):
+            a.currency = "FOO"
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_get_stock_value(self, mock_return_money):
@@ -290,14 +300,6 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(b.amount, mock_stockingsmoney.return_value.amount)
         self.assertEqual(b.currency, mock_stockingsmoney.return_value.currency)
         self.assertEqual(b.timestamp, mock_stockingsmoney.return_value.timestamp)
-
-    def test_set_currency(self):
-        """Setting the currency is not possible."""
-
-        a = PortfolioItem()
-
-        with self.assertRaises(StockingsInterfaceError):
-            a._set_currency("FOO")
 
     @skip
     @mock.patch("stockings.models.portfolio.StockingsMoney.convert")
