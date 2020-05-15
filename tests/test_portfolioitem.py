@@ -17,80 +17,77 @@ from .util.testcases import StockingsTestCase
 class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
-    @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_cash_in(self, mock_add, mock_portfolio):
+    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_update_cash_in(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `cash_in`."""
-
-        # set up the mock
-        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
-
-        # Set up the mock
-        # Please note, that `timestamp` is set to an illegal value, that may
-        # not be stored into the database. But it should be sufficient for
-        # testing.
-        mock_add.return_value = StockingsMoney(5, "EUR", timestamp="foo")
 
         # Actually it is assumed, that the method is called with a `StockingsMoney`
         # instance, but for this test, that part is mocked out anyway...
         a.update_cash_in("StockingsMoney")
 
-        self.assertTrue(mock_add.called)
-        self.assertEqual(a._cash_in_amount, 5)
-        self.assertEqual(a._cash_in_timestamp, "foo")
+        self.assertTrue(mock_stockingsmoney.return_value.add.called)
+        self.assertEqual(
+            a._cash_in_amount, mock_stockingsmoney.return_value.add.return_value.amount
+        )
+        self.assertEqual(
+            a._cash_in_timestamp,
+            mock_stockingsmoney.return_value.add.return_value.timestamp,
+        )
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
-    @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_cash_out(self, mock_add, mock_portfolio):
+    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_update_cash_out(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `cash_out`."""
-
-        # set up the mock
-        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
-
-        # Set up the mock
-        # Please note, that `timestamp` is set to an illegal value, that may
-        # not be stored into the database. But it should be sufficient for
-        # testing.
-        mock_add.return_value = StockingsMoney(5, "EUR", timestamp="foo")
 
         # Actually it is assumed, that the method is called with a `StockingsMoney`
         # instance, but for this test, that part is mocked out anyway...
         a.update_cash_out("StockingsMoney")
 
-        self.assertTrue(mock_add.called)
-        self.assertEqual(a._cash_out_amount, 5)
-        self.assertEqual(a._cash_out_timestamp, "foo")
+        self.assertTrue(mock_stockingsmoney.return_value.add.called)
+        self.assertEqual(
+            a._cash_out_amount, mock_stockingsmoney.return_value.add.return_value.amount
+        )
+        self.assertEqual(
+            a._cash_out_timestamp,
+            mock_stockingsmoney.return_value.add.return_value.timestamp,
+        )
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.portfolio")
-    @mock.patch("stockings.models.portfolio.StockingsMoney.add")
-    def test_update_costs(self, mock_add, mock_portfolio):
+    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_update_costs(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `costs`."""
-
-        # set up the mock
-        type(mock_portfolio).currency = mock.PropertyMock(return_value="FOO")
 
         # get a PortfolioItem object
         a = PortfolioItem()
-
-        # Set up the mock
-        # Please note, that `timestamp` is set to an illegal value, that may
-        # not be stored into the database. But it should be sufficient for
-        # testing.
-        mock_add.return_value = StockingsMoney(5, "EUR", timestamp="foo")
 
         # Actually it is assumed, that the method is called with a `StockingsMoney`
         # instance, but for this test, that part is mocked out anyway...
         a.update_costs("StockingsMoney")
 
-        self.assertTrue(mock_add.called)
-        self.assertEqual(a._costs_amount, 5)
-        self.assertEqual(a._costs_timestamp, "foo")
+        self.assertTrue(mock_stockingsmoney.return_value.add.called)
+        self.assertEqual(
+            a._costs_amount, mock_stockingsmoney.return_value.add.return_value.amount
+        )
+        self.assertEqual(
+            a._costs_timestamp,
+            mock_stockingsmoney.return_value.add.return_value.timestamp,
+        )
 
     @mock.patch("stockings.models.portfolio.StockingsMoney.multiply")
     @mock.patch("stockings.models.portfolio.PortfolioItem.stock_item")
