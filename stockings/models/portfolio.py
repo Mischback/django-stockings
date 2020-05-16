@@ -269,25 +269,25 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_in()'."
-        )  # pragma: nocover
+        )
 
     def _set_cash_out(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_out()'."
-        )  # pragma: nocover
+        )
 
     def _set_costs(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_costs()'."
-        )  # pragma: nocover
+        )
 
     def _set_currency(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "The currency may only be set on `Portfolio` level."
-        )  # pragma: nocover
+        )
 
     def _set_currency_old(self, value):
         """Set a new currency for the object and update all money-related fields."""
@@ -324,7 +324,7 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_stock_value()'."
-        )  # pragma: nocover
+        )
 
     cash_in = property(_get_cash_in, _set_cash_in, doc="TODO: Add docstring here")
 
