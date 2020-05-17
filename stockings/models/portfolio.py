@@ -17,7 +17,7 @@ class Portfolio(models.Model):
     """Represents a portolio of stocks."""
 
     # The currency for all money-related fields.
-    currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     # A human-readable name of the ``Portolio`` object.
     name = models.CharField(max_length=50,)
@@ -39,6 +39,25 @@ class Portfolio(models.Model):
 
     def __str__(self):
         return "{} ({})".format(self.name, self.user)  # pragma: nocover
+
+    def _get_currency(self):
+        return self._currency
+
+    def _set_currency(self, new_currency):
+
+        # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
+        # instance stock item.
+        portfolio_item_set = PortfolioItem.objects.filter(portfolio=self)
+
+        # Update all relevant ``PortfolioItem`` objects.
+        for item in portfolio_item_set.iterator():
+            item._update_currency(new_currency)
+            item.save()
+
+        # actually update the object's attribute
+        self._currency = new_currency
+
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
 
 
 class PortfolioItemManager(models.Manager):
@@ -289,7 +308,18 @@ class PortfolioItem(models.Model):
             "The currency may only be set on `Portfolio` level."
         )
 
-    def _set_currency_old(self, value):
+    def _set_stock_count(self, value):
+        """Set a new `stock_count` and recalculate the object's `stock_value`."""
+
+        self.update_stock_value(item_count=value)
+
+    def _set_stock_value(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_stock_value()'."
+        )
+
+    def _update_currency(self, value):
         """Set a new currency for the object and update all money-related fields."""
 
         # cash_in
@@ -311,20 +341,6 @@ class PortfolioItem(models.Model):
         new_value = self.stock_value.convert(value)
         self._stock_value_amount = new_value.amount
         self._stock_value_timestamp = new_value.timestamp
-
-        # actually update the object's attribute
-        self._currency = value
-
-    def _set_stock_count(self, value):
-        """Set a new `stock_count` and recalculate the object's `stock_value`."""
-
-        self.update_stock_value(item_count=value)
-
-    def _set_stock_value(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_stock_value()'."
-        )
 
     cash_in = property(_get_cash_in, _set_cash_in, doc="TODO: Add docstring here")
 
