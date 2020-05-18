@@ -300,6 +300,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(StockingsInterfaceError):
             a.cash_in = 1337
 
+        with self.assertRaises(AttributeError):
+            del a.cash_in
+
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_property_cash_out(self, mock_return_money):
         """Property's getter uses `_return_money()`, setter raises exception."""
@@ -319,6 +322,9 @@ class PortfolioItemTest(StockingsTestCase):
         # setting the property is not possible
         with self.assertRaises(StockingsInterfaceError):
             a.cash_out = 1337
+
+        with self.assertRaises(AttributeError):
+            del a.cash_out
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_property_costs(self, mock_return_money):
@@ -340,6 +346,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(StockingsInterfaceError):
             a.costs = 1337
 
+        with self.assertRaises(AttributeError):
+            del a.costs
+
     @mock.patch(
         "stockings.models.portfolio.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
@@ -356,6 +365,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(StockingsInterfaceError):
             a.currency = "FOO"
 
+        with self.assertRaises(AttributeError):
+            del a.currency
+
     @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
     def test_property_stock_count(self, mock_update):
         """Setting the `stock_count` updates the `stock_value`."""
@@ -371,6 +383,9 @@ class PortfolioItemTest(StockingsTestCase):
 
         # get the stock count
         self.assertEqual(a.stock_count, a._stock_count)
+
+        with self.assertRaises(AttributeError):
+            del a.stock_count
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_property_stock_value(self, mock_return_money):
@@ -391,6 +406,9 @@ class PortfolioItemTest(StockingsTestCase):
         # setting the property is not possible
         with self.assertRaises(StockingsInterfaceError):
             a.stock_value = 1337
+
+        with self.assertRaises(AttributeError):
+            del a.stock_value
 
     @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
     @mock.patch(
