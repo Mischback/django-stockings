@@ -1,6 +1,7 @@
 """These classes represent a portfolio and its items."""
 
 # Django imports
+from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
@@ -164,6 +165,36 @@ class PortfolioItem(models.Model):
                 item_price=trade_obj.price,
                 item_count=self.stock_count - trade_obj.item_count,
             )
+
+    def reapply_trades(self):
+        """Resets all of the object's money-related fields and then reapplies all trades."""
+
+        # reset all money-related fields by assigning `_amount`= 0
+        self._cash_in_amount = 0
+        self._cash_out_amount = 0
+        self._costs_amount = 0
+        self._stock_value_amount = 0
+
+        # reset the `stock_count`
+        self._stock_count = 0
+
+        # fetch the associated `Trade` objects
+        # The objects have to be ordered by date (`Trade.timestamp`) to ensure,
+        # that they are re-applied in the correct order.
+        # The `Trade` model can not be imported at the top of this file, because this
+        # would lead to a circular import.
+        # However, this is the only occurence of `Trade`, so the class is fetched
+        # Django's app registry.
+        trade_set = (
+            apps.get_model("stockings.Trade")
+            .objects.filter(portfolio=self.portfolio, stock_item=self.stock_item)
+            .order_by("timestamp")
+        )
+
+        for trade in trade_set.iterator():
+            # The integrity check can actually be skipped, because the `trade_set`
+            # applies a filter to ensure correct objects.
+            self.apply_trade(trade, skip_integrity_check=True)
 
     def update_cash_in(self, new_cash_flow):
         # calculate new value (old value + new cash flow)
