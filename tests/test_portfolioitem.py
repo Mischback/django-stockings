@@ -65,6 +65,55 @@ class PortfolioItemTest(StockingsTestCase):
             mock_stock_value.return_value.convert.return_value.amount,
         )
 
+    @mock.patch("stockings.models.trade.Trade", autospec=True)
+    @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
+    @mock.patch("stockings.models.portfolio.PortfolioItem.update_cash_out")
+    @mock.patch("stockings.models.portfolio.PortfolioItem.update_cash_in")
+    @mock.patch("stockings.models.portfolio.PortfolioItem.update_costs")
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_apply_trade(
+        self,
+        mock_portfolio,
+        mock_update_costs,
+        mock_update_cash_in,
+        mock_update_cash_out,
+        mock_update_stock_value,
+        mock_trade,
+    ):
+        """Method calls the methods to update money-related fields."""
+
+        # get PortfolioItem object
+        a = PortfolioItem()
+
+        mock_trade.trade_type = "BUY"
+        mock_trade.item_count = 1
+
+        a.apply_trade(mock_trade, skip_integrity_check=True)
+
+        mock_update_costs.assert_called_with(mock_trade.costs)
+        mock_update_cash_in.assert_called_with(mock_trade.price.multiply.return_value)
+        mock_update_stock_value.assert_called_with(
+            item_count=a._stock_count + mock_trade.item_count,
+            item_price=mock_trade.price,
+        )
+
+        mock_trade.reset_mock()
+        mock_trade.trade_type = "SELL"
+        mock_trade.item_count = 1
+        a._stock_count = 4
+
+        a.apply_trade(mock_trade, skip_integrity_check=True)
+
+        mock_update_costs.assert_called_with(mock_trade.costs)
+        mock_update_cash_out.assert_called_with(mock_trade.price.multiply.return_value)
+        mock_update_stock_value.assert_called_with(
+            item_count=a._stock_count - mock_trade.item_count,
+            item_price=mock_trade.price,
+        )
+
     @tag("signal-handler")
     def test_callback_stockitem_update_stock_value_raw(self):
         """Callback does not execute when called with `raw` = `True`."""
@@ -159,7 +208,7 @@ class PortfolioItemTest(StockingsTestCase):
             )
         )
 
-    @tag("signal-handler")
+    @tag("signal-handler", "current")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_buy(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for buy operations.
@@ -195,13 +244,10 @@ class PortfolioItemTest(StockingsTestCase):
             mock_cls_stock_item, mock_instance, True, False,
         )
 
-        self.assertTrue(mock_item.update_costs.called)
-        self.assertTrue(mock_item.update_cash_in.called)
-        self.assertFalse(mock_item.update_cash_out.called)
-        self.assertTrue(mock_item.update_stock_value.called)
+        self.assertTrue(mock_item.apply_trade.called)
         self.assertTrue(mock_item.save.called)
 
-    @tag("signal-handler")
+    @tag("signal-handler", "current")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_valid(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for sell operations.
@@ -237,13 +283,10 @@ class PortfolioItemTest(StockingsTestCase):
             mock_cls_stock_item, mock_instance, True, False,
         )
 
-        self.assertTrue(mock_item.update_costs.called)
-        self.assertFalse(mock_item.update_cash_in.called)
-        self.assertTrue(mock_item.update_cash_out.called)
-        self.assertTrue(mock_item.update_stock_value.called)
+        self.assertTrue(mock_item.apply_trade.called)
         self.assertTrue(mock_item.save.called)
 
-    @tag("signal-handler")
+    @tag("signal-handler", "current")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_invalid(self, mock_objects):
         """Callback raises error, if not available stock is sold.

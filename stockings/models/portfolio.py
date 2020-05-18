@@ -134,6 +134,37 @@ class PortfolioItem(models.Model):
     def __str__(self):
         return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
 
+    def apply_trade(self, trade_obj, skip_integrity_check=False):
+        """Track a single trade operation and update object's fields."""
+
+        # ensure, that the `trade_obj` is actually associated with this `PortfolioItem`
+        if not skip_integrity_check and (
+            (self.portfolio != trade_obj.portfolio)
+            or (self.stock_item != trade_obj.stock_item)
+        ):
+            raise StockingsInterfaceError(
+                "Could not apply trade, `trade_obj` does not belong to this `PortfolioItem`."
+            )  # pragma: nocover
+
+        # track the costs of this trade
+        self.update_costs(trade_obj.costs)
+
+        # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
+        if trade_obj.trade_type == "BUY":
+            self.update_cash_in(trade_obj.price.multiply(trade_obj.item_count))
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self.stock_count + trade_obj.item_count,
+            )
+
+        # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
+        if trade_obj.trade_type == "SELL":
+            self.update_cash_out(trade_obj.price.multiply(trade_obj.item_count))
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self.stock_count - trade_obj.item_count,
+            )
+
     def update_cash_in(self, new_cash_flow):
         # calculate new value (old value + new cash flow)
         # Currency conversion is implicitly provided, because
@@ -219,36 +250,22 @@ class PortfolioItem(models.Model):
         if not created:
             return None
 
-        fetch_item = cls.objects.get_or_create(
+        item, item_state = cls.objects.get_or_create(
             portfolio=instance.portfolio,
             stock_item=instance.stock_item,
             # defaults={},
         )
-        item = fetch_item[0]
-        item_state = fetch_item[1]
 
-        item.update_costs(instance.costs)
-
-        if instance.trade_type == "BUY":
-            item.update_cash_in(instance.price.multiply(instance.item_count))
-            item.update_stock_value(
-                item_price=instance.price,
-                item_count=item.stock_count + instance.item_count,
+        # Another safety to ensure, that no stock can be sold, that is not present
+        # in the `Portfolio`.
+        if instance.trade_type == "SELL" and item_state is True:
+            raise RuntimeError(
+                "Trying to sell stock, that are not in the portfolio! "
+                "Something went terribly wrong!"
             )
 
-        if instance.trade_type == "SELL":
-            if item_state is True:
-                raise RuntimeError(
-                    "Trying to sell stock, that are not in the portfolio! "
-                    "Something went terribly wrong!"
-                )
-
-            item.update_cash_out(instance.price.multiply(instance.item_count))
-            item.update_stock_value(
-                item_price=instance.price,
-                item_count=item.stock_count - instance.item_count,
-            )
-
+        # actually update the `PortfolioItem`'s fields
+        item.apply_trade(instance)
         item.save()
 
     def _get_cash_in(self):
