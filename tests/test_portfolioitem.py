@@ -17,6 +17,54 @@ from .util.testcases import StockingsTestCase
 class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.cash_in",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.cash_out",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.costs", new_callable=mock.PropertyMock
+    )
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.stock_value",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_apply_new_currency(
+        self, mock_portfolio, mock_stock_value, mock_costs, mock_cash_out, mock_cash_in,
+    ):
+        """Setting a new currency recalculates all money-related amounts."""
+
+        # get PortfolioItem object
+        a = PortfolioItem()
+
+        a._apply_new_currency("FOO")
+
+        # Assess, if the conversion method is called and the `amount` updated.
+        mock_cash_in.return_value.convert.assert_called_with("FOO")
+        self.assertEqual(
+            a._cash_in_amount, mock_cash_in.return_value.convert.return_value.amount
+        )
+        mock_cash_out.return_value.convert.assert_called_with("FOO")
+        self.assertEqual(
+            a._cash_out_amount, mock_cash_out.return_value.convert.return_value.amount
+        )
+        mock_costs.return_value.convert.assert_called_with("FOO")
+        self.assertEqual(
+            a._costs_amount, mock_costs.return_value.convert.return_value.amount
+        )
+        mock_stock_value.return_value.convert.assert_called_with("FOO")
+        self.assertEqual(
+            a._stock_value_amount,
+            mock_stock_value.return_value.convert.return_value.amount,
+        )
+
     @tag("signal-handler")
     def test_callback_stockitem_update_stock_value_raw(self):
         """Callback does not execute when called with `raw` = `True`."""
@@ -77,26 +125,6 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_instance_latest_price.called)
         self.assertTrue(mock_item.update_stock_value.called)
         self.assertTrue(mock_item.save.called)
-
-    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
-    def test_property_cash_in(self, mock_return_money):
-        """Property's getter uses `_return_money()`, setter raises exception."""
-
-        # get a PortfolioItem object
-        a = PortfolioItem()
-
-        # getting the property
-        b = a.cash_in
-
-        self.assertTrue(mock_return_money.called)
-        mock_return_money.assert_called_with(
-            a._cash_in_amount, timestamp=a._cash_in_timestamp
-        )
-        self.assertEqual(b, mock_return_money.return_value)
-
-        # setting the property is not possible
-        with self.assertRaises(StockingsInterfaceError):
-            a.cash_in = 1337
 
     @tag("signal-handler")
     def test_callback_trade_apply_trade_noop(self):
@@ -251,6 +279,26 @@ class PortfolioItemTest(StockingsTestCase):
             PortfolioItem.callback_trade_apply_trade(
                 mock_cls_stock_item, mock_instance, True, False,
             )
+
+    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    def test_property_cash_in(self, mock_return_money):
+        """Property's getter uses `_return_money()`, setter raises exception."""
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        # getting the property
+        b = a.cash_in
+
+        self.assertTrue(mock_return_money.called)
+        mock_return_money.assert_called_with(
+            a._cash_in_amount, timestamp=a._cash_in_timestamp
+        )
+        self.assertEqual(b, mock_return_money.return_value)
+
+        # setting the property is not possible
+        with self.assertRaises(StockingsInterfaceError):
+            a.cash_in = 1337
 
     @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
     def test_property_cash_out(self, mock_return_money):
@@ -462,7 +510,6 @@ class PortfolioItemTest(StockingsTestCase):
             mock_stockingsmoney.return_value.add.return_value.timestamp,
         )
 
-    @tag("current")
     @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
     @mock.patch(
         "stockings.models.portfolio.PortfolioItem.portfolio",

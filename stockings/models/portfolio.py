@@ -51,7 +51,7 @@ class Portfolio(models.Model):
 
         # Update all relevant ``PortfolioItem`` objects.
         for item in portfolio_item_set.iterator():
-            item._update_currency(new_currency)
+            item._apply_new_currency(new_currency)
             item.save()
 
         # actually update the object's attribute
@@ -319,26 +319,26 @@ class PortfolioItem(models.Model):
             "You might want to use 'update_stock_value()'."
         )
 
-    def _update_currency(self, value):
+    def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
 
         # cash_in
-        new_value = self.cash_in.convert(value)
+        new_value = self.cash_in.convert(new_currency)
         self._cash_in_amount = new_value.amount
         self._cash_in_timestamp = new_value.timestamp
 
         # cash_out
-        new_value = self.cash_out.convert(value)
+        new_value = self.cash_out.convert(new_currency)
         self._cash_out_amount = new_value.amount
         self._cash_out_timestamp = new_value.timestamp
 
         # costs
-        new_value = self.costs.convert(value)
+        new_value = self.costs.convert(new_currency)
         self._costs_amount = new_value.amount
         self._costs_timestamp = new_value.timestamp
 
         # stock_value
-        new_value = self.stock_value.convert(value)
+        new_value = self.stock_value.convert(new_currency)
         self._stock_value_amount = new_value.amount
         self._stock_value_timestamp = new_value.timestamp
 
