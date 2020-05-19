@@ -208,7 +208,7 @@ class PortfolioItemTest(StockingsTestCase):
             )
         )
 
-    @tag("signal-handler", "current")
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_buy(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for buy operations.
@@ -247,7 +247,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.apply_trade.called)
         self.assertTrue(mock_item.save.called)
 
-    @tag("signal-handler", "current")
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_valid(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for sell operations.
@@ -286,7 +286,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.apply_trade.called)
         self.assertTrue(mock_item.save.called)
 
-    @tag("signal-handler", "current")
+    @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_invalid(self, mock_objects):
         """Callback raises error, if not available stock is sold.
@@ -452,6 +452,40 @@ class PortfolioItemTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             del a.stock_value
+
+    @mock.patch("django.apps.apps.get_model")
+    @mock.patch("stockings.models.portfolio.PortfolioItem.apply_trade")
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolio.PortfolioItem.stock_item",
+        new_callable=mock.PropertyMock,
+    )
+    def test_reapply_trades(
+        self, mock_stock_item, mock_portfolio, mock_apply_trade, mock_objects
+    ):
+        """Reapplies all associated `Trade` objects using `apply_trade()`."""
+
+        mock_trade = mock.MagicMock()
+
+        # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
+        # and basically intercepts all Django database ORM stuff.
+        # The following code provides the `queryset`'s `iterator()` and returns
+        # one single MagicMock (`mock_item`) on iteration.
+        mock_objects.return_value.objects.filter.return_value.order_by.return_value.iterator.return_value.__iter__.return_value = iter(  # noqa: E501
+            [mock_trade]
+        )
+
+        # get a PortfolioItem object
+        a = PortfolioItem()
+
+        # actually call the method
+        a.reapply_trades()
+
+        self.assertTrue(mock_apply_trade.called)
+        mock_apply_trade.assert_called_with(mock_trade, skip_integrity_check=True)
 
     @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
     @mock.patch(
