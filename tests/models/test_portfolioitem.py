@@ -10,7 +10,7 @@ from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import PortfolioItem
 
 # app imports
-from .util.testcases import StockingsTestCase
+from ..util.testcases import StockingsTestCase
 
 
 @tag("models", "portfolioitem")

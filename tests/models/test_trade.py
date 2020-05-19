@@ -11,7 +11,7 @@ from stockings.models.portfolio import PortfolioItem
 from stockings.models.trade import Trade
 
 # app imports
-from .util.testcases import StockingsTestCase
+from ..util.testcases import StockingsTestCase
 
 
 class TradeTest(StockingsTestCase):
