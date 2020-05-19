@@ -7,6 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
+from stockings.exceptions import StockingsInterfaceError
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
@@ -30,6 +31,9 @@ class StockItem(models.Model):
     # A short version of the item's ``full_name`` attribute.
     # This is the object's main representation in the front end.
     name = models.CharField(blank=True, max_length=100)
+
+    # The currency for all money-related fields.
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     class Meta:
         app_label = "stockings"
@@ -78,16 +82,14 @@ class StockItem(models.Model):
 
         return self.portfolioitem_set.filter(is_active=True).count() > 0
 
-    @property
-    def latest_price(self):
-        # TODO: Fetch `StockItemPrice` object and return its `price`
-        raise NotImplementedError("tbd")
+    def _get_currency(self):
+        return self._currency
 
-    @latest_price.setter
-    def latest_price(self, new_price):
-        # TODO: Use `get_or_create` to get a `StockItemPrice` object and set
-        #       its `price`
-        raise NotImplementedError("tbd")
+    def _set_currency(self, value):
+        # FIXME: Get all associated `StockItemPrice` objects and call `_apply_new_currency()`
+        raise NotImplementedError("to be done")
+
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
 
 
 class StockItemPrice(models.Model):
@@ -97,7 +99,6 @@ class StockItemPrice(models.Model):
 
     # The latest price information for the item.
     _price_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _price_currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
     _price_timestamp = models.DateTimeField(default=now)
 
     class Meta:
@@ -113,13 +114,23 @@ class StockItemPrice(models.Model):
             self._price_timestamp,
         )
 
-    def _del_price(self):
-        # TODO: this might be used to trigger deletion of these objects...
-        raise NotImplementedError("tbd")
+    def _apply_new_currency(self, new_currency):
+        """Set a new currency for the object and convert price information."""
+
+        new_value = self.price.convert(new_currency)
+        self._price_amount = new_value.amount
+        self._price_timestamp = new_value.timestamp
+
+    def _get_currency(self):
+        return self.stock_item.currency
 
     def _get_price(self):
-        return StockingsMoney(
-            self._price_amount, self._price_currency, self._price_timestamp,
+        return StockingsMoney(self._price_amount, self.currency, self._price_timestamp,)
+
+    def _set_currency(self, value):
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "The currency may only be set on `StockItem` level."
         )
 
     def _set_price(self, value):
@@ -133,4 +144,6 @@ class StockItemPrice(models.Model):
         # self._price_currency = value.currency
         self._price_timestamp = value.timestamp
 
-    price = property(_get_price, _set_price, _del_price, "TODO: Add docstring here!")
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
+
+    price = property(_get_price, _set_price, doc="TODO: Add docstring here!")
