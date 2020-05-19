@@ -1,6 +1,7 @@
 """These classes represent a portfolio and its items."""
 
 # Django imports
+from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
@@ -15,6 +16,9 @@ from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 class Portfolio(models.Model):
     """Represents a portolio of stocks."""
+
+    # The currency for all money-related fields.
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
 
     # A human-readable name of the ``Portolio`` object.
     name = models.CharField(max_length=50,)
@@ -36,6 +40,25 @@ class Portfolio(models.Model):
 
     def __str__(self):
         return "{} ({})".format(self.name, self.user)  # pragma: nocover
+
+    def _get_currency(self):
+        return self._currency
+
+    def _set_currency(self, new_currency):
+
+        # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
+        # instance stock item.
+        portfolio_item_set = PortfolioItem.objects.filter(portfolio=self)
+
+        # Update all relevant ``PortfolioItem`` objects.
+        for item in portfolio_item_set.iterator():
+            item._apply_new_currency(new_currency)
+            item.save()
+
+        # actually update the object's attribute
+        self._currency = new_currency
+
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
 
 
 class PortfolioItemManager(models.Manager):
@@ -91,9 +114,6 @@ class PortfolioItem(models.Model):
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     _costs_timestamp = models.DateTimeField(default=now)
 
-    # The currency for all money-related fields.
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
-
     # Stores the details of the ``stock_value``, which tracks the current value
     # of the associated ``StockItem``s.
     _stock_value_amount = models.DecimalField(
@@ -114,6 +134,67 @@ class PortfolioItem(models.Model):
 
     def __str__(self):
         return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
+
+    def apply_trade(self, trade_obj, skip_integrity_check=False):
+        """Track a single trade operation and update object's fields."""
+
+        # ensure, that the `trade_obj` is actually associated with this `PortfolioItem`
+        if not skip_integrity_check and (
+            (self.portfolio != trade_obj.portfolio)
+            or (self.stock_item != trade_obj.stock_item)
+        ):
+            raise StockingsInterfaceError(
+                "Could not apply trade, `trade_obj` does not belong to this `PortfolioItem`."
+            )  # pragma: nocover
+
+        # track the costs of this trade
+        self.update_costs(trade_obj.costs)
+
+        # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
+        if trade_obj.trade_type == "BUY":
+            self.update_cash_in(trade_obj.price.multiply(trade_obj.item_count))
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self.stock_count + trade_obj.item_count,
+            )
+
+        # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
+        if trade_obj.trade_type == "SELL":
+            self.update_cash_out(trade_obj.price.multiply(trade_obj.item_count))
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self.stock_count - trade_obj.item_count,
+            )
+
+    def reapply_trades(self):
+        """Resets all of the object's money-related fields and then reapplies all trades."""
+
+        # reset all money-related fields by assigning `_amount`= 0
+        self._cash_in_amount = 0
+        self._cash_out_amount = 0
+        self._costs_amount = 0
+        self._stock_value_amount = 0
+
+        # reset the `stock_count`
+        self._stock_count = 0
+
+        # fetch the associated `Trade` objects
+        # The objects have to be ordered by date (`Trade.timestamp`) to ensure,
+        # that they are re-applied in the correct order.
+        # The `Trade` model can not be imported at the top of this file, because this
+        # would lead to a circular import.
+        # However, this is the only occurence of `Trade`, so the class is fetched
+        # Django's app registry.
+        trade_set = (
+            apps.get_model("stockings.Trade")
+            .objects.filter(portfolio=self.portfolio, stock_item=self.stock_item)
+            .order_by("timestamp")
+        )
+
+        for trade in trade_set.iterator():
+            # The integrity check can actually be skipped, because the `trade_set`
+            # applies a filter to ensure correct objects.
+            self.apply_trade(trade, skip_integrity_check=True)
 
     def update_cash_in(self, new_cash_flow):
         # calculate new value (old value + new cash flow)
@@ -200,36 +281,22 @@ class PortfolioItem(models.Model):
         if not created:
             return None
 
-        fetch_item = cls.objects.get_or_create(
+        item, item_state = cls.objects.get_or_create(
             portfolio=instance.portfolio,
             stock_item=instance.stock_item,
             # defaults={},
         )
-        item = fetch_item[0]
-        item_state = fetch_item[1]
 
-        item.update_costs(instance.costs)
-
-        if instance.trade_type == "BUY":
-            item.update_cash_in(instance.price.multiply(instance.item_count))
-            item.update_stock_value(
-                item_price=instance.price,
-                item_count=item.stock_count + instance.item_count,
+        # Another safety to ensure, that no stock can be sold, that is not present
+        # in the `Portfolio`.
+        if instance.trade_type == "SELL" and item_state is True:
+            raise RuntimeError(
+                "Trying to sell stock, that are not in the portfolio! "
+                "Something went terribly wrong!"
             )
 
-        if instance.trade_type == "SELL":
-            if item_state is True:
-                raise RuntimeError(
-                    "Trying to sell stock, that are not in the portfolio! "
-                    "Something went terribly wrong!"
-                )
-
-            item.update_cash_out(instance.price.multiply(instance.item_count))
-            item.update_stock_value(
-                item_price=instance.price,
-                item_count=item.stock_count - instance.item_count,
-            )
-
+        # actually update the `PortfolioItem`'s fields
+        item.apply_trade(instance)
         item.save()
 
     def _get_cash_in(self):
@@ -246,7 +313,7 @@ class PortfolioItem(models.Model):
         return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
 
     def _get_currency(self):
-        return self._currency
+        return self.portfolio.currency
 
     def _get_stock_count(self):
         return self._stock_count
@@ -256,16 +323,10 @@ class PortfolioItem(models.Model):
             self._stock_value_amount, timestamp=self._stock_value_timestamp
         )
 
-    def _is_active(self):
-        """Return bool to indicate status of the object.
-
-        A PortfolioItem is considered 'active', if the stock count is > 0."""
-        return self._stock_count > 0
-
     def _return_money(self, amount, currency=None, timestamp=None):
         return StockingsMoney(
             amount,
-            currency or self._currency,
+            currency or self.currency,
             # `StockingsMoney` will set the timestamp to `now()`, if no
             # timestamp is provided.
             timestamp,
@@ -275,45 +336,25 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_in()'."
-        )  # pragma: nocover
+        )
 
     def _set_cash_out(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_cash_out()'."
-        )  # pragma: nocover
+        )
 
     def _set_costs(self, value):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_costs()'."
-        )  # pragma: nocover
+        )
 
     def _set_currency(self, value):
-        """Set a new currency for the object and update all money-related fields."""
-
-        # cash_in
-        new_value = self.cash_in.convert(value)
-        self._cash_in_amount = new_value.amount
-        self._cash_in_timestamp = new_value.timestamp
-
-        # cash_out
-        new_value = self.cash_out.convert(value)
-        self._cash_out_amount = new_value.amount
-        self._cash_out_timestamp = new_value.timestamp
-
-        # costs
-        new_value = self.costs.convert(value)
-        self._costs_amount = new_value.amount
-        self._costs_timestamp = new_value.timestamp
-
-        # stock_value
-        new_value = self.stock_value.convert(value)
-        self._stock_value_amount = new_value.amount
-        self._stock_value_timestamp = new_value.timestamp
-
-        # actually update the object's attribute
-        self._currency = value
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "The currency may only be set on `Portfolio` level."
+        )
 
     def _set_stock_count(self, value):
         """Set a new `stock_count` and recalculate the object's `stock_value`."""
@@ -324,47 +365,43 @@ class PortfolioItem(models.Model):
         raise StockingsInterfaceError(
             "This attribute may not be set directly! "
             "You might want to use 'update_stock_value()'."
-        )  # pragma: nocover
+        )
 
-    def __del_attribute(self):
-        raise StockingsInterfaceError(
-            "This attribute may not be deleted!"
-        )  # pragma: nocover
+    def _apply_new_currency(self, new_currency):
+        """Set a new currency for the object and update all money-related fields."""
 
-    def __noop(self, value):
-        """Required dummy function.
+        # cash_in
+        new_value = self.cash_in.convert(new_currency)
+        self._cash_in_amount = new_value.amount
+        self._cash_in_timestamp = new_value.timestamp
 
-        Some functions, that are implemented as Python properties should be
-        accessible in Django querysets aswell. They are provided as annotations
-        in `PortfolioItemManager`'s `get_queryset()`.
+        # cash_out
+        new_value = self.cash_out.convert(new_currency)
+        self._cash_out_amount = new_value.amount
+        self._cash_out_timestamp = new_value.timestamp
 
-        Because `PortfolioItemManager` is used as the primary and default
-        manager, these properties need a setter, but the setter may not perform
-        any action and should be set to this method."""
-        pass  # pragma: nocover
+        # costs
+        new_value = self.costs.convert(new_currency)
+        self._costs_amount = new_value.amount
+        self._costs_timestamp = new_value.timestamp
 
-    cash_in = property(
-        _get_cash_in, _set_cash_in, __del_attribute, "TODO: Add docstring here"
-    )
+        # stock_value
+        new_value = self.stock_value.convert(new_currency)
+        self._stock_value_amount = new_value.amount
+        self._stock_value_timestamp = new_value.timestamp
 
-    cash_out = property(
-        _get_cash_out, _set_cash_out, __del_attribute, "TODO: Add docstring here"
-    )
+    cash_in = property(_get_cash_in, _set_cash_in, doc="TODO: Add docstring here")
 
-    costs = property(
-        _get_costs, _set_costs, __del_attribute, "TODO: Add docstring here"
-    )
+    cash_out = property(_get_cash_out, _set_cash_out, doc="TODO: Add docstring here")
 
-    currency = property(
-        _get_currency, _set_currency, __del_attribute, "TODO: Add docstring here"
-    )
+    costs = property(_get_costs, _set_costs, doc="TODO: Add docstring here")
 
-    is_active = property(_is_active, __noop, "TODO: Add docstring here")
+    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here")
 
     stock_count = property(
-        _get_stock_count, _set_stock_count, __del_attribute, "TODO: Add docstring here"
+        _get_stock_count, _set_stock_count, doc="TODO: Add docstring here"
     )
 
     stock_value = property(
-        _get_stock_value, _set_stock_value, __del_attribute, "TODO: Add docstring here"
+        _get_stock_value, _set_stock_value, doc="TODO: Add docstring here"
     )
