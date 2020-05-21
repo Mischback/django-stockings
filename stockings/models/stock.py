@@ -2,6 +2,7 @@
 
 # Django imports
 from django.db import models
+from django.db.models.functions import TruncDate
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
@@ -85,17 +86,49 @@ class StockItem(models.Model):
     def _get_currency(self):
         return self._currency
 
+    def _get_latest_price(self):
+        return StockItemPrice.get_latest_price(self)
+
     def _set_currency(self, value):
         # FIXME: Get all associated `StockItemPrice` objects and call `_apply_new_currency()`
         raise NotImplementedError("to be done")
 
+    def _set_latest_price(self, value):
+        StockItemPrice.set_latest_price(self, value)
+
     currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
+
+    latest_price = property(
+        _get_latest_price, _set_latest_price, doc="TODO: Add docstring here!"
+    )
+
+
+class StockItemPriceManager(models.Manager):
+    """Custom manager to provide some methods specific to `StockItemPrice`."""
+
+    def get_latest_price_object(self, stock_item):
+        """Return the most recent object for a given `stock_item`.
+
+        The most recent object is defined as the one with the most recent `_timestamp`."""
+
+        return (
+            self.get_queryset().filter(stock_item=stock_item).latest("_price_timestamp")
+        )
+
+    def get_queryset(self):
+        """Annotate the queryset with a `date` field."""
+
+        return super().get_queryset().annotate(date=TruncDate("_price_timestamp"))
 
 
 class StockItemPrice(models.Model):
     """Tracks the price of a given `StockItem`."""
 
-    stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE)
+    objects = StockItemPriceManager()
+
+    stock_item = models.ForeignKey(
+        StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp"
+    )
 
     # The latest price information for the item.
     _price_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
@@ -113,6 +146,38 @@ class StockItemPrice(models.Model):
             self._price_amount,
             self._price_timestamp,
         )
+
+    @classmethod
+    def get_latest_price(cls, stock_item):
+        """Return `StockingsMoney` instance with the most recent price information."""
+
+        return cls.objects.get_latest_price_object(stock_item=stock_item).price
+
+    @classmethod
+    def set_latest_price(cls, stock_item, value):
+        """Set latest price information for a given `stock_item`.
+
+        The method evaluates `value.timestamp` to determine if either:
+            - an existing `StockItemPrice` object can be updated
+            - a new `StockItemPrice` object has to be created
+            - no action is required
+        """
+
+        # get the latest available object
+        latest_obj = cls.objects.get_latest_price_object(stock_item=stock_item)
+
+        # `latest_obj` is more recent than the provided value -> do nothing
+        if latest_obj._price_timestamp >= value.timestamp:
+            return None
+
+        # provided value is actually on a new day/date
+        if latest_obj._price.timestamp.date() < value.timestamp.date():
+            latest_obj = cls.objects.create(
+                stock_item=stock_item, _price_timestamp=value.timestamp
+            )
+
+        latest_obj._set_price(value)
+        latest_obj.save()
 
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and convert price information."""
