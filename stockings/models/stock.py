@@ -74,8 +74,7 @@ class StockItem(models.Model):
             },
         )[0]
 
-    @property
-    def is_active(self):
+    def _is_active(self):
         """Return bool to indicate, that this StockItem is active.
 
         A StockItem is considered active, if it is referenced by at least one
@@ -97,6 +96,8 @@ class StockItem(models.Model):
         StockItemPrice.set_latest_price(self, value)
 
     currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
+
+    is_active = property(_is_active, doc="TODO: Add docstring here!")
 
     latest_price = property(
         _get_latest_price, _set_latest_price, doc="TODO: Add docstring here!"

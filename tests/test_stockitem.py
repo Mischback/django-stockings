@@ -44,6 +44,28 @@ class StockItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             del a.currency
 
+    @mock.patch(
+        "stockings.models.stock.StockItem.portfolioitem_set",
+        new_callable=mock.PropertyMock,
+    )
+    def test_property_is_active(self, mock_portfolioitem_set):
+        """Determine `is_active` status based on `PortfolioItem `objects`."""
+
+        # get a `StockItem` object
+        a = StockItem()
+
+        mock_portfolioitem_set.return_value.filter.return_value.count.return_value = 0
+        self.assertFalse(a.is_active)
+
+        mock_portfolioitem_set.return_value.filter.return_value.count.return_value = 5
+        self.assertTrue(a.is_active)
+
+        with self.assertRaises(AttributeError):
+            a.is_active = False
+
+        with self.assertRaises(AttributeError):
+            del a.is_active
+
     @mock.patch("stockings.models.stock.StockItemPrice")
     def test_property_latest_price(self, mock_price_object):
 
