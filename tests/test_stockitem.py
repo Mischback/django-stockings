@@ -15,6 +15,18 @@ from .util.testcases import StockingsTestCase
 class StockItemTest(StockingsTestCase):
     """Provide tests for class `StockItem`."""
 
+    def test_to_string(self):
+        """Return ISIN as a fallback."""
+
+        # get a `StockItem` object
+        a = StockItem()
+
+        self.assertEqual(a.isin, a.__str__())
+
+        a.name = "foo"
+
+        self.assertEqual("{} ({})".format(a.name, a.isin), a.__str__())
+
     def test_property_currency(self):
         """Returns the object's currency, setter applies new currency to all price items."""
 
