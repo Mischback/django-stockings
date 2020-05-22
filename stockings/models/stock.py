@@ -205,11 +205,14 @@ class StockItemPrice(models.Model):
         )
 
     def _set_price(self, value):
-        # TODO: Only set a new price, if value.timestamp > self._price_timestamp
 
-        if self._price_currency != value.currency:
-            value.amount = value.convert(self._price_currency)
-            value.currency = self._price_currency
+        # only update the price, if the provided value is more recent
+        if self._price_timestamp >= value.timestamp:
+            return
+
+        if self.currency != value.currency:
+            value.amount = value.convert(self.currency)
+            # value.currency = self._price_currency
 
         self._price_amount = value.amount
         # self._price_currency = value.currency
