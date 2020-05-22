@@ -15,8 +15,24 @@ from .util.testcases import StockingsTestCase
 
 
 @tag("models", "stockitemprice")
-class StockItemTest(StockingsTestCase):
+class StockItemPriceTest(StockingsTestCase):
     """Provide tests for class `StockItemPrice`."""
+
+    @mock.patch(
+        "stockings.models.stock.StockItemPrice.price", new_callable=mock.PropertyMock
+    )
+    def test_apply_new_currency(self, mock_price):
+        """Call convert and apply new amount."""
+
+        # get a `StockItemPrice` object
+        a = StockItemPrice()
+
+        a._apply_new_currency("FOO")
+
+        mock_price.return_value.convert.assert_called_with("FOO")
+        self.assertEqual(
+            a._price_amount, mock_price.return_value.convert.return_value.amount
+        )
 
     @mock.patch(
         "stockings.models.stock.StockItemPrice.stock_item",
