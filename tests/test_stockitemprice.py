@@ -35,6 +35,21 @@ class StockItemPriceTest(StockingsTestCase):
         )
 
     @mock.patch(
+        "stockings.models.stock.StockItemPrice.objects", new_callable=mock.PropertyMock
+    )
+    def test_get_latest_price(self, mock_objects):
+        """Return the most recent object's price as StockingsMoney instance."""
+
+        a = StockItemPrice.get_latest_price("FOO")
+        self.assertTrue(mock_objects.return_value.get_latest_price_object.called)
+        mock_objects.return_value.get_latest_price_object.assert_called_with(
+            stock_item="FOO"
+        )
+        self.assertEqual(
+            a, mock_objects.return_value.get_latest_price_object.return_value.price
+        )
+
+    @mock.patch(
         "stockings.models.stock.StockItemPrice.stock_item",
         new_callable=mock.PropertyMock,
     )
