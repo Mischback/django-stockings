@@ -27,7 +27,11 @@ class StockItemTest(StockingsTestCase):
 
         self.assertEqual("{} ({})".format(a.name, a.isin), a.__str__())
 
-    def test_property_currency(self):
+    @mock.patch(
+        "stockings.models.stock.StockItem.stockitemprice_set",
+        new_callable=mock.PropertyMock,
+    )
+    def test_property_currency(self, mock_stockitemprice_set):
         """Returns the object's currency, setter applies new currency to all price items."""
 
         # get a `StockItem` object
@@ -38,7 +42,15 @@ class StockItemTest(StockingsTestCase):
         self.assertEqual(a._currency, b)
 
         # setter
-        # TODO: after implementation
+        mock_item = mock.MagicMock()
+        mock_stockitemprice_set.return_value.iterator.return_value.__iter__.return_value = iter(
+            [mock_item]
+        )
+
+        a.currency = "FOO"
+
+        mock_item._apply_new_currency.assert_called_with("FOO")
+        self.assertEqual(a.currency, "FOO")
 
         # deleting should not be possible
         with self.assertRaises(AttributeError):

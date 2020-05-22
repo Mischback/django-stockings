@@ -88,9 +88,14 @@ class StockItem(models.Model):
     def _get_latest_price(self):
         return StockItemPrice.get_latest_price(self)
 
-    def _set_currency(self, value):
-        # FIXME: Get all associated `StockItemPrice` objects and call `_apply_new_currency()`
-        raise NotImplementedError("to be done")
+    def _set_currency(self, new_currency):
+        """Set the currency for all associated `StockItemPrice` objects."""
+
+        for item in self.stockitemprice_set.iterator():
+            item._apply_new_currency(new_currency)
+            item.save()
+
+        self._currency = new_currency
 
     def _set_latest_price(self, value):
         StockItemPrice.set_latest_price(self, value)
@@ -146,7 +151,7 @@ class StockItemPrice(models.Model):
             self._price_currency,
             self._price_amount,
             self._price_timestamp,
-        )
+        )  # pragma: nocover
 
     @classmethod
     def get_latest_price(cls, stock_item):
