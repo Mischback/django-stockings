@@ -55,7 +55,7 @@ class StockItem(models.Model):
         )  # pragma: nocover
 
     @classmethod
-    def get_sentinel_item(cls):
+    def get_sentinel_item(cls):  # pragma: nocover
         """Return a sentinel / placeholder object to maintain database integrity.
 
         Currently, this is not actively used, because all ForeignKey relations
