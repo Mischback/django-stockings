@@ -115,19 +115,19 @@ class PortfolioItemTest(StockingsTestCase):
         )
 
     @tag("signal-handler")
-    def test_callback_stockitem_update_stock_value_raw(self):
+    def test_callback_stockitemprice_update_stock_value_raw(self):
         """Callback does not execute when called with `raw` = `True`."""
 
         # fourth parameter is `raw`
         self.assertIsNone(
-            PortfolioItem.callback_stockitem_update_stock_value(
+            PortfolioItem.callback_stockitemprice_update_stock_value(
                 None, None, None, True,  # sender, instance, created, raw
             )
         )
 
     @tag("signal-handler")
     @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
-    def test_callback_stockitem_update_stock_value_regular(self, mock_objects):
+    def test_callback_stockitemprice_update_stock_value_regular(self, mock_objects):
         """Callback determines `PortfolioItems` to update and calls `update_stock_value()`.
 
         While this unittest does hit all code lines of the method, actually
@@ -149,7 +149,7 @@ class PortfolioItemTest(StockingsTestCase):
         # that property.
         mock_instance = mock.MagicMock()
         mock_instance_latest_price = mock.PropertyMock()
-        type(mock_instance).latest_price = mock_instance_latest_price
+        type(mock_instance).price = mock_instance_latest_price
 
         # This item will be returned from all Django database layer related functions.
         # See `mock_objects` for details.
@@ -164,7 +164,7 @@ class PortfolioItemTest(StockingsTestCase):
         )
 
         # actually call the method...
-        PortfolioItem.callback_stockitem_update_stock_value(
+        PortfolioItem.callback_stockitemprice_update_stock_value(
             mock_cls_stock_item,  # sender
             mock_instance,  # instance
             False,  # created

@@ -22,8 +22,8 @@ class StockingsTestCaseBase(TestCase):
         post_save.disconnect(
             apps.get_model(
                 "stockings.PortfolioItem"
-            ).callback_stockitem_update_stock_value,
-            sender=apps.get_model("stockings.StockItem"),
+            ).callback_stockitemprice_update_stock_value,
+            sender=apps.get_model("stockings.StockItemPrice"),
             dispatch_uid="STOCKINGS_portfolioitem_stock_value",
         )
 
@@ -40,8 +40,8 @@ class StockingsTestCaseBase(TestCase):
         post_save.connect(
             apps.get_model(
                 "stockings.PortfolioItem"
-            ).callback_stockitem_update_stock_value,
-            sender=apps.get_model("stockings.StockItem"),
+            ).callback_stockitemprice_update_stock_value,
+            sender=apps.get_model("stockings.StockItemPrice"),
             dispatch_uid="STOCKINGS_portfolioitem_stock_value",
         )
 

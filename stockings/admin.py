@@ -3,7 +3,7 @@ from django.contrib import admin
 
 # app imports
 from stockings.models.portfolio import Portfolio, PortfolioItem
-from stockings.models.stock import StockItem
+from stockings.models.stock import StockItem, StockItemPrice
 from stockings.models.trade import Trade
 
 
@@ -19,6 +19,11 @@ class PortfolioItemAdmin(admin.ModelAdmin):
 
 @admin.register(StockItem)
 class StockItemAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(StockItemPrice)
+class StockItemPriceAdmin(admin.ModelAdmin):
     pass
 
 
