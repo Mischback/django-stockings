@@ -1,5 +1,8 @@
 """Provides data structures for communication between objects."""
 
+# Python imports
+import decimal
+
 # Django imports
 from django.utils.timezone import now
 
@@ -76,8 +79,10 @@ class StockingsMoney:
         """Multiply this object's amount with `multiplier` and updates the timestamp."""
 
         try:
-            return StockingsMoney(self.amount * float(multiplier), self.currency)
-        except (ValueError, TypeError):
+            return StockingsMoney(
+                self.amount * decimal.Decimal(multiplier), self.currency
+            )
+        except (ValueError, TypeError, decimal.InvalidOperation):
             raise StockingsInterfaceError(
                 "StockingsMoney.multiply() was called with an incompatible summand."
             )

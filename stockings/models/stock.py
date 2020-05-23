@@ -147,10 +147,7 @@ class StockItemPrice(models.Model):
 
     def __str__(self):
         return "{} - {} {} ({})".format(
-            self.stock_item,
-            self._price_currency,
-            self._price_amount,
-            self._price_timestamp,
+            self.stock_item, self.currency, self._price_amount, self._price_timestamp,
         )  # pragma: nocover
 
     @classmethod
