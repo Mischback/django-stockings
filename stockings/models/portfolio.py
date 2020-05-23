@@ -162,7 +162,7 @@ class PortfolioItem(models.Model):
         self._stock_count = item_count
 
     @classmethod
-    def callback_stockitem_update_stock_value(
+    def callback_stockitemprice_update_stock_value(
         cls, sender, instance, created, raw, *args, **kwargs
     ):
         """Update PortfolioItem's `stock_value` with new price information.
@@ -176,10 +176,10 @@ class PortfolioItem(models.Model):
 
         # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
         # instance stock item.
-        portfolio_item_set = cls.objects.filter(stock_item=instance)
+        portfolio_item_set = cls.objects.filter(stock_item=instance.stock_item)
 
         # Store the new price outside of the loop.
-        new_price = instance.latest_price
+        new_price = instance.price
 
         # Update all relevant ``PortfolioItem`` objects.
         for item in portfolio_item_set.iterator():

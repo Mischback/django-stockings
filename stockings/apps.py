@@ -25,7 +25,7 @@ class StockingsConfig(AppConfig):
         # The callback updates `PortfolioItem`'s `stock_value` based on recent
         # price information.
         post_save.connect(
-            self.get_model("PortfolioItem").callback_stockitem_update_stock_value,
-            sender=self.get_model("StockItem"),
+            self.get_model("PortfolioItem").callback_stockitemprice_update_stock_value,
+            sender=self.get_model("StockItemPrice"),
             dispatch_uid="STOCKINGS_portfolioitem_stock_value",
         )
