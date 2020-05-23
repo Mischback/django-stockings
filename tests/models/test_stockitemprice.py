@@ -11,7 +11,7 @@ from stockings.exceptions import StockingsInterfaceError
 from stockings.models.stock import StockItemPrice
 
 # app imports
-from .util.testcases import StockingsTestCase
+from ..util.testcases import StockingsTestCase
 
 
 @tag("models", "stockitemprice")

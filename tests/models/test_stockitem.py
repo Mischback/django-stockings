@@ -8,7 +8,7 @@ from django.test import override_settings, tag  # noqa
 from stockings.models.stock import StockItem
 
 # app imports
-from .util.testcases import StockingsTestCase
+from ..util.testcases import StockingsTestCase
 
 
 @tag("models", "stockitem")
