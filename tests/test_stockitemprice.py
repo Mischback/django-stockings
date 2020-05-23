@@ -1,5 +1,5 @@
 # Python imports
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest import mock, skip  # noqa
 
 # Django imports
@@ -108,3 +108,47 @@ class StockItemPriceTest(StockingsTestCase):
         # deleter
         with self.assertRaises(AttributeError):
             del a.price
+
+    @mock.patch("stockings.models.stock.StockingsMoney", autospec=True)
+    @mock.patch(
+        "stockings.models.stock.StockItemPrice.objects", new_callable=mock.PropertyMock
+    )
+    def test_set_latest_price(self, mock_objects, mock_stockingsmoney):
+        """Retrieve required `StockItemPrice` object and set new price information."""
+
+        mock_latest_obj = mock.MagicMock()
+        mock_latest_obj._price_timestamp = datetime(2020, 5, 23, hour=21, minute=0)
+        mock_objects.return_value.get_latest_price_object.return_value = mock_latest_obj
+        mock_stockingsmoney.timestamp = datetime(2020, 5, 23, hour=20, minute=0)
+
+        # `_timestamp` of the latest object is more recent than the `timestamp`
+        # of `value`, no action is performed!
+        StockItemPrice.set_latest_price("FOO", mock_stockingsmoney)
+        mock_objects.return_value.get_latest_price_object.assert_called_with(
+            stock_item="FOO"
+        )
+        self.assertFalse(mock_latest_obj.save.called)
+
+        mock_latest_obj.reset_mock()
+        mock_objects.reset_mock()
+        mock_stockingsmoney.timestamp = datetime(2020, 5, 23, hour=22, minute=0)
+
+        # `timestamp` of `value` is more recent, but still on the same day
+        StockItemPrice.set_latest_price("FOO", mock_stockingsmoney)
+        self.assertFalse(mock_objects.create.called)
+        mock_latest_obj._set_price.assert_called_with(mock_stockingsmoney)
+        self.assertTrue(mock_latest_obj.save.called)
+
+        mock_latest_obj.reset_mock()
+        mock_objects.reset_mock()
+        mock_stockingsmoney.timestamp = datetime(2020, 5, 24, hour=7, minute=0)
+
+        # `timestamp` of `value` is on the next day
+        StockItemPrice.set_latest_price("FOO", mock_stockingsmoney)
+        mock_objects.return_value.create.assert_called_with(
+            stock_item="FOO", _price_timestamp=mock_stockingsmoney.timestamp
+        )
+        mock_objects.return_value.create.return_value._set_price.assert_called_with(
+            mock_stockingsmoney
+        )
+        self.assertTrue(mock_objects.return_value.create.return_value.save.called)

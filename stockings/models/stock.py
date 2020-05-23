@@ -177,7 +177,7 @@ class StockItemPrice(models.Model):
             return None
 
         # provided value is actually on a new day/date
-        if latest_obj._price.timestamp.date() < value.timestamp.date():
+        if latest_obj._price_timestamp.date() < value.timestamp.date():
             latest_obj = cls.objects.create(
                 stock_item=stock_item, _price_timestamp=value.timestamp
             )
