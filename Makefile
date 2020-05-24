@@ -10,6 +10,7 @@ black:
 
 clean:
 	- tox -q -e util -- coverage erase
+	rm -rf docs/build/*
 	find . -iname "*.pyc" -delete
 	find . -iname "__pycache__" -delete
 	find . -iname ".coverage.*" -delete
@@ -17,6 +18,12 @@ clean:
 coverage: clean test
 	- tox -q -e util -- coverage combine
 	tox -q -e util -- coverage report
+
+doc:
+	tox -q -e sphinx
+
+doc/srv:
+	tox -q -e sphinx-srv
 
 flake: flake8
 flake8:
