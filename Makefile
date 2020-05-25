@@ -1,4 +1,5 @@
 
+doc: sphinx/serve/html
 run: django/runserver
 
 # ##### utility commands
@@ -18,12 +19,6 @@ clean:
 coverage: clean test
 	- tox -q -e util -- coverage combine
 	tox -q -e util -- coverage report
-
-doc:
-	tox -q -e sphinx
-
-doc/srv:
-	tox -q -e sphinx-srv
 
 flake: flake8
 flake8:
@@ -78,6 +73,15 @@ django/runserver: django/migrate
 # django-admin shell
 django/shell:
 	$(MAKE) django django_cmd="shell"
+
+sphinx/build/html:
+	tox -q -e sphinx
+
+sphinx/build/apidoc:
+	tox -q -e sphinx -- sphinx-apidoc -o source/api stockings */migrations/* --tocfile api --separate
+
+sphinx/serve/html: sphinx/build/html
+	tox -q -e sphinx-srv
 
 .PHONY: \
 	run \
