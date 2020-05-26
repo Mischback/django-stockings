@@ -14,28 +14,49 @@ class StockingsMoney:
     """Provides a structured interface to pass money-related data around.
 
     Throughout django-stockings, all money-related data is always constructed
-    of an actual value, its currency and a timestamp. This class provides a
-    mean to pass these information around between different objects."""
+    of an actual value (amount), its currency and a timestamp. This class provides
+    a mean to pass these information around between different objects.
+
+    No validation / verification is done in this object, but will be applied by
+    Django's ORM layer.
+
+    Parameters
+    ----------
+    amount
+        The actual numerical value.
+    currency : str
+        The currency of the object. Should be a pre-determined string, because
+        the models only accept a set of valid values, but is not enforced in
+        objects of this class.
+    timestamp : datetime.datetime, optional
+        Money-related fields always provide a timestamp, usually describing their
+        last update. If this parameter is omitted, it will be set to the current
+        time, as provided by Django's wrapper to `now`.
+
+    Returns
+    -------
+    StockingsMoney
+        A new class instance.
+
+    Raises
+    ------
+    StockingsInterfaceError
+        If add() is called with an incompatible summand or multiply() with an
+        incompatible multiplier.
+    """
 
     amount = None
     currency = None
     timestamp = None
 
     def __init__(self, amount, currency, timestamp=None):
-        """Create a simple app-specific Money object.
-
-        No validation/verification is done here, it will probably break, when
-        the included values are stored in Django models (because of Django's
-        validation).
-
-        ``timestamp`` may be omitted, the object's creation time will be used
-        to fill that gap."""
-
+        """Create a simple app-specific Money object."""
         self.amount = amount
         self.currency = currency
         self.timestamp = timestamp or now()
 
     def __str__(self):
+        """Return a string representation of the instance."""
         return "{} {} ({})".format(
             self.currency, self.amount, self.timestamp
         )  # pragma: nocover
@@ -44,8 +65,27 @@ class StockingsMoney:
         """Add `summand` to the object and return a new `StockingsMoney` object.
 
         The new object will have `currency` set to the original object's
-        currency and its `timestamp` will be updated."""
+        currency and its `timestamp` will be updated.
 
+        Parameters
+        ----------
+        summand : StockingsMoney
+            The value to be added to the object, should typically be an instance
+            of `StockingsMoney` aswell.
+
+        Returns
+        -------
+        StockingsMoney
+            A new instance of `StockingsMoney`, where `amount` is the requested
+            sum, `currency` is unchanged and `timestamp` is set to the current
+            `datetime.datetime` .
+
+        Raises
+        ------
+        StockingsInterfaceError
+            If `summand` does not have a `convert()` method, a `currency`
+            attribute or the actual addition causes a `TypeError`.
+        """
         # This block ensures, that `summand` has a `currency` attribute and a
         # method `convert()`.
         try:
@@ -69,20 +109,82 @@ class StockingsMoney:
             )
 
     def convert(self, target_currency):
-        """Convert the value of the object to another target currency.
+        """Convert the value of the object to another currency.
 
-        Currency conversion 'should be' implemented, but is highly dependent
-        on the availability of exchange rates between the currencies."""
+        Currency conversion is currently **not implemented** and calling this
+        method will raise `NotImplementedError`.
+
+        It is intended to provide functionality for automatic currency conversions
+        in a future release. Most of the code already *handles* the conversion by
+        calling this method, **without** catching the raised error.
+
+        Parameters
+        ------------
+        target_currency : str
+            The three-letter identifier of the currency to be converted to.
+
+        Returns
+        --------
+        StockingsMoney
+            A new instance of `StockingsMoney` is returned, with adjusted `amount`
+            and updated `currency` values.
+
+        Raises
+        -------
+        NotImplementedError
+            This error is raised until currency conversion is actually implemented
+            in a future release.
+
+        Warnings
+        ----------
+        Currency conversion is currently **not implemented** and calling this method
+        will raise `NotImplementedError`.
+
+        Notes
+        -------
+        Currency conversion is dependent on the availability of currency exchange
+        rates. These rates **should** be matching the object's `timestamp`, meaning
+        that a history of conversion rates must be maintained inside the app.
+
+        Furthermore, to reduce required conversion rate updates, only a specific
+        set of target currencies should be available.
+        """
         raise NotImplementedError("Currency conversion is currently not implemented!")
 
     def multiply(self, multiplier):
-        """Multiply this object's amount with `multiplier` and updates the timestamp."""
+        """Multiply the object's `amount` with `multiplier`.
 
+        `multiplier` is a given (decimal) number. Thus, no currency conversion is
+        required to calculate the new `amount` and the returned `StockingsMoney`
+        instance will provide the original `currency`.
+
+        The `StockingsMoney` instance's `timestamp` will be set to the time of
+        the multiplication. This means, that possibly *older* values are
+        artificially updated to a current timestamp.
+
+        Parameters
+        ------------
+        multiplier : number
+            The number to multiply with. Must be castable to `decimal.Decimal`.
+
+        Returns
+        --------
+        StockingsMoney
+            A new instance of `StockingsMoney`, where `amount` is the requested
+            product, `currency` is unchanged and `timestamp` is set to the current
+            `datetime.datetime` .
+
+        Raises
+        -------
+        StockingsInterfaceError
+            If the `multiplier` is not compatible for multiplication with a
+            `decimal.Decimal` value.
+        """
         try:
             return StockingsMoney(
                 self.amount * decimal.Decimal(multiplier), self.currency
             )
         except (ValueError, TypeError, decimal.InvalidOperation):
             raise StockingsInterfaceError(
-                "StockingsMoney.multiply() was called with an incompatible summand."
+                "StockingsMoney.multiply() was called with an incompatible multiplier."
             )

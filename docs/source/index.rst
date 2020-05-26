@@ -10,7 +10,7 @@ Welcome to django-stockings's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   api/api
+   api/src/index
 
 
 Indices and tables

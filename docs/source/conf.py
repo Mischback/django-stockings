@@ -36,7 +36,9 @@ author = "Mischback"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    # "sphinxcontrib_django"
+    "sphinx.ext.napoleon",
+    # "sphinxcontrib_django",
+    "sphinx_rtd_theme",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +54,8 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+# html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -64,10 +67,10 @@ html_static_path = ["_static"]
 # provide mocks for 'django' imports
 autodoc_mock_imports = ["django"]
 
-autodoc_default_options = {
-    "members": True,
-    "undoc-members": True,
-    "inherited-members": False,
-    "private-members": True,
-    "member-order": "bysource",
-}
+# autodoc_default_options = {
+#     "members": False,
+#     "undoc-members": False,
+#     "inherited-members": False,
+#     "private-members": False,
+#     "member-order": "bysource",
+# }
