@@ -1,0 +1,4 @@
+Django>=3.0
+sphinx
+sphinx-autoapi
+sphinx_rtd_theme
