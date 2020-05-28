@@ -1,14 +1,27 @@
 Source Code Documentation
 =========================
 
+Package Overview
+----------------
+
+   - stockings
+      - admin
+      - :doc:`apps <apps>`
+      - :doc:`data <data>`
+      - exceptions
+      - models
+         - portfolio
+         - stock
+         - :doc:`trade <models.trade>`
+      - settings
+
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :hidden:
 
    apps
    data
    models.trade.rst
-
 
 
 .. automodule:: stockings.models.portfolio
