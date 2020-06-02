@@ -145,6 +145,8 @@ extlinks = {
         "https://docs.djangoproject.com/en/{}/ref/%s".format(django_version),
         "",
     ),
+    # will show "Wikipedia: [title]"
+    "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: "),
 }
 
 # ### HTML Output
