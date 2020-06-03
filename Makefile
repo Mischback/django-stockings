@@ -77,8 +77,9 @@ django/shell:
 sphinx/build/html:
 	tox -q -e sphinx
 
-sphinx/build/apidoc:
-	tox -q -e sphinx -- sphinx-apidoc -o source/api stockings */migrations/* --tocfile api --separate
+sphinx/intersphinx/django:
+	# FIXME: automatically determine the Django version
+	tox -q -e sphinx -- python -msphinx.ext.intersphinx https://docs.djangoproject.com/en/3.0/_objects/ | less
 
 sphinx/serve/html: sphinx/build/html
 	tox -q -e sphinx-srv
