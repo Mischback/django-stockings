@@ -320,19 +320,57 @@ class StockItem(models.Model):
 
 
 class StockItemPriceManager(models.Manager):
-    """Custom manager to provide some methods specific to `StockItemPrice`."""
+    """Custom manager for :class:`~stockings.models.stock.StockItemPrice`.
+
+    This manager provides some methods, specific for
+    :class:`~stockings.models.stock.StockItemPrice` objects. It is applied as
+    the default manager (see
+    :attr:`StockItemPrice.objects <stockings.models.stock.StockItemPrice.objects>`)
+
+    Warnings
+    --------
+    The class documentation only includes code, that is actually shipped by the
+    `stockings` app. Inherited attributes/methods (provided by Django's
+    :class:`~django.db.models.Manager`) are not documented here.
+    """
 
     def get_latest_price_object(self, stock_item):
-        """Return the most recent object for a given `stock_item`.
+        """Return the most recent `StockItemPrice` object.
 
-        The most recent object is defined as the one with the most recent `_timestamp`.
+        The most recent object is defined as the one with the most recent
+        :attr:`~stockings.models.stock.StockItemPrice._timestamp`.
+
+        Parameters
+        ----------
+        stock_item : :class:`~stockings.models.stock.StockItem`
+            The `StockItem` for which the latest price information should be
+            retrieved.
+
+        Returns
+        -------
+        :class:`~stockings.models.stock.StockItemPrice`
+            The most recent `StockItemPrice` object.
         """
         return (
             self.get_queryset().filter(stock_item=stock_item).latest("_price_timestamp")
         )
 
     def get_queryset(self):
-        """Annotate the queryset with a `date` field."""
+        """Provide the base queryset, annotated with a `date` field.
+
+        The :class:`~stockings.models.stock.StockItemPrice` provides date
+        information in its
+        :attr:`~stockings.models.stock.StockItemPrice._price_timestamp`
+        attribute, which provides a :obj:`datetime.datetime` object.
+
+        The provided annotation abstracts/truncates this timestamp and reduces
+        it to the date, using :obj:`~django.db.models.functions.TruncDate`.
+
+        Returns
+        -------
+        :class:`~django.db.models.query.QuerySet`
+            The annotated base queryset.
+        """
         return super().get_queryset().annotate(date=TruncDate("_price_timestamp"))
 
 
