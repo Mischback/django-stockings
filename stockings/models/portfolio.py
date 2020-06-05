@@ -15,13 +15,25 @@ from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
 class Portfolio(models.Model):
-    """Represents a portolio of stocks."""
+    """Represents a portolio of stocks.
 
-    # The currency for all money-related fields.
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    Warnings
+    ----------
+    The class documentation only includes code, that is actually shipped by the
+    `stockings` app. Inherited attributes/methods (provided by Django's
+    :class:`~django.db.models.Model`) are not documented here.
+    """
 
     # A human-readable name of the ``Portolio`` object.
     name = models.CharField(max_length=50,)
+    """The name of this `Portfolio` instance (:py:obj:`str`).
+
+    Notes
+    -----
+    The attribute is implemented as :class:`~django.db.models.CharField`.
+
+    The name **must be** unique for the associated :attr:`user`.
+    """
 
     # Reference to Django's ``User`` object.
     # In fact, the project may have substituted Django's default user object,
@@ -31,44 +43,157 @@ class Portfolio(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
     )
+    """Reference to a Django `User`.
 
-    class Meta:
+    Notes
+    -----
+    This is implemented as a :class:`~django.db.models.ForeignKey` with
+    ``on_delete=CASCADE``, meaning if the referenced
+    `User` object is deleted, all referencing `Portfolio` objects are discarded
+    aswell.
+
+    The backwards relation (see
+    :attr:`ForeignKey.related_name<django.db.models.ForeignKey.related_name>`)
+    is disabled.
+
+    To keep this application as pluggable as possible, the referenced class is
+    dependent on :setting:`AUTH_USER_MODEL`. With this method, the project may
+    substitute the :class:`~django.contrib.auth.models.User` model provided by
+    Django without breaking any functionality in `stockings` (see
+    :djangodoc:`Reusable Apps and AUTH_USER_MODEL <topics/auth/customizing/#reusable-apps-and-auth-user-model>`).
+    """
+
+    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    """The actual database representation of :attr:`currency`.
+
+    Notes
+    -----
+    This is implemented as :class:`~django.db.models.CharField` with
+    ``max_length=3``. The currency is stored as its
+    :wiki:`currency code as described by ISO 4217 <ISO_4217>`.
+
+    The provided default value can be configured using
+    :attr:`~stockings.settings.STOCKINGS_DEFAULT_CURRENCY` in the project's
+    settings.
+    """
+
+    class Meta:  # noqa: D106
         app_label = "stockings"
         unique_together = ["name", "user"]
         verbose_name = _("Portfolio")
         verbose_name_plural = _("Portfolios")
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return "{} ({})".format(self.name, self.user)  # pragma: nocover
 
     def _get_currency(self):
+        """`getter` for :attr:`currency`.
+
+        Returns
+        -------
+        :obj:`str`
+            The :attr:`currency` of the object.
+        """
         return self._currency
 
     def _set_currency(self, new_currency):
+        """`setter` for :attr:`currency`.
 
-        # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
-        # instance stock item.
+        Set the currency for all associated instances of
+        :class:`~stockings.models.portfolio.PortfolioItem` and
+        :class:`~stockings.models.trade.Trade`.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            The new currency to be applied.
+        """
+        # Fetch all `PortfolioItem` objects, that are referencing this object
+        # FIXME: This should not be necessary, because Django provides an automatic backwards relation!
         portfolio_item_set = PortfolioItem.objects.filter(portfolio=self)
 
-        # Update all relevant ``PortfolioItem`` objects.
+        # Update all relevant `PortfolioItem` objects.
         for item in portfolio_item_set.iterator():
+            item._apply_new_currency(new_currency)
+            item.save()
+
+        # Fetch all `Trade` objects, that are referencing this object
+        # FIXME: This should not be necessary, because Django provides an automatic backwards relation!
+        trade_set = apps.get_model("stockings.Trade").objects.filter(portfolio=self)
+
+        # Update all relevant `Trade` objects.
+        for item in trade_set.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 
         # actually update the object's attribute
         self._currency = new_currency
 
-    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here!")
+    currency = property(_get_currency, _set_currency)
+    """The currency for all money-related attributes (:obj:`str`).
+
+    The value of `currency` is also used for logically related objects,
+    including instances of :class:`~stockings.models.portfolio.PortfolioItem`
+    and :class:`~stockings.models.trade.Trade`.
+
+    Notes
+    -------
+    This attribute is implemented as a `property`. You may refer to
+    :meth:`_get_currency` and :meth:`_set_currency`
+    for implementation details.
+
+    **get**
+
+    Accessing the attribute returns a :obj:`str` with the current currency.
+
+    **set**
+
+    Setting this attribute will update all related instances of
+    :class:`~stockings.models.portfolio.PortfolioItem` and
+    :class:`~stockings.models.trade.Trade` by calling their
+    :meth:`PortfolioItem._apply_new_currency <~stockings.models.portfolio.PortfolioItem._apply_new_currency>`
+    and
+    :meth:`Trade._apply_new_currency <~stockings.models.trade.Trade._apply_new_currency>` methods.
+
+    Finally, this object's :attr:`_currency` is updated.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
 
 
 class PortfolioItemManager(models.Manager):
-    """Custom manager to provide custom properties for Django querysets."""
+    """Custom manager for :class:`~stockings.models.portfolio.PortfolioItem`.
+
+    This manager is applied as the default manager (see
+    :attr:`PortfolioItem.objects <stockings.models.portfolio.PortfolioItem.objects>`).
+
+    Warnings
+    --------
+    The class documentation only includes code, that is actually shipped by the
+    `stockings` app. Inherited attributes/methods (provided by Django's
+    :class:`~django.db.models.Manager`) are not documented here.
+    """
 
     def get_queryset(self):
-        """Return a modified queryset.
+        """Provide the base queryset, annotated with an `is_active` field.
 
-        The original queryset is annotated with additional fields to provide
-        ``PortfolioItem``'s properties in Django querysets."""
+        :class:`~stockings.models.portfolio.PortfolioItem` instances are used to
+        track a given :class:`~stockings.models.stock.StockItem` in the context
+        of the app. Logically, a `PortfolioItem` can be considered *inactive*,
+        if its :attr:`~stockings.models.portfolio.PortfolioItem.stock_count` is
+        ``0``, meaning, currently the tracked `StockItem` is currently not in
+        the possession of the user.
+
+        The provided `is_active` flag can be used to distinguish between these
+        states.
+
+        Returns
+        -------
+        :class:`~django.db.models.query.QuerySet`
+            The annotated base queryset.
+        """
         return (
             super()
             .get_queryset()
@@ -126,18 +251,17 @@ class PortfolioItem(models.Model):
     # ``_deposit_amount``. See ``update_deposit()`` for details.
     _stock_count = models.PositiveIntegerField(default=0)
 
-    class Meta:
+    class Meta:  # noqa: D106
         app_label = "stockings"
         unique_together = ["portfolio", "stock_item"]
         verbose_name = _("Portoflio Item")
         verbose_name_plural = _("Portfolio Items")
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
 
     def apply_trade(self, trade_obj, skip_integrity_check=False):
         """Track a single trade operation and update object's fields."""
-
         # ensure, that the `trade_obj` is actually associated with this `PortfolioItem`
         if not skip_integrity_check and (
             (self.portfolio != trade_obj.portfolio)
@@ -167,8 +291,7 @@ class PortfolioItem(models.Model):
             )
 
     def reapply_trades(self):
-        """Resets all of the object's money-related fields and then reapplies all trades."""
-
+        """Reset all of the object's money-related fields and then reapplies all trades."""
         # reset all money-related fields by assigning `_amount`= 0
         self._cash_in_amount = 0
         self._cash_out_amount = 0
@@ -197,6 +320,7 @@ class PortfolioItem(models.Model):
             self.apply_trade(trade, skip_integrity_check=True)
 
     def update_cash_in(self, new_cash_flow):
+        """TODO."""
         # calculate new value (old value + new cash flow)
         # Currency conversion is implicitly provided, because
         # `StockingsMoney.add()` ensures a target currency.
@@ -207,6 +331,7 @@ class PortfolioItem(models.Model):
         self._cash_in_timestamp = new_value.timestamp
 
     def update_cash_out(self, new_cash_flow):
+        """TODO."""
         # calculate new value (old value + new cash flow)
         # currency changes are implicitly prohibited, because
         # `StockingsMoney.add()` ensures a target currency.
@@ -218,7 +343,6 @@ class PortfolioItem(models.Model):
 
     def update_costs(self, new_costs):
         """Update the value of costs, by adding the costs of a trade."""
-
         # calculate new value (old value + new costs)
         # Currency conversion is implicitly provided, because
         # `StockingsMoney.add()` ensures the target currency.
@@ -228,7 +352,7 @@ class PortfolioItem(models.Model):
         self._costs_timestamp = new_value.timestamp
 
     def update_stock_value(self, item_price=None, item_count=None):
-
+        """TODO."""
         if item_price is None:
             item_price = self.stock_item.latest_price
 
@@ -249,8 +373,8 @@ class PortfolioItem(models.Model):
         """Update PortfolioItem's `stock_value` with new price information.
 
         This is a signal handler, that is attached as a post_save handler in
-        the app's ``StockingsConfig``'s ``ready`` method."""
-
+        the app's ``StockingsConfig``'s ``ready`` method.
+        """
         # Do nothing, if this is a raw save-operation.
         if raw:
             return None
@@ -272,7 +396,6 @@ class PortfolioItem(models.Model):
         cls, sender, instance, created, raw, *args, **kwargs
     ):
         """Update several of PortfolioItem's fields to track the trade operation."""
-
         # Do nothing, if this is a raw save-operation.
         if raw:
             return None
@@ -358,7 +481,6 @@ class PortfolioItem(models.Model):
 
     def _set_stock_count(self, value):
         """Set a new `stock_count` and recalculate the object's `stock_value`."""
-
         self.update_stock_value(item_count=value)
 
     def _set_stock_value(self, value):
@@ -369,7 +491,6 @@ class PortfolioItem(models.Model):
 
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
-
         # cash_in
         new_value = self.cash_in.convert(new_currency)
         self._cash_in_amount = new_value.amount
