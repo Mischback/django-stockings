@@ -563,7 +563,7 @@ class StockItemPrice(models.Model):
 
         This attribute can not be set directly. The :attr:`currency` is
         actually fetched from the associated
-        :class:`stockings.models.stoc.StockItem` object.
+        :class:`stockings.models.stock.StockItem` object.
 
         Parameters
         ----------

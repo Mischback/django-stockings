@@ -210,46 +210,117 @@ class PortfolioItemManager(models.Manager):
 class PortfolioItem(models.Model):
     """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
 
-    # Use the custom manager as default
     # TODO: Should Meta.default_manager_name be set aswell?
     objects = PortfolioItemManager()
+    """The default manager for these objects."""
 
-    # Reference to the ``Portfolio``.
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    """Reference to the :class:`~stockings.models.portfolio.Portfolio`.
 
-    # Reference to the ``StockItem``.
-    # The deletion of ``StockItem``s must be prevented, if a ``PortfolioItem``
-    # is still referencing them. That's the reason for ``on_delete=models.PROTECT``.
-    # The referenced ``StockItem`` does not have to know, which portoflios
-    # referenced it, so ``related_name='+'`` disables the backwards relation.
+    Notes
+    -------
+    This is implemented as a :class:`~django.db.models.ForeignKey` with
+    ``on_delete=CASCADE``, meaning if the referenced
+    :class:`~stockings.models.portfolio.Portfolio` object is deleted, all
+    referencing `PortfolioItem` objects are discarded aswell.
+    """
+
     stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
+    """Reference to a :class:`~stockings.models.stock.StockItem`.
 
-    # Stores the details of ``cash_in``, which represents the accumulated
-    # prices of stocks, at the time of buying them.
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.ForeignKey` to
+    :class:`~stockings.models.stock.StockItem` with ``on_delete=PROTECT``,
+    meaning that it is not possible to delete the
+    :class:`~stockings.models.stock.StockItem` while it is referenced by a
+    `PortfolioItem` object.
+    """
+
     _cash_in_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    """The `amount` part of :attr:`cash_in` (:obj:`decimal.Decimal`).
+
+    Notes
+    -----
+    This is implemented as :class:`django.db.models.DecimalField`.
+    """
+
     _cash_in_timestamp = models.DateTimeField(default=now)
+    """The `timestamp` part of :attr:`cash_in` (:obj:`datetime.datetime`).
 
-    # Stores the details of ``cash_out``, which represents the accumulated
-    # prices of stocks, at the time of selling them.
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
+    providing :obj:`django.utils.timezone.now` as its default value.
+    """
+
     _cash_out_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
+    """The `amount` part of :attr:`cash_out` (:obj:`decimal.Decimal`).
+
+    Notes
+    -----
+    This is implemented as :class:`django.db.models.DecimalField`.
+    """
+
     _cash_out_timestamp = models.DateTimeField(default=now)
+    """The `timestamp` part of :attr:`cash_out` (:obj:`datetime.datetime`).
 
-    # Stores the details of ``costs``, which represents the accumulated costs
-    # spent for buying or selling stock items.
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
+    providing :obj:`django.utils.timezone.now` as its default value.
+    """
+
     _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    _costs_timestamp = models.DateTimeField(default=now)
+    """The `amount` part of :attr:`costs` (:obj:`decimal.Decimal`).
 
-    # Stores the details of the ``stock_value``, which tracks the current value
-    # of the associated ``StockItem``s.
+    Notes
+    -----
+    This is implemented as :class:`django.db.models.DecimalField`.
+    """
+
+    _costs_timestamp = models.DateTimeField(default=now)
+    """The `timestamp` part of :attr:`costs` (:obj:`datetime.datetime`).
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
+    providing :obj:`django.utils.timezone.now` as its default value.
+    """
+
     _stock_value_amount = models.DecimalField(
         decimal_places=4, default=0, max_digits=19
     )
+    """The `amount` part of :attr:`stock_value` (:obj:`decimal.Decimal`).
+
+    Notes
+    -----
+    This is implemented as :class:`django.db.models.DecimalField`.
+    """
+
     _stock_value_timestamp = models.DateTimeField(default=now)
+    """The `timestamp` part of :attr:`stock_value` (:obj:`datetime.datetime`).
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
+    providing :obj:`django.utils.timezone.now` as its default value.
+    """
 
     # Stores the quantity of ``StockItem`` in this ``Portfolio``.
     # This directly influences the ``deposit``, specifically the
     # ``_deposit_amount``. See ``update_deposit()`` for details.
     _stock_count = models.PositiveIntegerField(default=0)
+    """The number of shares of the referenced `StockItem` (:obj:`int`).
+
+    Notes
+    -----
+    This attribute is implemented as
+    :class:`~django.db.models.PositiveIntegerField` with ``default=0``.
+
+    Obviously it doesn't make sense to obtain a negative `stock_count`, so this
+    only allows positive values.
+    """
 
     class Meta:  # noqa: D106
         app_label = "stockings"
@@ -422,73 +493,6 @@ class PortfolioItem(models.Model):
         item.apply_trade(instance)
         item.save()
 
-    def _get_cash_in(self):
-        return self._return_money(
-            self._cash_in_amount, timestamp=self._cash_in_timestamp
-        )
-
-    def _get_cash_out(self):
-        return self._return_money(
-            self._cash_out_amount, timestamp=self._cash_out_timestamp
-        )
-
-    def _get_costs(self):
-        return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
-
-    def _get_currency(self):
-        return self.portfolio.currency
-
-    def _get_stock_count(self):
-        return self._stock_count
-
-    def _get_stock_value(self):
-        return self._return_money(
-            self._stock_value_amount, timestamp=self._stock_value_timestamp
-        )
-
-    def _return_money(self, amount, currency=None, timestamp=None):
-        return StockingsMoney(
-            amount,
-            currency or self.currency,
-            # `StockingsMoney` will set the timestamp to `now()`, if no
-            # timestamp is provided.
-            timestamp,
-        )
-
-    def _set_cash_in(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_cash_in()'."
-        )
-
-    def _set_cash_out(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_cash_out()'."
-        )
-
-    def _set_costs(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_costs()'."
-        )
-
-    def _set_currency(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "The currency may only be set on `Portfolio` level."
-        )
-
-    def _set_stock_count(self, value):
-        """Set a new `stock_count` and recalculate the object's `stock_value`."""
-        self.update_stock_value(item_count=value)
-
-    def _set_stock_value(self, value):
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_stock_value()'."
-        )
-
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
         # cash_in
@@ -511,18 +515,422 @@ class PortfolioItem(models.Model):
         self._stock_value_amount = new_value.amount
         self._stock_value_timestamp = new_value.timestamp
 
-    cash_in = property(_get_cash_in, _set_cash_in, doc="TODO: Add docstring here")
+    def _get_cash_in(self):
+        """`getter` for :attr:`cash_in`.
 
-    cash_out = property(_get_cash_out, _set_cash_out, doc="TODO: Add docstring here")
+        Returns
+        --------
+        :class:`~stockings.data.StockingsMoney`
+            The total cash flow into this object.
 
-    costs = property(_get_costs, _set_costs, doc="TODO: Add docstring here")
+        See Also
+        --------
+        :meth:`_return_money`
+        """
+        return self._return_money(
+            self._cash_in_amount, timestamp=self._cash_in_timestamp
+        )
 
-    currency = property(_get_currency, _set_currency, doc="TODO: Add docstring here")
+    def _get_cash_out(self):
+        """`getter` for :attr:`cash_out`.
 
-    stock_count = property(
-        _get_stock_count, _set_stock_count, doc="TODO: Add docstring here"
-    )
+        Returns
+        --------
+        :class:`~stockings.data.StockingsMoney`
+            The total cash flow out of this object.
 
-    stock_value = property(
-        _get_stock_value, _set_stock_value, doc="TODO: Add docstring here"
-    )
+        See Also
+        --------
+        :meth:`_return_money`
+        """
+        return self._return_money(
+            self._cash_out_amount, timestamp=self._cash_out_timestamp
+        )
+
+    def _get_costs(self):
+        """`getter` for :attr:`costs`.
+
+        Returns
+        --------
+        :class:`~stockings.data.StockingsMoney`
+            The costs associated with this object.
+
+        See Also
+        --------
+        :meth:`_return_money`
+        """
+        return self._return_money(self._costs_amount, timestamp=self._costs_timestamp)
+
+    def _get_currency(self):
+        """`getter` for :attr:`currency`.
+
+        Returns
+        -------
+        :obj:`str`
+            The :attr:`currency` of the object.
+
+        Notes
+        -----
+        The `currency` is actually fetched from the associated
+        :class:`~stockings.models.portfolio.Portfolio` object.
+        """
+        return self.portfolio.currency
+
+    def _get_stock_count(self):
+        """`getter` for :attr:`stock_count`.
+
+        Returns
+        -------
+        :obj:`int`
+            The count of stocks of this object.
+        """
+        return self._stock_count
+
+    def _get_stock_value(self):
+        """`getter` for :attr:`stock_value`.
+
+        Returns
+        --------
+        :class:`~stockings.data.StockingsMoney`
+            The total value of stocks of this object.
+
+        See Also
+        --------
+        :meth:`_return_money`
+        """
+        return self._return_money(
+            self._stock_value_amount, timestamp=self._stock_value_timestamp
+        )
+
+    def _return_money(self, amount, currency=None, timestamp=None):
+        """Return a `StockingsMoney` instance with the given parameters.
+
+        This is a utility method to provide a generic interface for all
+        money-related fields of `PortfolioItem`.
+
+        Parameters
+        ----------
+        amount : :obj:`decimal.Decimal`
+        currency : :obj:`str`, optional
+        timestamp : :obj:`datetime.datetime`, optional
+
+        Returns
+        --------
+        :class:`~stockings.data.StockingsMoney`
+            Instance's values depends on parameters.
+
+        Notes
+        -----
+        This method is used to return money-related information using a
+        :class:`~stockings.data.StockingsMoney` instance.
+
+        ``amount`` and ``timestamp`` are fetched from the object, depending
+        on the accessed attribute.
+
+        If ``currency`` is not provided, the value of :attr:`currency` is used.
+        """
+        return StockingsMoney(
+            amount,
+            currency or self.currency,
+            # `StockingsMoney` will set the timestamp to `now()`, if no
+            # timestamp is provided.
+            timestamp,
+        )
+
+    def _set_cash_in(self, value):
+        """`setter` for :attr:`cash_in`.
+
+        This attribute can not be set directly.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            This parameter is only provided to match the required prototype for
+            this `setter`, it is actually not used.
+
+        Raises
+        ------
+        :exc:`~stockings.exceptions.StockingsInterfaceError`
+            This attribute can not be set directly.
+
+        See Also
+        --------
+        :meth:`update_cash_in`
+        """
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_in()'."
+        )
+
+    def _set_cash_out(self, value):
+        """`setter` for :attr:`cash_out`.
+
+        This attribute can not be set directly.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            This parameter is only provided to match the required prototype for
+            this `setter`, it is actually not used.
+
+        Raises
+        ------
+        :exc:`~stockings.exceptions.StockingsInterfaceError`
+            This attribute can not be set directly.
+
+        See Also
+        --------
+        :meth:`update_cash_out`
+        """
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_cash_out()'."
+        )
+
+    def _set_costs(self, value):
+        """`setter` for :attr:`costs`.
+
+        This attribute can not be set directly.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            This parameter is only provided to match the required prototype for
+            this `setter`, it is actually not used.
+
+        Raises
+        ------
+        :exc:`~stockings.exceptions.StockingsInterfaceError`
+            This attribute can not be set directly.
+
+        See Also
+        --------
+        :meth:`update_costs`
+        """
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_costs()'."
+        )
+
+    def _set_currency(self, value):
+        """`setter` for :attr:`currency`.
+
+        This attribute can not be set directly. The :attr:`currency` is
+        actually fetched from the associated
+        :class:`stockings.models.portfolio.Portfolio` object.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            This parameter is only provided to match the required prototype for
+            this `setter`, it is actually not used.
+
+        Raises
+        ------
+        :exc:`~stockings.exceptions.StockingsInterfaceError`
+            This attribute can not be set directly.
+
+        See Also
+        --------
+        :meth:`_apply_new_currency`
+        """
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "The currency may only be set on `Portfolio` level."
+        )
+
+    def _set_stock_count(self, value):
+        """`setter` for :attr:`stock_count`.
+
+        By using this `setter`, the :attr:`stock_count` is set to the new
+        `` value`` and the object's :attr:`stock_value` is updated.
+
+        Parameters
+        ----------
+        value : :obj:`int`
+            The new count to be applied.
+
+        See Also
+        --------
+        :meth:`update_stock_value`
+        """
+        self.update_stock_value(item_count=value)
+
+    def _set_stock_value(self, value):
+        """`setter` for :attr:`stock_value`.
+
+        This attribute can not be set directly.
+
+        Parameters
+        ----------
+        new_currency : :obj:`str`
+            This parameter is only provided to match the required prototype for
+            this `setter`, it is actually not used.
+
+        Raises
+        ------
+        :exc:`~stockings.exceptions.StockingsInterfaceError`
+            This attribute can not be set directly.
+
+        See Also
+        --------
+        :meth:`update_stock_value`
+        """
+        raise StockingsInterfaceError(
+            "This attribute may not be set directly! "
+            "You might want to use 'update_stock_value()'."
+        )
+
+    cash_in = property(_get_cash_in, _set_cash_in)
+    """Cash flow into this `PortfolioItem`
+    (:class:`~stockings.data.StockingsMoney`).
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, you may refer to
+    :meth:`_get_cash_in` and :meth:`_set_cash_in`.
+
+    **get**
+
+    Accessing the attribute returns a `StockingsMoney` object.
+
+    - ``amount`` is stored in :attr:`_cash_in_amount` as :obj:`decimal.Decimal`.
+    - ``currency`` is fetched from the object's :attr:`currency`.
+    - ``timestamp`` is fetched from the object's :attr:`_cash_in_timestamp`.
+
+    **set**
+
+    This property may not be set directly, trying to do so will raise a
+    :exc:`~stockings.exceptions.StockingsInterfaceException`.
+
+    To update `cash_in`, use :meth:`update_cash_in`.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
+
+    cash_out = property(_get_cash_out, _set_cash_out)
+    """Cash flow out of this `PortfolioItem`
+    (:class:`~stockings.data.StockingsMoney`).
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, you may refer to
+    :meth:`_get_cash_out` and :meth:`_set_cash_out`.
+
+    **get**
+
+    Accessing the attribute returns a `StockingsMoney` object.
+
+    - ``amount`` is stored in :attr:`_cash_out_amount` as :obj:`decimal.Decimal`.
+    - ``currency`` is fetched from the object's :attr:`currency`.
+    - ``timestamp`` is fetched from the object's :attr:`_cash_out_timestamp`.
+
+    **set**
+
+    This property may not be set directly, trying to do so will raise a
+    :exc:`~stockings.exceptions.StockingsInterfaceException`.
+
+    To update `cash_out`, use :meth:`update_cash_out`.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
+
+    costs = property(_get_costs, _set_costs)
+    """Costs associated with this `PortfolioItem`
+    (:class:`~stockings.data.StockingsMoney`).
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, you may refer to
+    :meth:`_get_costs` and :meth:`_set_costs`.
+
+    **get**
+
+    Accessing the attribute returns a `StockingsMoney` object.
+
+    - ``amount`` is stored in :attr:`_costs_amount` as :obj:`decimal.Decimal`.
+    - ``currency`` is fetched from the object's :attr:`currency`.
+    - ``timestamp`` is fetched from the object's :attr:`_costs_timestamp`.
+
+    **set**
+
+    This property may not be set directly, trying to do so will raise a
+    :exc:`~stockings.exceptions.StockingsInterfaceException`.
+
+    To update `costs`, use :meth:`update_costs`.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
+
+    currency = property(_get_currency, _set_currency)
+    """The currency for all money-related fields (:obj:`str`, read-only).
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, and its value is actually
+    fetched from the referenced :class:`~stockings.models.portfolio.Portfolio`
+    object.
+
+    Setting this attribute is not possible and will raise
+    :exc:`~stockings.exceptions.StockingsInterfaceError`. Deleting the attribute
+    will raise :exc:`AttributeError`.
+    """
+
+    stock_count = property(_get_stock_count, _set_stock_count)
+    """The number of shares of the referenced `StockItem` (:obj:`int`).
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, you may refer to
+    :meth:`_get_stock_count` and :meth:`_set_stock_count`.
+
+    **get**
+
+    Accessing the attribute returns :attr:`_stock_count`.
+
+    **set**
+
+    This attribute may be set by providing an :obj:`int`.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
+
+    stock_value = property(_get_stock_value, _set_stock_value)
+    """The value of stocks of this `PortfolioItem`
+    (:class:`~stockings.data.StockingsMoney`).
+
+    This is the total value. The *price per item* of the referenced
+    :attr:`stock_item` is multiplied with this object's :attr:`stock_count`.
+
+    Notes
+    -----
+    This attribute is implemented as a `property`, you may refer to
+    :meth:`_get_stock_value` and :meth:`_set_stock_value`.
+
+    **get**
+
+    Accessing the attribute returns a `StockingsMoney` object.
+
+    - ``amount`` is stored in :attr:`_stock_value_amount` as :obj:`decimal.Decimal`.
+    - ``currency`` is fetched from the object's :attr:`currency`.
+    - ``timestamp`` is fetched from the object's :attr:`_stock_value_timestamp`.
+
+    **set**
+
+    This property may not be set directly, trying to do so will raise a
+    :exc:`~stockings.exceptions.StockingsInterfaceException`.
+
+    To update `stock_value`, use :meth:`update_stock_value`.
+
+    **del**
+
+    This is not implemented, thus an :exc:`AttributeError` will be raised.
+    """
