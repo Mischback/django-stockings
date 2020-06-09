@@ -14,6 +14,101 @@ from stockings.models.portfolio import Portfolio, PortfolioItem
 from stockings.models.stock import StockItem
 
 
+class TradeQuerySet(models.QuerySet):
+    """App-specific implementation of :class:`django.db.modesl.QuerySet`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.QuerySet` implementation provides
+    app-specific augmentations.
+
+    The provided methods augment/extend the retrieved
+    :class:`stockings.models.trade.Trade` instances by annotating them with
+    additional information.
+    """
+
+    def full(self):
+        """Return a queryset with all app-specific annotations.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The fully annotated queryset.
+        """
+        return self._annotate_trade_volume()
+
+    def _annotate_trade_volume(self):
+        """Annotate each object with `_trade_volume_amount`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+
+        Notes
+        -----
+        The attribute :attr:`~stockings.models.trade.Trade.trade_volume` of
+        :class:`stockings.models.trade.Trade` is not actually stored as a
+        Django model field. Instead, it is only provided by this annotation.
+        """
+        return self.annotate(
+            _trade_volume_amount=models.ExpressionWrapper(
+                models.F("item_count") * models.F("_price_amount"),
+                output_field=models.DecimalField(),
+            )
+        )
+
+
+class TradeManager(models.Manager):
+    """App-specific implementation of :class:`django.db.models.Manager`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.Manager` implementation is used as the
+    default manager of :class:`~stockings.models.trade.Trade` (see
+    :attr:`stockings.models.trade.Trade.objects`).
+
+    This implementation inherits its functionality from
+    :class:`django.db.models.Manager` and should be usable without any
+    differences.
+
+    It provides its own, app-specific methods as augmentation, which must be
+    used explicitly while retrieving :class:`~stockings.models.trade.Trade`
+    instances from the database. These augmented methods rely on the
+    app-/model-specific :class:`~django.db.models.QuerySet` implementation
+    provided by :class:`~stockings.models.trade.TradeQuerySet`.
+    """
+
+    def full(self):
+        """Get the app-specific queryset including all annotations.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The queryset as provided by
+            :meth:`~stockings.models.trade.TradeQuerySet.full`
+        """
+        return self._get_stockings_queryset().full()
+
+    def _get_stockings_queryset(self):
+        """Activate the app-specific queryset.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The queryset as provided by
+            :class:`~stockings.models.trade.TradeQuerySet`.
+
+        Notes
+        -----
+        This :class:`~django.db.models.Manager` implementation does not replace
+        the default queryset (see
+        :meth:`django.db.models.QuerySet.get_queryset`) but rather provides the
+        extended/augmented queryset with this method.
+        """
+        return TradeQuerySet(self.model, using=self._db)
+
+
 class Trade(models.Model):
     """Represents a single trade operation, i.e. the purchase or sale of stock.
 
@@ -47,6 +142,11 @@ class Trade(models.Model):
     The class documentation only includes code, that is actually shipped by the
     `stockings` app. Inherited attributes/methods (provided by Django's
     :class:`~django.db.models.Model`) are not documented here.
+    """
+
+    objects = TradeManager()
+    """The model's default manager is set to
+    :class:`~stockings.models.trade.TradeManager`.
     """
 
     # Define the choices for `type` field.
