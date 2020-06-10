@@ -311,6 +311,43 @@ class Trade(models.Model):
             if self.item_count > portfolio_item.stock_count:
                 self.item_count = portfolio_item.stock_count
 
+    @property
+    def trade_volume(self):  # noqa: D401
+        """The total trade volume (:class:`~stockings.data.StockingsMoney`, read-only).
+
+        *trade volume* is semantically defined as
+        ``price per item * item count``. It does **not** include the trade's
+        :attr:`costs`.
+
+        Notes
+        -----
+        `trade_volume` is implemented as a :obj:`property`.
+
+        The value is not stored as an attribute of the `Trade` class; instead,
+        it is determined dynamically while fetching `Trade` instances from the
+        database using :class:`~stockings.models.trade.TradeManager` (the
+        app-specific implementation of :class:`django.db.models.Manager`) by
+        :meth:`annotating <django.db.models.query.QuerySet.annotate>` the
+        retrieved objects with ``_trade_volume_amount`` (see
+        :meth:`stockings.models.trade.TradeQuerySet._annotate_trade_volume`).
+
+        The returned instance of :class:`~stockings.data.StockingsMoney` is then
+        built from the annotated `amount`, the instance's :attr:`currency` and
+        the instance's :attr:`timestamp`.
+        """
+        # FIXME: handle the situation, that `_trade_volume_amount` is not
+        #        available (AttributeError?) and provide a
+        #        `StockingsInterfaceError` with a meaningful error message.
+        try:
+            return StockingsMoney(
+                self._trade_volume_amount, self.currency, self.timestamp
+            )
+        except AttributeError:
+            raise StockingsInterfaceError(
+                "Could not return attribute. Probably the object was not fetched using "
+                "the custom manager."
+            )
+
     def _get_costs(self):
         """`getter` for :attr:`costs`.
 
