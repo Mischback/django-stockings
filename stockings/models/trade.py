@@ -1,4 +1,13 @@
-"""Provides the `Trade` class."""
+"""Provides the :class:`~stockings.models.trade.Trade` and its related classes.
+
+This includes the Django model :class:`~stockings.models.trade.Trade`, the
+app-/model-specific `Manager` :class:`~stockings.models.trade.TradeManager` and
+the `QuerySet` :class:`~stockings.models.trade.TradeQuerySet`.
+
+Instances of :class:`~stockings.models.trade.Trade` are the main mean to
+model cash flows into the :class:`~stockings.models.portfolio.Portfolio` (by
+buying stock) or out of the `Portfolio` (by selling stock).
+"""
 
 # Django imports
 from django.core.exceptions import ValidationError
