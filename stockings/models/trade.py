@@ -60,53 +60,33 @@ class TradeQuerySet(models.QuerySet):
 
 
 class TradeManager(models.Manager):
-    """App-specific implementation of :class:`django.db.models.Manager`.
+    """App-/model-specific implementation of :class:`django.db.models.Manager`.
 
     Notes
     -----
-    This :class:`~django.db.models.Manager` implementation is used as the
-    default manager of :class:`~stockings.models.trade.Trade` (see
-    :attr:`stockings.models.trade.Trade.objects`).
+    This :class:`~django.db.models.Manager` implementation is used as an
+    additional manager of :class:`~stockings.models.trade.Trade` (see
+    :attr:`stockings.models.trade.Trade.stockings_manager`.
 
     This implementation inherits its functionality from
-    :class:`django.db.models.Manager` and should be usable without any
-    differences.
-
-    It provides its own, app-specific methods as augmentation, which must be
-    used explicitly while retrieving :class:`~stockings.models.trade.Trade`
-    instances from the database. These augmented methods rely on the
-    app-/model-specific :class:`~django.db.models.QuerySet` implementation
-    provided by :class:`~stockings.models.trade.TradeQuerySet`.
+    :class:`django.db.models.Manager` and provides identical funtionality.
+    Furthermore, it augments the retrieved objects with additional attributes,
+    using the custom :class:`~django.db.models.QuerySet` implementation
+    :class:`~stockings.models.trade.TradeQuerySet`.
     """
 
-    def full(self):
-        """Get the app-specific queryset including all annotations.
+    def get_queryset(self):
+        """Use the app-/model-specific :class:`~stockings.models.trade.TradeQuerySet` by default.
 
         Returns
         -------
-        :class:`django.db.models.QuerySet`
-            The queryset as provided by
-            :meth:`~stockings.models.trade.TradeQuerySet.full`
+        :class:`django.models.db.QuerySet`
+            This queryset is provided by
+            :class:`stockings.models.trade.TradeQuerySet` and applies its
+            :meth:`~stockings.models.trade.TradeQuerySet.full` method. The
+            retrieved objects will be annotated with additional attributes.
         """
-        return self._get_stockings_queryset().full()
-
-    def _get_stockings_queryset(self):
-        """Activate the app-specific queryset.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The queryset as provided by
-            :class:`~stockings.models.trade.TradeQuerySet`.
-
-        Notes
-        -----
-        This :class:`~django.db.models.Manager` implementation does not replace
-        the default queryset (see
-        :meth:`django.db.models.QuerySet.get_queryset`) but rather provides the
-        extended/augmented queryset with this method.
-        """
-        return TradeQuerySet(self.model, using=self._db)
+        return TradeQuerySet(self.model, using=self._db).full()
 
 
 class Trade(models.Model):
@@ -144,9 +124,48 @@ class Trade(models.Model):
     :class:`~django.db.models.Model`) are not documented here.
     """
 
-    objects = TradeManager()
-    """The model's default manager is set to
-    :class:`~stockings.models.trade.TradeManager`.
+    objects = models.Manager()
+    """The model's default manager.
+
+    The default manager is set to :class:`django.db.models.Manager`, which is
+    the default value. In order to add the custom :attr:`stockings_manager` as
+    an *additional* manager, the default manager has to be provided explicitly
+    (see :djangodoc:`topics/db/managers/#default-managers`).
+    """
+
+    stockings_manager = TradeManager()
+    """App-/model-specific manager, that provides additional functionality.
+
+    This manager is set to :class:`stockings.models.trade.TradeManager`. Its
+    implementation provides augmentations of `Trade` objects, by annotating them
+    on database level.
+
+    The manager has to be used explicitly, see **Examples** section below.
+
+    For a list of (virtual) attributes, that are solely provided as annotations,
+    refer to :class:`stockings.models.trade.TradeQuerySet`.
+
+    Warnings
+    --------
+    The :attr:`trade_volume` attribute is only available, when the `Trade`
+    instance is retrieved using :attr:`stockings_manager` (see **Examples**
+    section below).
+
+    Examples
+    --------
+    >>> t = Trade.object.first()
+    >>> t.trade_volume
+    StockingsInterfaceError
+    >>> t = Trade.stockings_manager.first()
+    >>> t.trade_volume
+    StockingsMoney instance
+
+    Using stockings_manager in a reverse relation
+
+    >>> from stockings.models.portfolio import Portfolio
+    >>> p = Portfolio.objects.first()
+    >>> p.trade_set(manager="stockings_manager").all()
+    QuerySet including all Trade objects with portfolio=p
     """
 
     # Define the choices for `type` field.
@@ -335,9 +354,6 @@ class Trade(models.Model):
         built from the annotated `amount`, the instance's :attr:`currency` and
         the instance's :attr:`timestamp`.
         """
-        # FIXME: handle the situation, that `_trade_volume_amount` is not
-        #        available (AttributeError?) and provide a
-        #        `StockingsInterfaceError` with a meaningful error message.
         try:
             return StockingsMoney(
                 self._trade_volume_amount, self.currency, self.timestamp
@@ -345,7 +361,7 @@ class Trade(models.Model):
         except AttributeError:
             raise StockingsInterfaceError(
                 "Could not return attribute. Probably the object was not fetched using "
-                "the custom manager."
+                "the custom manager (stockings_manager)."
             )
 
     def _get_costs(self):
