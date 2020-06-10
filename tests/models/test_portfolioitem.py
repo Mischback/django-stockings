@@ -1,3 +1,5 @@
+"""Provides tests for module `stockings.models.portfolioitem`."""
+
 # Python imports
 from unittest import mock, skip  # noqa
 
@@ -7,7 +9,7 @@ from django.test import override_settings, tag  # noqa
 # app imports
 from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
-from stockings.models.portfolio import PortfolioItem
+from stockings.models.portfolioitem import PortfolioItem
 
 # app imports
 from ..util.testcases import StockingsTestCase
@@ -18,29 +20,29 @@ class PortfolioItemTest(StockingsTestCase):
     """Provide tests for PortfolioItem class."""
 
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.cash_in",
+        "stockings.models.portfolioitem.PortfolioItem.cash_in",
         new_callable=mock.PropertyMock,
     )
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.cash_out",
+        "stockings.models.portfolioitem.PortfolioItem.cash_out",
         new_callable=mock.PropertyMock,
     )
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.costs", new_callable=mock.PropertyMock
-    )
-    @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.stock_value",
+        "stockings.models.portfolioitem.PortfolioItem.costs",
         new_callable=mock.PropertyMock,
     )
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.stock_value",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_apply_new_currency(
         self, mock_portfolio, mock_stock_value, mock_costs, mock_cash_out, mock_cash_in,
     ):
         """Setting a new currency recalculates all money-related amounts."""
-
         # get PortfolioItem object
         a = PortfolioItem()
 
@@ -66,12 +68,12 @@ class PortfolioItemTest(StockingsTestCase):
         )
 
     @mock.patch("stockings.models.trade.Trade", autospec=True)
-    @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.update_cash_out")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.update_cash_in")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.update_costs")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.update_stock_value")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.update_cash_out")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.update_cash_in")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.update_costs")
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_apply_trade(
@@ -84,7 +86,6 @@ class PortfolioItemTest(StockingsTestCase):
         mock_trade,
     ):
         """Method calls the methods to update money-related fields."""
-
         # get PortfolioItem object
         a = PortfolioItem()
 
@@ -117,7 +118,6 @@ class PortfolioItemTest(StockingsTestCase):
     @tag("signal-handler")
     def test_callback_stockitemprice_update_stock_value_raw(self):
         """Callback does not execute when called with `raw` = `True`."""
-
         # fourth parameter is `raw`
         self.assertIsNone(
             PortfolioItem.callback_stockitemprice_update_stock_value(
@@ -126,7 +126,7 @@ class PortfolioItemTest(StockingsTestCase):
         )
 
     @tag("signal-handler")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.objects")
     def test_callback_stockitemprice_update_stock_value_regular(self, mock_objects):
         """Callback determines `PortfolioItems` to update and calls `update_stock_value()`.
 
@@ -139,8 +139,8 @@ class PortfolioItemTest(StockingsTestCase):
         and updated consequently.
 
         A functional / integration test should be used with an appropriate
-        fixture to actually test the signal handler."""
-
+        fixture to actually test the signal handler.
+        """
         # Set up the mocks:
         # `mock_cls_stock_item` (is not actually used for assertions)
         mock_cls_stock_item = mock.MagicMock()
@@ -178,7 +178,6 @@ class PortfolioItemTest(StockingsTestCase):
     @tag("signal-handler")
     def test_callback_trade_apply_trade_noop(self):
         """Callback does not execute when called with `raw` = `True` or `created` = `False`."""
-
         # Fourth parameter is `raw`... Always returns `None`
         self.assertIsNone(
             PortfolioItem.callback_trade_apply_trade(
@@ -209,7 +208,7 @@ class PortfolioItemTest(StockingsTestCase):
         )
 
     @tag("signal-handler")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.objects")
     def test_callback_trade_apply_trade_buy(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for buy operations.
 
@@ -222,8 +221,8 @@ class PortfolioItemTest(StockingsTestCase):
         and updated consequently.
 
         A functional / integration test should be used with an appropriate
-        fixture to actually test the signal handler."""
-
+        fixture to actually test the signal handler.
+        """
         # Set up the mocks:
         # `mock_cls_stock_item` (is not actually used for assertions)
         mock_cls_stock_item = mock.MagicMock()
@@ -248,7 +247,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.save.called)
 
     @tag("signal-handler")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_valid(self, mock_objects):
         """Callback updates attributes of `PortfolioItem` for sell operations.
 
@@ -261,8 +260,8 @@ class PortfolioItemTest(StockingsTestCase):
         and updated consequently.
 
         A functional / integration test should be used with an appropriate
-        fixture to actually test the signal handler."""
-
+        fixture to actually test the signal handler.
+        """
         # Set up the mocks:
         # `mock_cls_stock_item` (is not actually used for assertions)
         mock_cls_stock_item = mock.MagicMock()
@@ -287,7 +286,7 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_item.save.called)
 
     @tag("signal-handler")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.objects")
     def test_callback_trade_apply_trade_sell_invalid(self, mock_objects):
         """Callback raises error, if not available stock is sold.
 
@@ -300,8 +299,8 @@ class PortfolioItemTest(StockingsTestCase):
         and updated consequently.
 
         A functional / integration test should be used with an appropriate
-        fixture to actually test the signal handler."""
-
+        fixture to actually test the signal handler.
+        """
         # Set up the mocks:
         # `mock_cls_stock_item` (is not actually used for assertions)
         mock_cls_stock_item = mock.MagicMock()
@@ -323,10 +322,9 @@ class PortfolioItemTest(StockingsTestCase):
                 mock_cls_stock_item, mock_instance, True, False,
             )
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem._return_money")
     def test_property_cash_in(self, mock_return_money):
         """Property's getter uses `_return_money()`, setter raises exception."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -346,10 +344,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             del a.cash_in
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem._return_money")
     def test_property_cash_out(self, mock_return_money):
         """Property's getter uses `_return_money()`, setter raises exception."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -369,10 +366,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             del a.cash_out
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem._return_money")
     def test_property_costs(self, mock_return_money):
         """Property's getter uses `_return_money()`, setter raises exception."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -393,12 +389,11 @@ class PortfolioItemTest(StockingsTestCase):
             del a.costs
 
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_property_currency(self, mock_portfolio):
         """Returns the object's `currency`."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -411,10 +406,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             del a.currency
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.update_stock_value")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.update_stock_value")
     def test_property_stock_count(self, mock_update):
         """Setting the `stock_count` updates the `stock_value`."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -430,10 +424,9 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             del a.stock_count
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem._return_money")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem._return_money")
     def test_property_stock_value(self, mock_return_money):
         """Property's getter uses `_return_money()`, setter raises exception."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -454,20 +447,19 @@ class PortfolioItemTest(StockingsTestCase):
             del a.stock_value
 
     @mock.patch("django.apps.apps.get_model")
-    @mock.patch("stockings.models.portfolio.PortfolioItem.apply_trade")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.apply_trade")
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.stock_item",
+        "stockings.models.portfolioitem.PortfolioItem.stock_item",
         new_callable=mock.PropertyMock,
     )
     def test_reapply_trades(
         self, mock_stock_item, mock_portfolio, mock_apply_trade, mock_objects
     ):
         """Reapplies all associated `Trade` objects using `apply_trade()`."""
-
         mock_trade = mock.MagicMock()
 
         # `mock_objects` is the actual mock, that patches `PortfolioItem`'s `objects`
@@ -487,14 +479,13 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertTrue(mock_apply_trade.called)
         mock_apply_trade.assert_called_with(mock_trade, skip_integrity_check=True)
 
-    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch("stockings.models.portfolioitem.StockingsMoney", autospec=True)
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_return_money(self, mock_portfolio, mock_stockingsmoney):
         """Returns correctly populated `StockingsMoney` object."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -533,14 +524,13 @@ class PortfolioItemTest(StockingsTestCase):
         self.assertEqual(b.currency, mock_stockingsmoney.return_value.currency)
         self.assertEqual(b.timestamp, mock_stockingsmoney.return_value.timestamp)
 
-    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch("stockings.models.portfolioitem.StockingsMoney", autospec=True)
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_update_cash_in(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `cash_in`."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -557,14 +547,13 @@ class PortfolioItemTest(StockingsTestCase):
             mock_stockingsmoney.return_value.add.return_value.timestamp,
         )
 
-    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch("stockings.models.portfolioitem.StockingsMoney", autospec=True)
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_update_cash_out(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `cash_out`."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -581,14 +570,13 @@ class PortfolioItemTest(StockingsTestCase):
             mock_stockingsmoney.return_value.add.return_value.timestamp,
         )
 
-    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch("stockings.models.portfolioitem.StockingsMoney", autospec=True)
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     def test_update_costs(self, mock_portfolio, mock_stockingsmoney):
         """Adds provided `StockingsMoney` to `costs`."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
 
@@ -605,20 +593,19 @@ class PortfolioItemTest(StockingsTestCase):
             mock_stockingsmoney.return_value.add.return_value.timestamp,
         )
 
-    @mock.patch("stockings.models.portfolio.StockingsMoney", autospec=True)
+    @mock.patch("stockings.models.portfolioitem.StockingsMoney", autospec=True)
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.portfolio",
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
         new_callable=mock.PropertyMock,
     )
     @mock.patch(
-        "stockings.models.portfolio.PortfolioItem.stock_item",
+        "stockings.models.portfolioitem.PortfolioItem.stock_item",
         new_callable=mock.PropertyMock,
     )
     def test_update_stock_value(
         self, mock_stock_item, mock_portfolio, mock_stockingsmoney
     ):
         """Updates `stock_value` while automatically retrieving required parameters."""
-
         # get a PortfolioItem object
         a = PortfolioItem()
         a._stock_count = 1

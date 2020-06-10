@@ -1,3 +1,5 @@
+"""Provides tests for module `stockings.models.portfolio`."""
+
 # Python imports
 from unittest import mock, skip  # noqa
 
@@ -15,19 +17,16 @@ from ..util.testcases import StockingsTestCase
 class PortfolioTest(StockingsTestCase):
     """Provide tests for `Portfolio` class."""
 
-    @mock.patch("stockings.models.portfolio.PortfolioItem.objects")
+    @mock.patch("stockings.models.portfolio.Portfolio.portfolioitem_set")
     def test_property_currency(self, mock_objects):
         """Property's getter works, setter applies currency to all associated `PortfolioItem`s."""
-
         # get a Portfolio object
         a = Portfolio()
 
         self.assertEqual(a._currency, a.currency)
 
         mock_item = mock.MagicMock()
-        mock_objects.filter.return_value.iterator.return_value.__iter__.return_value = iter(
-            [mock_item]
-        )
+        mock_objects.iterator.return_value.__iter__.return_value = iter([mock_item])
 
         a.currency = "FOO"
 

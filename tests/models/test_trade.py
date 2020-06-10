@@ -10,7 +10,7 @@ from django.test import override_settings, tag  # noqa
 # app imports
 from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
-from stockings.models.portfolio import PortfolioItem
+from stockings.models.portfolioitem import PortfolioItem
 from stockings.models.trade import Trade
 
 # app imports

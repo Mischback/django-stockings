@@ -10,6 +10,7 @@ buying stock) or out of the `Portfolio` (by selling stock).
 """
 
 # Django imports
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -19,7 +20,7 @@ from django.utils.translation import ugettext_lazy as _
 # app imports
 from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
-from stockings.models.portfolio import Portfolio, PortfolioItem
+from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
 
 
@@ -325,7 +326,7 @@ class Trade(models.Model):
                 portfolio_item = self.portfolio.portfolioitem_set.get(
                     stock_item=self.stock_item
                 )
-            except PortfolioItem.DoesNotExist:
+            except apps.get_model("stockings.PortfolioItem").DoesNotExist:
                 raise ValidationError(
                     _(
                         "You are trying to sell stock, that is not present in your portfolio!"

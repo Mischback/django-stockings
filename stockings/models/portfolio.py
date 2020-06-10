@@ -1,13 +1,12 @@
 """These classes represent a portfolio and its items."""
 
 # Django imports
-from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
-from stockings.models.portfolioitem import PortfolioItem
+# from stockings.models.portfolioitem import PortfolioItem
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
@@ -105,21 +104,13 @@ class Portfolio(models.Model):
         new_currency : :obj:`str`
             The new currency to be applied.
         """
-        # Fetch all `PortfolioItem` objects, that are referencing this object
-        # FIXME: This should not be necessary, because Django provides an automatic backwards relation!
-        portfolio_item_set = PortfolioItem.objects.filter(portfolio=self)
-
         # Update all relevant `PortfolioItem` objects.
-        for item in portfolio_item_set.iterator():
+        for item in self.portfolioitem_set.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 
-        # Fetch all `Trade` objects, that are referencing this object
-        # FIXME: This should not be necessary, because Django provides an automatic backwards relation!
-        trade_set = apps.get_model("stockings.Trade").objects.filter(portfolio=self)
-
         # Update all relevant `Trade` objects.
-        for item in trade_set.iterator():
+        for item in self.trade_set.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 
