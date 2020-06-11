@@ -1,7 +1,6 @@
 """Provides the :class:`~stockings.models.portfolioitem.PortfolioItem`."""
 
 # Django imports
-from django.apps import apps
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
@@ -11,58 +10,161 @@ from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
+from stockings.models.trade import Trade
 
 
-class PortfolioItemManager(models.Manager):
-    """Custom manager for :class:`~stockings.models.portfolio.PortfolioItem`.
+class PortfolioItemQuerySet(models.QuerySet):
+    """App-specific implementation of :class:`django.db.modesl.QuerySet`.
 
-    This manager is applied as the default manager (see
-    :attr:`PortfolioItem.objects <stockings.models.portfolio.PortfolioItem.objects>`).
+    Notes
+    -----
+    This :class:`~django.db.models.QuerySet` implementation provides
+    app-specific augmentations.
 
-    Warnings
-    --------
-    The class documentation only includes code, that is actually shipped by the
-    `stockings` app. Inherited attributes/methods (provided by Django's
-    :class:`~django.db.models.Manager`) are not documented here.
+    The provided methods augment/extend the retrieved
+    :class:`stockings.models.portfolioitem.PortfolioItem` instances by
+    annotating them with additional information.
     """
 
-    def get_queryset(self):
-        """Provide the base queryset, annotated with an `is_active` field.
-
-        :class:`~stockings.models.portfolio.PortfolioItem` instances are used to
-        track a given :class:`~stockings.models.stock.StockItem` in the context
-        of the app. Logically, a `PortfolioItem` can be considered *inactive*,
-        if its :attr:`~stockings.models.portfolio.PortfolioItem.stock_count` is
-        ``0``, meaning, currently the tracked `StockItem` is currently not in
-        the possession of the user.
-
-        The provided `is_active` flag can be used to distinguish between these
-        states.
+    def full(self):
+        """Return a queryset with all app-specific annotations.
 
         Returns
         -------
-        :class:`~django.db.models.query.QuerySet`
-            The annotated base queryset.
+        :class:`django.db.models.QuerySet`
+            The fully annotated queryset.
         """
-        return (
-            super()
-            .get_queryset()
+        return self._annotate_cash_flows()
+
+    def _annotate_cash_flows(self):
+        """Annotate the instances with their cash flows.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        trade_objects = (
+            Trade
+            # 1) Use the app-/model-specific manager.
+            # 2) Filter by `portfolio` and `stock_item`:
+            #    There is no direct reference between `Trade` and
+            #    `PortfolioItem` instances.
+            .stockings_manager.filter(
+                portfolio=models.OuterRef("portfolio"),
+                stock_item=models.OuterRef("stock_item"),
+            )
+            # Removes any pre-defined `ORDER BY`-clause.
+            .order_by()
+            # Groups by `stock_item`.
+            .values("stock_item")
+            # Let the magic happen and determine cash flows into and out of the
+            # `PortfolioItem`.
+            # Because the `PortfolioItem` is directly linked with `StockItem`,
+            # these cash flows can then be used to annotate the `PortfolioItem`
+            # instances.
             .annotate(
-                is_active=models.Case(
-                    models.When(_stock_count=0, then=models.Value(False)),
-                    default=models.Value(True),
-                    output_field=models.BooleanField(),
-                )
+                cash_in=models.Sum(
+                    "_trade_volume_amount", filter=models.Q(trade_type="BUY")
+                ),
+                cash_out=models.Sum(
+                    "_trade_volume_amount", filter=models.Q(trade_type="SELL")
+                ),
+                costs=models.Sum("_costs_amount"),
             )
         )
+
+        # FIXME: keep the annotation seperate from the attributes (prefix 'foo')
+        # TODO: The annotations are extendable, so that other cash flows (e.g.
+        # dividends) may be included.
+        return self.annotate(
+            foo_cash_in_amount=models.ExpressionWrapper(
+                0 + models.Subquery(trade_objects.values("cash_in")),
+                output_field=models.DecimalField(),
+            ),
+            foo_cash_out_amount=models.ExpressionWrapper(
+                0 + models.Subquery(trade_objects.values("cash_out")),
+                output_field=models.DecimalField(),
+            ),
+            foo_costs_amount=models.ExpressionWrapper(
+                0 + models.Subquery(trade_objects.values("costs")),
+                output_field=models.DecimalField(),
+            ),
+        )
+
+
+class PortfolioItemManager(models.Manager):
+    """App-/model-specific implementation of :class:`django.db.models.Manager`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.Manager` implementation is used as an
+    additional manager of :class:`~stockings.models.portfolio.PortfolioItem` (see
+    :attr:`stockings.models.portfolio.PortfolioItem.stockings_manager`.
+
+    This implementation inherits its functionality from
+    :class:`django.db.models.Manager` and provides identical funtionality.
+    Furthermore, it augments the retrieved objects with additional attributes,
+    using the custom :class:`~django.db.models.QuerySet` implementation
+    :class:`~stockings.models.portfolio.PortfolioItemQuerySet`.
+    """
+
+    def get_queryset(self):
+        """Use the app-/model-specific :class:`~stockings.models.portfolio.PortfolioItemQuerySet` by default.
+
+        Returns
+        -------
+        :class:`django.models.db.QuerySet`
+            This queryset is provided by
+            :class:`stockings.models.portfolio.PortfolioItemQuerySet` and
+            applies its
+            :meth:`~stockings.models.portfolio.PortfolioItemQuerySet.full`
+            method. The retrieved objects will be annotated with additional
+            attributes.
+        """
+        return PortfolioItemQuerySet(self.model, using=self._db).full()
 
 
 class PortfolioItem(models.Model):
     """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
 
-    # TODO: Should Meta.default_manager_name be set aswell?
-    objects = PortfolioItemManager()
-    """The default manager for these objects."""
+    objects = models.Manager()
+    """The model's default manager.
+
+    The default manager is set to :class:`django.db.models.Manager`, which is
+    the default value. In order to add the custom :attr:`stockings_manager` as
+    an *additional* manager, the default manager has to be provided explicitly
+    (see :djangodoc:`topics/db/managers/#default-managers`).
+    """
+
+    stockings_manager = PortfolioItemManager()
+    """App-/model-specific manager, that provides additional functionality.
+
+    This manager is set to
+    :class:`stockings.models.portfolio.PortfolioItemManager`. Its implementation
+    provides augmentations of `PortfolioItem` objects, by annotating them on
+    database level.
+
+    The manager has to be used explicitly, see **Examples** section below.
+
+    For a list of (virtual) attributes, that are solely provided as annotations,
+    refer to :class:`stockings.models.portfolio.PortfolioItemQuerySet`.
+
+    Warnings
+    --------
+    The attributes :attr:`cash_in`, :attr:`cash_out` and :attr:`costs` are only
+    available, when the `PortfolioItem` instance is retrieved using
+    :attr:`stockings_manager` (see **Examples** section below).
+
+    Examples
+    --------
+    >>> pi = PortfolioItem.object.first()
+    >>> pi.cash_in
+    AttributeError
+    >>> pi = PortfolioItem.stockings_manager.first()
+    >>> pi.cash_in
+    StockingsMoney instance
+    """
 
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     """Reference to the :class:`~stockings.models.portfolio.Portfolio`.
@@ -229,11 +331,9 @@ class PortfolioItem(models.Model):
         # would lead to a circular import.
         # However, this is the only occurence of `Trade`, so the class is fetched
         # Django's app registry.
-        trade_set = (
-            apps.get_model("stockings.Trade")
-            .objects.filter(portfolio=self.portfolio, stock_item=self.stock_item)
-            .order_by("timestamp")
-        )
+        trade_set = Trade.objects.filter(
+            portfolio=self.portfolio, stock_item=self.stock_item
+        ).order_by("timestamp")
 
         for trade in trade_set.iterator():
             # The integrity check can actually be skipped, because the `trade_set`
