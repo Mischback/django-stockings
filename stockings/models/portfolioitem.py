@@ -265,36 +265,18 @@ class PortfolioItem(models.Model):
         # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
         if trade_obj.trade_type == "BUY":
             # FIXME: _stock_count is not updated
-            pass
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self._stock_count + trade_obj.item_count,
+            )
 
         # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
         if trade_obj.trade_type == "SELL":
             # FIXME: _stock_count is not updated
-            pass
-
-    def reapply_trades(self):
-        """Reset all of the object's money-related fields and then reapplies all trades."""
-        # reset all money-related fields by assigning `_amount`= 0
-        self._stock_value_amount = 0
-
-        # reset the `stock_count`
-        self._stock_count = 0
-
-        # fetch the associated `Trade` objects
-        # The objects have to be ordered by date (`Trade.timestamp`) to ensure,
-        # that they are re-applied in the correct order.
-        # The `Trade` model can not be imported at the top of this file, because this
-        # would lead to a circular import.
-        # However, this is the only occurence of `Trade`, so the class is fetched
-        # Django's app registry.
-        trade_set = Trade.objects.filter(
-            portfolio=self.portfolio, stock_item=self.stock_item
-        ).order_by("timestamp")
-
-        for trade in trade_set.iterator():
-            # The integrity check can actually be skipped, because the `trade_set`
-            # applies a filter to ensure correct objects.
-            self.apply_trade(trade, skip_integrity_check=True)
+            self.update_stock_value(
+                item_price=trade_obj.price,
+                item_count=self._stock_count - trade_obj.item_count,
+            )
 
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
