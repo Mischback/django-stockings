@@ -26,7 +26,7 @@ class PortfolioItemQuerySet(models.QuerySet):
     annotating them with additional information.
     """
 
-    def full(self):
+    def default(self):
         """Return a queryset with all app-specific annotations.
 
         Returns
@@ -141,7 +141,7 @@ class PortfolioItemManager(models.Manager):
             method. The retrieved objects will be annotated with additional
             attributes.
         """
-        return PortfolioItemQuerySet(self.model, using=self._db).full()
+        return PortfolioItemQuerySet(self.model, using=self._db).default()
 
 
 class PortfolioItem(models.Model):

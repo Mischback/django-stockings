@@ -37,7 +37,7 @@ class TradeQuerySet(models.QuerySet):
     additional information.
     """
 
-    def full(self):
+    def default(self):
         """Return a queryset with all app-specific annotations.
 
         Returns
@@ -96,7 +96,7 @@ class TradeManager(models.Manager):
             :meth:`~stockings.models.trade.TradeQuerySet.full` method. The
             retrieved objects will be annotated with additional attributes.
         """
-        return TradeQuerySet(self.model, using=self._db).full()
+        return TradeQuerySet(self.model, using=self._db).default()
 
 
 class Trade(models.Model):
