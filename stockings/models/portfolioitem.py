@@ -85,11 +85,11 @@ class PortfolioItemQuerySet(models.QuerySet):
         # TODO: The annotations are extendable, so that other cash flows (e.g.
         # dividends) may be included.
         return self.annotate(
-            foo_cash_in_amount=models.ExpressionWrapper(
+            _cash_in_amount=models.ExpressionWrapper(
                 0 + models.Subquery(trade_objects.values("cash_in_amount")),
                 output_field=models.DecimalField(),
             ),
-            foo_cash_in_timestamp=models.ExpressionWrapper(
+            _cash_in_timestamp=models.ExpressionWrapper(
                 models.Subquery(trade_objects.values("cash_in_timestamp")),
                 output_field=models.DateTimeField(),
             ),
@@ -208,23 +208,6 @@ class PortfolioItem(models.Model):
     `PortfolioItem` object.
     """
 
-    _cash_in_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    """The `amount` part of :attr:`cash_in` (:obj:`decimal.Decimal`).
-
-    Notes
-    -----
-    This is implemented as :class:`django.db.models.DecimalField`.
-    """
-
-    _cash_in_timestamp = models.DateTimeField(default=now)
-    """The `timestamp` part of :attr:`cash_in` (:obj:`datetime.datetime`).
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
-    providing :obj:`django.utils.timezone.now` as its default value.
-    """
-
     _cash_out_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
     """The `amount` part of :attr:`cash_out` (:obj:`decimal.Decimal`).
 
@@ -318,11 +301,7 @@ class PortfolioItem(models.Model):
 
         # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
         if trade_obj.trade_type == "BUY":
-            self.update_cash_in(trade_obj.price.multiply(trade_obj.item_count))
-            self.update_stock_value(
-                item_price=trade_obj.price,
-                item_count=self.stock_count + trade_obj.item_count,
-            )
+            pass
 
         # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
         if trade_obj.trade_type == "SELL":
@@ -335,7 +314,6 @@ class PortfolioItem(models.Model):
     def reapply_trades(self):
         """Reset all of the object's money-related fields and then reapplies all trades."""
         # reset all money-related fields by assigning `_amount`= 0
-        self._cash_in_amount = 0
         self._cash_out_amount = 0
         self._costs_amount = 0
         self._stock_value_amount = 0
@@ -358,17 +336,6 @@ class PortfolioItem(models.Model):
             # The integrity check can actually be skipped, because the `trade_set`
             # applies a filter to ensure correct objects.
             self.apply_trade(trade, skip_integrity_check=True)
-
-    def update_cash_in(self, new_cash_flow):
-        """TODO."""
-        # calculate new value (old value + new cash flow)
-        # Currency conversion is implicitly provided, because
-        # `StockingsMoney.add()` ensures a target currency.
-        new_value = self.cash_in.add(new_cash_flow)
-
-        # update with new value
-        self._cash_in_amount = new_value.amount
-        self._cash_in_timestamp = new_value.timestamp
 
     def update_cash_out(self, new_cash_flow):
         """TODO."""
@@ -464,11 +431,6 @@ class PortfolioItem(models.Model):
 
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
-        # cash_in
-        new_value = self.cash_in.convert(new_currency)
-        self._cash_in_amount = new_value.amount
-        self._cash_in_timestamp = new_value.timestamp
-
         # cash_out
         new_value = self.cash_out.convert(new_currency)
         self._cash_out_amount = new_value.amount
