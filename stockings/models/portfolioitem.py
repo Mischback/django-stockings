@@ -64,13 +64,20 @@ class PortfolioItemQuerySet(models.QuerySet):
             # these cash flows can then be used to annotate the `PortfolioItem`
             # instances.
             .annotate(
-                cash_in=models.Sum(
+                cash_in_amount=models.Sum(
                     "_trade_volume_amount", filter=models.Q(trade_type="BUY")
                 ),
-                cash_out=models.Sum(
+                cash_in_timestamp=models.Max(
+                    "timestamp", filter=models.Q(trade_type="BUY")
+                ),
+                cash_out_amount=models.Sum(
                     "_trade_volume_amount", filter=models.Q(trade_type="SELL")
                 ),
-                costs=models.Sum("_costs_amount"),
+                cash_out_timestamp=models.Max(
+                    "timestamp", filter=models.Q(trade_type="SELL")
+                ),
+                costs_amount=models.Sum("_costs_amount"),
+                costs_timestamp=models.Max("timestamp"),
             )
         )
 
@@ -79,16 +86,28 @@ class PortfolioItemQuerySet(models.QuerySet):
         # dividends) may be included.
         return self.annotate(
             foo_cash_in_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("cash_in")),
+                0 + models.Subquery(trade_objects.values("cash_in_amount")),
                 output_field=models.DecimalField(),
+            ),
+            foo_cash_in_timestamp=models.ExpressionWrapper(
+                models.Subquery(trade_objects.values("cash_in_timestamp")),
+                output_field=models.DateTimeField(),
             ),
             foo_cash_out_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("cash_out")),
+                0 + models.Subquery(trade_objects.values("cash_out_amount")),
                 output_field=models.DecimalField(),
             ),
+            foo_cash_out_timestamp=models.ExpressionWrapper(
+                models.Subquery(trade_objects.values("cash_out_timestamp")),
+                output_field=models.DateTimeField(),
+            ),
             foo_costs_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("costs")),
+                0 + models.Subquery(trade_objects.values("costs_amount")),
                 output_field=models.DecimalField(),
+            ),
+            foo_costs_timestamp=models.ExpressionWrapper(
+                models.Subquery(trade_objects.values("costs_timestamp")),
+                output_field=models.DateTimeField(),
             ),
         )
 
