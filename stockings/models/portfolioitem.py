@@ -101,11 +101,11 @@ class PortfolioItemQuerySet(models.QuerySet):
                 models.Subquery(trade_objects.values("cash_out_timestamp")),
                 output_field=models.DateTimeField(),
             ),
-            foo_costs_amount=models.ExpressionWrapper(
+            _costs_amount=models.ExpressionWrapper(
                 0 + models.Subquery(trade_objects.values("costs_amount")),
                 output_field=models.DecimalField(),
             ),
-            foo_costs_timestamp=models.ExpressionWrapper(
+            _costs_timestamp=models.ExpressionWrapper(
                 models.Subquery(trade_objects.values("costs_timestamp")),
                 output_field=models.DateTimeField(),
             ),
@@ -208,23 +208,6 @@ class PortfolioItem(models.Model):
     `PortfolioItem` object.
     """
 
-    _costs_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
-    """The `amount` part of :attr:`costs` (:obj:`decimal.Decimal`).
-
-    Notes
-    -----
-    This is implemented as :class:`django.db.models.DecimalField`.
-    """
-
-    _costs_timestamp = models.DateTimeField(default=now)
-    """The `timestamp` part of :attr:`costs` (:obj:`datetime.datetime`).
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
-    providing :obj:`django.utils.timezone.now` as its default value.
-    """
-
     _stock_value_amount = models.DecimalField(
         decimal_places=4, default=0, max_digits=19
     )
@@ -279,21 +262,19 @@ class PortfolioItem(models.Model):
                 "Could not apply trade, `trade_obj` does not belong to this `PortfolioItem`."
             )  # pragma: nocover
 
-        # track the costs of this trade
-        self.update_costs(trade_obj.costs)
-
         # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
         if trade_obj.trade_type == "BUY":
+            # FIXME: _stock_count is not updated
             pass
 
         # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
         if trade_obj.trade_type == "SELL":
+            # FIXME: _stock_count is not updated
             pass
 
     def reapply_trades(self):
         """Reset all of the object's money-related fields and then reapplies all trades."""
         # reset all money-related fields by assigning `_amount`= 0
-        self._costs_amount = 0
         self._stock_value_amount = 0
 
         # reset the `stock_count`
@@ -314,16 +295,6 @@ class PortfolioItem(models.Model):
             # The integrity check can actually be skipped, because the `trade_set`
             # applies a filter to ensure correct objects.
             self.apply_trade(trade, skip_integrity_check=True)
-
-    def update_costs(self, new_costs):
-        """Update the value of costs, by adding the costs of a trade."""
-        # calculate new value (old value + new costs)
-        # Currency conversion is implicitly provided, because
-        # `StockingsMoney.add()` ensures the target currency.
-        new_value = self.costs.add(new_costs)
-
-        self._costs_amount = new_value.amount
-        self._costs_timestamp = new_value.timestamp
 
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
@@ -398,11 +369,6 @@ class PortfolioItem(models.Model):
 
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
-        # costs
-        new_value = self.costs.convert(new_currency)
-        self._costs_amount = new_value.amount
-        self._costs_timestamp = new_value.timestamp
-
         # stock_value
         new_value = self.stock_value.convert(new_currency)
         self._stock_value_amount = new_value.amount
