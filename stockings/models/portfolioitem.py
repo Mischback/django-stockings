@@ -2,6 +2,7 @@
 
 # Django imports
 from django.db import models
+from django.db.models.functions import Coalesce
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
@@ -34,9 +35,9 @@ class PortfolioItemQuerySet(models.QuerySet):
         :class:`django.db.models.QuerySet`
             The fully annotated queryset.
         """
-        return self._annotate_cash_flows()
+        return self._annotate_trade_information()
 
-    def _annotate_cash_flows(self):
+    def _annotate_trade_information(self):
         """Annotate the instances with their cash flows.
 
         Returns
@@ -64,25 +65,38 @@ class PortfolioItemQuerySet(models.QuerySet):
             # these cash flows can then be used to annotate the `PortfolioItem`
             # instances.
             .annotate(
-                cash_in_amount=models.Sum(
-                    "_trade_volume_amount", filter=models.Q(trade_type="BUY")
+                cash_in_amount=Coalesce(
+                    models.Sum(
+                        "_trade_volume_amount", filter=models.Q(trade_type="BUY")
+                    ),
+                    models.Value(0),
                 ),
                 cash_in_timestamp=models.Max(
                     "timestamp", filter=models.Q(trade_type="BUY")
                 ),
-                cash_out_amount=models.Sum(
-                    "_trade_volume_amount", filter=models.Q(trade_type="SELL")
+                cash_out_amount=Coalesce(
+                    models.Sum(
+                        "_trade_volume_amount", filter=models.Q(trade_type="SELL")
+                    ),
+                    models.Value(0),
                 ),
                 cash_out_timestamp=models.Max(
                     "timestamp", filter=models.Q(trade_type="SELL")
                 ),
-                costs_amount=models.Sum("_costs_amount"),
+                costs_amount=Coalesce(models.Sum("_costs_amount"), models.Value(0)),
                 costs_timestamp=models.Max("timestamp"),
+                stock_buy_count=Coalesce(
+                    models.Sum("item_count", filter=models.Q(trade_type="BUY")),
+                    models.Value(0),
+                ),
+                stock_sell_count=Coalesce(
+                    models.Sum("item_count", filter=models.Q(trade_type="SELL")),
+                    models.Value(0),
+                ),
             )
         )
 
-        # FIXME: keep the annotation seperate from the attributes (prefix 'foo')
-        # TODO: The annotations are extendable, so that other cash flows (e.g.
+        # The annotations are extendable, so that other cash flows (e.g.
         # dividends) may be included.
         return self.annotate(
             _cash_in_amount=models.ExpressionWrapper(
@@ -108,6 +122,11 @@ class PortfolioItemQuerySet(models.QuerySet):
             _costs_timestamp=models.ExpressionWrapper(
                 models.Subquery(trade_objects.values("costs_timestamp")),
                 output_field=models.DateTimeField(),
+            ),
+            _stock_count=models.ExpressionWrapper(
+                models.Subquery(trade_objects.values("stock_buy_count"))
+                - models.Subquery(trade_objects.values("stock_sell_count")),
+                output_field=models.PositiveIntegerField(),
             ),
         )
 
@@ -227,21 +246,6 @@ class PortfolioItem(models.Model):
     providing :obj:`django.utils.timezone.now` as its default value.
     """
 
-    # Stores the quantity of ``StockItem`` in this ``Portfolio``.
-    # This directly influences the ``deposit``, specifically the
-    # ``_deposit_amount``. See ``update_deposit()`` for details.
-    _stock_count = models.PositiveIntegerField(default=0)
-    """The number of shares of the referenced `StockItem` (:obj:`int`).
-
-    Notes
-    -----
-    This attribute is implemented as
-    :class:`~django.db.models.PositiveIntegerField` with ``default=0``.
-
-    Obviously it doesn't make sense to obtain a negative `stock_count`, so this
-    only allows positive values.
-    """
-
     class Meta:  # noqa: D106
         app_label = "stockings"
         unique_together = ["portfolio", "stock_item"]
@@ -250,33 +254,6 @@ class PortfolioItem(models.Model):
 
     def __str__(self):  # noqa: D105
         return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
-
-    def apply_trade(self, trade_obj, skip_integrity_check=False):
-        """Track a single trade operation and update object's fields."""
-        # ensure, that the `trade_obj` is actually associated with this `PortfolioItem`
-        if not skip_integrity_check and (
-            (self.portfolio != trade_obj.portfolio)
-            or (self.stock_item != trade_obj.stock_item)
-        ):
-            raise StockingsInterfaceError(
-                "Could not apply trade, `trade_obj` does not belong to this `PortfolioItem`."
-            )  # pragma: nocover
-
-        # 'BUY' means a cash flow into the `PortfolioItem` and an increase of the `stock_count`
-        if trade_obj.trade_type == "BUY":
-            # FIXME: _stock_count is not updated
-            self.update_stock_value(
-                item_price=trade_obj.price,
-                item_count=self._stock_count + trade_obj.item_count,
-            )
-
-        # 'SELL' means a cash flow out of the `PortfolioItem` and a decrease of the `stock_count`
-        if trade_obj.trade_type == "SELL":
-            # FIXME: _stock_count is not updated
-            self.update_stock_value(
-                item_price=trade_obj.price,
-                item_count=self._stock_count - trade_obj.item_count,
-            )
 
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
@@ -317,37 +294,6 @@ class PortfolioItem(models.Model):
         for item in portfolio_item_set.iterator():
             item.update_stock_value(item_price=new_price)
             item.save()
-
-    @classmethod
-    def callback_trade_apply_trade(
-        cls, sender, instance, created, raw, *args, **kwargs
-    ):
-        """Update several of PortfolioItem's fields to track the trade operation."""
-        # Do nothing, if this is a raw save-operation.
-        if raw:
-            return None
-
-        # Do nothing, if this is an edit of an existing trade.
-        if not created:
-            return None
-
-        item, item_state = cls.objects.get_or_create(
-            portfolio=instance.portfolio,
-            stock_item=instance.stock_item,
-            # defaults={},
-        )
-
-        # Another safety to ensure, that no stock can be sold, that is not present
-        # in the `Portfolio`.
-        if instance.trade_type == "SELL" and item_state is True:
-            raise RuntimeError(
-                "Trying to sell stock, that are not in the portfolio! "
-                "Something went terribly wrong!"
-            )
-
-        # actually update the `PortfolioItem`'s fields
-        item.apply_trade(instance)
-        item.save()
 
     def _apply_new_currency(self, new_currency):
         """Set a new currency for the object and update all money-related fields."""
