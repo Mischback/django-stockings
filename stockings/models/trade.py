@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import Coalesce
+from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
@@ -509,7 +510,7 @@ class Trade(models.Model):
             if self.item_count > portfolio_item.stock_count:
                 self.item_count = portfolio_item.stock_count
 
-    @property
+    @cached_property
     def trade_volume(self):  # noqa: D401
         """The total trade volume (:class:`~stockings.data.StockingsMoney`, read-only).
 
@@ -517,30 +518,29 @@ class Trade(models.Model):
         ``price per item * item count``. It does **not** include the trade's
         :attr:`costs`.
 
+        Warnings
+        --------
+        It is highly recommended to use
+        :class:`~stockings.models.trade.TradeManager` to
+        retrieve `Trade` objects from the database including the required
+        annotations to actually populate this property.
+
         Notes
         -----
-        `trade_volume` is implemented as a :obj:`property`.
+        `trade_volume` is implemented as
+        :class:`django.utils.functional.cached_property`.
 
-        The value is not stored as an attribute of the `Trade` class; instead,
-        it is determined dynamically while fetching `Trade` instances from the
-        database using :class:`~stockings.models.trade.TradeManager` (the
-        app-specific implementation of :class:`django.db.models.Manager`) by
-        :meth:`annotating <django.db.models.query.QuerySet.annotate>` the
-        retrieved objects with ``_trade_volume_amount`` (see
-        :meth:`stockings.models.trade.TradeQuerySet._annotate_trade_volume`).
-
-        The returned instance of :class:`~stockings.data.StockingsMoney` is then
-        built from the annotated `amount`, the instance's :attr:`currency` and
-        the instance's :attr:`timestamp`.
+        The required values to populate the
+        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        as attributes of this `Trade` object.
         """
         try:
             return StockingsMoney(
                 self._trade_volume_amount, self.currency, self.timestamp
             )
         except AttributeError:
-            raise StockingsInterfaceError(
-                "Could not return attribute. Probably the object was not fetched using "
-                "the custom manager (stockings_manager)."
+            return StockingsMoney(
+                self.item_count * self._price_amount, self.currency, self.timestamp
             )
 
     def _get_costs(self):
