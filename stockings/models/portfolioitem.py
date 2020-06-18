@@ -331,6 +331,75 @@ class PortfolioItem(models.Model):
                 trade_information["purchase_latest_timestamp"],
             )
 
+    @cached_property
+    def cash_out(self):  # noqa: D401
+        """The cash flow out of this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
+
+        Warnings
+        --------
+        It is highly recommended to use
+        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
+        retrieve `PortfolioItem` objects from the database, because this will
+        use a (rather complex) SQL statement which includes the required
+        annotations to actually populate this property. However, only one
+        database query is performed. When using
+        :class:`~django.db.models.Manager`, accessing this attribute will result
+        in another database access (and probably more than one, if the
+        attributes :attr:`cash_in`, :attr:`costs`, :attr:`stock_count` or
+        :attr:`stock_value` are accessed aswell).
+
+        Notes
+        -----
+        `cash_out` is implemented as
+        :class:`django.utils.functional.cached_property`.
+
+        The required values to populate the
+        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        as attributes of this `PortfolioItem` object. Instead, they are
+        dynamically calculated by evaluating other models, most notably
+        :class:`stockings.models.trade.Trade`.
+
+        This might be done while fetching the `PortfolioItem` object using
+        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
+        as provided by :attr:`stockings_manager`; the required values are then
+        provided as annotations to the `PortfolioItem` instance.
+
+        If the `PortfolioItem` object was fetched using
+        :class:`Django's default manager <django.db.models.Manager>`, as
+        provided by :attr:`objects`, these annotations are missing, so the
+        `getter` implementation performs additional database queries to retrieve
+        these values (the implementation as
+        :class:`~django.utils.functional.cached_property` ensures, that this
+        *expensive* operation is only performed once during the lifetime of this
+        instance).
+        """
+        try:
+            return StockingsMoney(
+                self._cash_out_amount, self.currency, self._cash_out_timestamp
+            )
+        except AttributeError:
+            logger.info(
+                "Missing values while accessing attribute 'cash_out'. "
+                "Performing required database queries!"
+            )
+            logger.debug(
+                "'cash_out' is accessed while required values are not available. Most "
+                "likely, the 'PortfolioItem' was not fetched using "
+                "'PortfolioItem.stockings_manager', so that the specific annotations "
+                "are missing."
+            )
+
+            # collect the required information
+            trade_information = Trade.stockings_manager.aggregation_by_portfolioitem(
+                portfolio=self.portfolio, stock_item=self.stock_item
+            ).first()
+
+            return StockingsMoney(
+                trade_information["sale_amount"],
+                self.currency,
+                trade_information["sale_latest_timestamp"],
+            )
+
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
         if item_price is None:
@@ -377,22 +446,6 @@ class PortfolioItem(models.Model):
         new_value = self.stock_value.convert(new_currency)
         self._stock_value_amount = new_value.amount
         self._stock_value_timestamp = new_value.timestamp
-
-    def _get_cash_out(self):
-        """`getter` for :attr:`cash_out`.
-
-        Returns
-        --------
-        :class:`~stockings.data.StockingsMoney`
-            The total cash flow out of this object.
-
-        See Also
-        --------
-        :meth:`_return_money`
-        """
-        return self._return_money(
-            self._cash_out_amount, timestamp=self._cash_out_timestamp
-        )
 
     def _get_costs(self):
         """`getter` for :attr:`costs`.
@@ -482,31 +535,6 @@ class PortfolioItem(models.Model):
             # `StockingsMoney` will set the timestamp to `now()`, if no
             # timestamp is provided.
             timestamp,
-        )
-
-    def _set_cash_out(self, value):
-        """`setter` for :attr:`cash_out`.
-
-        This attribute can not be set directly.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            This parameter is only provided to match the required prototype for
-            this `setter`, it is actually not used.
-
-        Raises
-        ------
-        :exc:`~stockings.exceptions.StockingsInterfaceError`
-            This attribute can not be set directly.
-
-        See Also
-        --------
-        :meth:`update_cash_out`
-        """
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_cash_out()'."
         )
 
     def _set_costs(self, value):
@@ -602,35 +630,6 @@ class PortfolioItem(models.Model):
             "This attribute may not be set directly! "
             "You might want to use 'update_stock_value()'."
         )
-
-    cash_out = property(_get_cash_out, _set_cash_out)
-    """Cash flow out of this `PortfolioItem`
-    (:class:`~stockings.data.StockingsMoney`).
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_cash_out` and :meth:`_set_cash_out`.
-
-    **get**
-
-    Accessing the attribute returns a `StockingsMoney` object.
-
-    - ``amount`` is stored in :attr:`_cash_out_amount` as :obj:`decimal.Decimal`.
-    - ``currency`` is fetched from the object's :attr:`currency`.
-    - ``timestamp`` is fetched from the object's :attr:`_cash_out_timestamp`.
-
-    **set**
-
-    This property may not be set directly, trying to do so will raise a
-    :exc:`~stockings.exceptions.StockingsInterfaceException`.
-
-    To update `cash_out`, use :meth:`update_cash_out`.
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
 
     costs = property(_get_costs, _set_costs)
     """Costs associated with this `PortfolioItem`
