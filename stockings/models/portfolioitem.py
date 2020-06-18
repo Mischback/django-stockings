@@ -14,7 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import Portfolio
-from stockings.models.stock import StockItem
+from stockings.models.stockitem import StockItem
 from stockings.models.trade import Trade
 
 # get a module-level logger
