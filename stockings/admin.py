@@ -6,7 +6,8 @@ from django.contrib import admin
 # app imports
 from stockings.models.portfolio import Portfolio
 from stockings.models.portfolioitem import PortfolioItem
-from stockings.models.stock import StockItem, StockItemPrice
+from stockings.models.stockitem import StockItem
+from stockings.models.stockitemprice import StockItemPrice
 from stockings.models.trade import Trade
 
 

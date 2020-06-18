@@ -5,11 +5,11 @@ actual stocks, providing general data about the items.
 """
 
 # Django imports
+from django.apps import apps
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
-from stockings.models.stock import StockItemPrice
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
@@ -208,7 +208,7 @@ class StockItem(models.Model):
             The :attr:`latest_price` of the object, as provided by an
             associated :class:`~stockings.models.stock.StockItemPrice` object.
         """
-        return StockItemPrice.get_latest_price(self)
+        return apps.get_model("stockings.StockItemPrice").get_latest_price(self)
 
     def _set_currency(self, new_currency):
         """`setter` for :attr:`currency`.
@@ -235,7 +235,7 @@ class StockItem(models.Model):
         value : :class:`~stockings.data.StockingsMoney`
             The new price information to be set.
         """
-        StockItemPrice.set_latest_price(self, value)
+        apps.get_model("stockings.StockItemPrice").set_latest_price(self, value)
 
     currency = property(_get_currency, _set_currency)
     """The currency for the item's price information (:obj:`str`).

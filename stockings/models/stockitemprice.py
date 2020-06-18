@@ -96,7 +96,7 @@ class StockItemPrice(models.Model):
     """The default manager for these objects."""
 
     stock_item = models.ForeignKey(
-        StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp"
+        StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp",
     )
     """Reference to a :class:`~stockings.models.stock.StockItem`.
 
