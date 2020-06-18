@@ -475,6 +475,71 @@ class PortfolioItem(models.Model):
                 trade_information["costs_latest_timestamp"],
             )
 
+    @cached_property
+    def stock_count(self):  # noqa: D401
+        """The count of stocks in this `PortfolioItem` (:obj:int`, read-only).
+
+        Warnings
+        --------
+        It is highly recommended to use
+        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
+        retrieve `PortfolioItem` objects from the database, because this will
+        use a (rather complex) SQL statement which includes the required
+        annotations to actually populate this property. However, only one
+        database query is performed. When using
+        :class:`~django.db.models.Manager`, accessing this attribute will result
+        in another database access (and probably more than one, if the
+        attributes :attr:`cash_in`, :attr:`cash_out`, :attr:`costs` or
+        :attr:`stock_value` are accessed aswell).
+
+        Notes
+        -----
+        `stock_count` is implemented as
+        :class:`django.utils.functional.cached_property`.
+
+        The required values to populate the
+        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        as attributes of this `PortfolioItem` object. Instead, they are
+        dynamically calculated by evaluating other models, most notably
+        :class:`stockings.models.trade.Trade`.
+
+        This might be done while fetching the `PortfolioItem` object using
+        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
+        as provided by :attr:`stockings_manager`; the required values are then
+        provided as annotations to the `PortfolioItem` instance.
+
+        If the `PortfolioItem` object was fetched using
+        :class:`Django's default manager <django.db.models.Manager>`, as
+        provided by :attr:`objects`, these annotations are missing, so the
+        `getter` implementation performs additional database queries to retrieve
+        these values (the implementation as
+        :class:`~django.utils.functional.cached_property` ensures, that this
+        *expensive* operation is only performed once during the lifetime of this
+        instance).
+        """
+        try:
+            return self._stock_count
+        except AttributeError:
+            logger.info(
+                "Missing value while accessing attribute 'stock_count'. "
+                "Performing required database queries!"
+            )
+            logger.debug(
+                "'stock_count' is accessed while required values are not available. Most "
+                "likely, the 'PortfolioItem' was not fetched using "
+                "'PortfolioItem.stockings_manager', so that the specific annotation "
+                "is missing."
+            )
+
+            # collect the required information
+            trade_information = list(
+                Trade.stockings_manager.aggregation_by_portfolioitem(
+                    portfolio=self.portfolio, stock_item=self.stock_item
+                )
+            )[0]
+
+            return trade_information["current_stock_count"]
+
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
         if item_price is None:
@@ -537,16 +602,6 @@ class PortfolioItem(models.Model):
         """
         return self.portfolio.currency
 
-    def _get_stock_count(self):
-        """`getter` for :attr:`stock_count`.
-
-        Returns
-        -------
-        :obj:`int`
-            The count of stocks of this object.
-        """
-        return self._stock_count
-
     def _get_stock_value(self):
         """`getter` for :attr:`stock_value`.
 
@@ -561,41 +616,6 @@ class PortfolioItem(models.Model):
         """
         return self._return_money(
             self._stock_value_amount, timestamp=self._stock_value_timestamp
-        )
-
-    def _return_money(self, amount, currency=None, timestamp=None):
-        """Return a `StockingsMoney` instance with the given parameters.
-
-        This is a utility method to provide a generic interface for all
-        money-related fields of `PortfolioItem`.
-
-        Parameters
-        ----------
-        amount : :obj:`decimal.Decimal`
-        currency : :obj:`str`, optional
-        timestamp : :obj:`datetime.datetime`, optional
-
-        Returns
-        --------
-        :class:`~stockings.data.StockingsMoney`
-            Instance's values depends on parameters.
-
-        Notes
-        -----
-        This method is used to return money-related information using a
-        :class:`~stockings.data.StockingsMoney` instance.
-
-        ``amount`` and ``timestamp`` are fetched from the object, depending
-        on the accessed attribute.
-
-        If ``currency`` is not provided, the value of :attr:`currency` is used.
-        """
-        return StockingsMoney(
-            amount,
-            currency or self.currency,
-            # `StockingsMoney` will set the timestamp to `now()`, if no
-            # timestamp is provided.
-            timestamp,
         )
 
     def _set_currency(self, value):
@@ -624,23 +644,6 @@ class PortfolioItem(models.Model):
             "This attribute may not be set directly! "
             "The currency may only be set on `Portfolio` level."
         )
-
-    def _set_stock_count(self, value):
-        """`setter` for :attr:`stock_count`.
-
-        By using this `setter`, the :attr:`stock_count` is set to the new
-        `` value`` and the object's :attr:`stock_value` is updated.
-
-        Parameters
-        ----------
-        value : :obj:`int`
-            The new count to be applied.
-
-        See Also
-        --------
-        :meth:`update_stock_value`
-        """
-        self.update_stock_value(item_count=value)
 
     def _set_stock_value(self, value):
         """`setter` for :attr:`stock_value`.
@@ -679,27 +682,6 @@ class PortfolioItem(models.Model):
     Setting this attribute is not possible and will raise
     :exc:`~stockings.exceptions.StockingsInterfaceError`. Deleting the attribute
     will raise :exc:`AttributeError`.
-    """
-
-    stock_count = property(_get_stock_count, _set_stock_count)
-    """The number of shares of the referenced `StockItem` (:obj:`int`).
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_stock_count` and :meth:`_set_stock_count`.
-
-    **get**
-
-    Accessing the attribute returns :attr:`_stock_count`.
-
-    **set**
-
-    This attribute may be set by providing an :obj:`int`.
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
     """
 
     stock_value = property(_get_stock_value, _set_stock_value)
