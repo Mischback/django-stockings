@@ -5,7 +5,6 @@ import logging
 
 # Django imports
 from django.db import models
-from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
@@ -15,7 +14,6 @@ from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import Portfolio
 from stockings.models.stockitem import StockItem
-from stockings.models.trade import Trade
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -43,99 +41,6 @@ class PortfolioItemQuerySet(models.QuerySet):
             The fully annotated queryset.
         """
         return self._annotate_trade_information()
-
-    def _annotate_trade_information(self):
-        """Annotate the instances with their cash flows.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The annotated queryset.
-        """
-        trade_objects = (
-            Trade
-            # 1) Use the app-/model-specific manager.
-            # 2) Filter by `portfolio` and `stock_item`:
-            #    There is no direct reference between `Trade` and
-            #    `PortfolioItem` instances.
-            .stockings_manager.filter(
-                portfolio=models.OuterRef("portfolio"),
-                stock_item=models.OuterRef("stock_item"),
-            )
-            # Removes any pre-defined `ORDER BY`-clause.
-            .order_by()
-            # Groups by `stock_item`.
-            .values("stock_item")
-            # Let the magic happen and determine cash flows into and out of the
-            # `PortfolioItem`.
-            # Because the `PortfolioItem` is directly linked with `StockItem`,
-            # these cash flows can then be used to annotate the `PortfolioItem`
-            # instances.
-            .annotate(
-                cash_in_amount=Coalesce(
-                    models.Sum(
-                        "_trade_volume_amount", filter=models.Q(trade_type="BUY")
-                    ),
-                    models.Value(0),
-                ),
-                cash_in_timestamp=models.Max(
-                    "timestamp", filter=models.Q(trade_type="BUY")
-                ),
-                cash_out_amount=Coalesce(
-                    models.Sum(
-                        "_trade_volume_amount", filter=models.Q(trade_type="SELL")
-                    ),
-                    models.Value(0),
-                ),
-                cash_out_timestamp=models.Max(
-                    "timestamp", filter=models.Q(trade_type="SELL")
-                ),
-                costs_amount=Coalesce(models.Sum("_costs_amount"), models.Value(0)),
-                costs_timestamp=models.Max("timestamp"),
-                stock_buy_count=Coalesce(
-                    models.Sum("item_count", filter=models.Q(trade_type="BUY")),
-                    models.Value(0),
-                ),
-                stock_sell_count=Coalesce(
-                    models.Sum("item_count", filter=models.Q(trade_type="SELL")),
-                    models.Value(0),
-                ),
-            )
-        )
-
-        # The annotations are extendable, so that other cash flows (e.g.
-        # dividends) may be included.
-        return self.annotate(
-            _cash_in_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("cash_in_amount")),
-                output_field=models.DecimalField(),
-            ),
-            _cash_in_timestamp=models.ExpressionWrapper(
-                models.Subquery(trade_objects.values("cash_in_timestamp")),
-                output_field=models.DateTimeField(),
-            ),
-            _cash_out_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("cash_out_amount")),
-                output_field=models.DecimalField(),
-            ),
-            _cash_out_timestamp=models.ExpressionWrapper(
-                models.Subquery(trade_objects.values("cash_out_timestamp")),
-                output_field=models.DateTimeField(),
-            ),
-            _costs_amount=models.ExpressionWrapper(
-                0 + models.Subquery(trade_objects.values("costs_amount")),
-                output_field=models.DecimalField(),
-            ),
-            _costs_timestamp=models.ExpressionWrapper(
-                models.Subquery(trade_objects.values("costs_timestamp")),
-                output_field=models.DateTimeField(),
-            ),
-            _stock_count=models.ExpressionWrapper(
-                models.Subquery(trade_objects.values("stock_buy_count"))
-                - models.Subquery(trade_objects.values("stock_sell_count")),
-                output_field=models.PositiveIntegerField(),
-            ),
-        )
 
 
 class PortfolioItemManager(models.Manager):
@@ -322,7 +227,7 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                Trade.stockings_manager.aggregation_by_portfolioitem(
+                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
                     portfolio=self.portfolio, stock_item=self.stock_item
                 )
             )[0]
@@ -393,7 +298,7 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                Trade.stockings_manager.aggregation_by_portfolioitem(
+                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
                     portfolio=self.portfolio, stock_item=self.stock_item
                 )
             )[0]
@@ -464,7 +369,7 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                Trade.stockings_manager.aggregation_by_portfolioitem(
+                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
                     portfolio=self.portfolio, stock_item=self.stock_item
                 )
             )[0]
@@ -533,7 +438,7 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                Trade.stockings_manager.aggregation_by_portfolioitem(
+                self.trade(manager="stockings_manager").aggregation_by_portfolioitem(
                     portfolio=self.portfolio, stock_item=self.stock_item
                 )
             )[0]

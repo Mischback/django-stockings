@@ -10,8 +10,6 @@ buying stock) or out of the `Portfolio` (by selling stock).
 """
 
 # Django imports
-from django.apps import apps
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import Coalesce
@@ -21,9 +19,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.exceptions import StockingsInterfaceError
-from stockings.models.portfolio import Portfolio
-from stockings.models.stockitem import StockItem
+from stockings.models.portfolioitem import PortfolioItem
 
 
 class TradeQuerySet(models.QuerySet):
@@ -330,22 +326,6 @@ class Trade(models.Model):
     The :attr:`trade_volume` attribute is only available, when the `Trade`
     instance is retrieved using :attr:`stockings_manager` (see **Examples**
     section below).
-
-    Examples
-    --------
-    >>> t = Trade.object.first()
-    >>> t.trade_volume
-    StockingsInterfaceError
-    >>> t = Trade.stockings_manager.first()
-    >>> t.trade_volume
-    StockingsMoney instance
-
-    Using stockings_manager in a reverse relation
-
-    >>> from stockings.models.portfolio import Portfolio
-    >>> p = Portfolio.objects.first()
-    >>> p.trade_set(manager="stockings_manager").all()
-    QuerySet including all Trade objects with portfolio=p
     """
 
     # Define the choices for `type` field.
@@ -353,9 +333,11 @@ class Trade(models.Model):
     # See: https://docs.djangoproject.com/en/3.0/ref/models/fields/#enumeration-types
     # Don't use this, if it is the only 3.0 feature to keep backwards compatibility,
     # but DO use this, if there are other 3.0 features, that *must* be used!
+    TRADE_TYPE_BUY = "BUY"
+    TRADE_TYPE_SELL = "SELL"
     TRADE_TYPES = [
-        ("BUY", _("Buy")),
-        ("SELL", _("Sell")),
+        (TRADE_TYPE_BUY, _("Buy")),
+        (TRADE_TYPE_SELL, _("Sell")),
     ]
 
     item_count = models.PositiveIntegerField(
@@ -377,33 +359,18 @@ class Trade(models.Model):
     `Trade` object with ``item_count = 0``.
     """
 
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
-    """Reference to a :class:`~stockings.models.portfolio.Portfolio`.
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.ForeignKey` to
-    :class:`~stockings.models.portfolio.Portfolio` with ``on_delete=CASCADE``,
-    meaning that, if the :class:`~stockings.models.portfolio.Portfolio` object
-    is deleted, all referencing `Trade` objects will be discarded aswell.
-    """
-
-    stock_item = models.ForeignKey(
-        StockItem, on_delete=models.PROTECT, related_name="+"
+    portfolioitem = models.ForeignKey(
+        PortfolioItem, on_delete=models.CASCADE, related_name="trades"
     )
-    """Reference to a :class:`~stockings.models.stock.StockItem`.
+    """Reference to a :class:`~stockings.models.portfolioitem.PortfolioItem`.
 
     Notes
     -----
     This attribute is implemented as :class:`~django.db.models.ForeignKey` to
-    :class:`~stockings.models.stock.StockItem` with ``on_delete=PROTECT``,
-    meaning that it is not possible to delete the
-    :class:`~stockings.models.stock.StockItem` while it is referenced by a
-    `Trade` object.
-
-    The backwards relation (see
-    :attr:`ForeignKey.related_name<django.db.models.ForeignKey.related_name>`)
-    is disabled.
+    :class:`~stockings.models.portfolioitem.PortfolioItem` with
+    ``on_delete=CASCADE``, meaning that, if the
+    :class:`~stockings.models.portfolio.Portfolio` object is deleted, all
+    referencing `Trade` objects will be discarded aswell.
     """
 
     timestamp = models.DateTimeField(default=now)
@@ -448,12 +415,16 @@ class Trade(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
+        ordering = ["-timestamp"]
         verbose_name = _("Trade")
         verbose_name_plural = _("Trades")
 
     def __str__(self):  # noqa: D105
         return "[{}] {} - {} ({})".format(
-            self.trade_type, self.portfolio, self.stock_item, self.timestamp
+            self.trade_type,
+            self.portfolioitem.portfolio,
+            self.portfolioitem.stock_item,
+            self.timestamp,
         )  # pragma: nocover
 
     def clean(self):
@@ -491,24 +462,51 @@ class Trade(models.Model):
         # 2. You are not able to sell more items than available in your
         #   portfolio.
         if self.trade_type == "SELL":
-            # Get the ``PortfolioItem``...
-            try:
-                portfolio_item = self.portfolio.portfolioitem_set.get(
-                    stock_item=self.stock_item
-                )
-            except apps.get_model("stockings.PortfolioItem").DoesNotExist:
-                raise ValidationError(
-                    _(
-                        "You are trying to sell stock, that is not present in your portfolio!"
-                    ),
-                    code="invalid",
-                )
-
             # Trying to sell more items than available. Setting a maximum value
             # for this trade.
             # TODO: Add a notification of some sort... django messages?
-            if self.item_count > portfolio_item.stock_count:
-                self.item_count = portfolio_item.stock_count
+            if self.item_count > self.portfolioitem.stock_count:
+                self.item_count = self.portfolioitem.stock_count
+
+    @cached_property
+    def costs(self):  # noqa: D401
+        """The costs of this trade operation (:class:`~stockings.data.StockingsMoney`, read-only).
+
+        In the context of this class, *costs* refer to whatever your broker is
+        charging for the trade.
+
+        Notes
+        -----
+        `costs` is implemented as
+        :class:`django.utils.functional.cached_property`.
+        """
+        return StockingsMoney(self._costs_amount, self.currency, self.timestamp)
+
+    @cached_property
+    def currency(self):  # noqa: D401
+        """The currency for `costs` and `price` (:obj:`str`, read-only).
+
+        The *currency* is actually determined by accessing the associated
+        :class:`stockings.models.portfolioitem.PortfolioItem` (which, accesses
+        the parent :class:`stockings.models.portfolio.Portfolio`)
+
+        Notes
+        -----
+        `currency` is implemented as
+        :class:`django.utils.functional.cached_property`
+        """
+        return self.portfolioitem.currency
+
+    @cached_property
+    def price(self):  # noqa: D401
+        """The price per item (:class:`~stockings.data.StockingsMoney`, read-only).
+
+        Notes
+        -----
+        `price` is implemented as
+        :class:`django.utils.functional.cached_property`.
+        """
+        return StockingsMoney(self._price_amount, self.currency, self.timestamp)
 
     @cached_property
     def trade_volume(self):  # noqa: D401
@@ -518,21 +516,10 @@ class Trade(models.Model):
         ``price per item * item count``. It does **not** include the trade's
         :attr:`costs`.
 
-        Warnings
-        --------
-        It is highly recommended to use
-        :class:`~stockings.models.trade.TradeManager` to
-        retrieve `Trade` objects from the database including the required
-        annotations to actually populate this property.
-
         Notes
         -----
         `trade_volume` is implemented as
         :class:`django.utils.functional.cached_property`.
-
-        The required values to populate the
-        :class:`~stockings.data.StockingsMoney` instance are not directly stored
-        as attributes of this `Trade` object.
         """
         try:
             return StockingsMoney(
@@ -542,160 +529,3 @@ class Trade(models.Model):
             return StockingsMoney(
                 self.item_count * self._price_amount, self.currency, self.timestamp
             )
-
-    def _get_costs(self):
-        """`getter` for :attr:`costs`.
-
-        Returns
-        --------
-        :class:`~stockings.data.StockingsMoney`
-            An instance of :class:`~stockings.data.StockingsMoney`, where
-            :attr:`~stockings.data.StockingsMoney.amount` is
-            :attr:`_costs_amount`,
-            :attr:`~stockings.data.StockingsMoney.currency` is :attr:`currency`
-            and :attr:`~stockings.data.StockingsMoney.timestamp` is
-            :attr:`timestamp`.
-        """
-        return StockingsMoney(self._costs_amount, self.currency, self.timestamp)
-
-    def _get_currency(self):
-        """`getter` for :attr:`currency`.
-
-        Returns
-        -------
-        :obj:`str`
-            The :attr:`currency` of the object.
-
-        Notes
-        -----
-        The `currency` is actually fetched from the associated
-        :class:`~stockings.models.portfolio.Portfolio` object.
-        """
-        return self.portfolio.currency
-
-    def _get_price(self):
-        """`getter` for :attr:`price`.
-
-        Returns
-        --------
-        :class:`~stockings.data.StockingsMoney`
-            An instance of :class:`~stockings.data.StockingsMoney`, where
-            :attr:`~stockings.data.StockingsMoney.amount` is
-            :attr:`_price_amount`,
-            :attr:`~stockings.data.StockingsMoney.currency` is :attr:`currency`
-            and :attr:`~stockings.data.StockingsMoney.timestamp` is
-            :attr:`timestamp`.
-
-        Notes
-        -------
-        This returns the **price per item**. Thus, it has similarity to
-        :class:`~stockings.models.stock.StockItemPrice`.
-
-        The total price of the trade may be calculated like
-        ``total_price = costs.add(price.multiply(item_count))``.
-        """
-        return StockingsMoney(self._price_amount, self.currency, self.timestamp)
-
-    def _set_costs(self, value):
-        raise NotImplementedError("to be done")
-
-    def _set_currency(self, new_currency):
-        """`setter` for :attr:`currency`.
-
-        This attribute can not be set directly. The :attr:`currency` is
-        actually fetched from the associated
-        :class:`stockings.models.portfolio.Portfolio` object.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            This parameter is only provided to match the required prototype for
-            this `setter`, it is actually not used.
-
-        Raises
-        ------
-        :exc:`~stockings.exceptions.StockingsInterfaceError`
-            This attribute can not be set directly.
-        """
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "The currency may only be set on `Portfolio` level."
-        )
-
-    def _set_price(self, value):
-        raise NotImplementedError("to be done")
-
-    costs = property(_get_costs, _set_costs)
-    """The costs of this trade operation (:class:`~stockings.data.StockingsMoney`).
-
-    In the context of this class, *costs* refer to whatever your broker is
-    charging for the trade.
-
-    Returns a :class:`~stockings.data.StockingsMoney` instance and accepts these
-    objects as input.
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_costs` and :meth:`_set_costs`.
-
-    **get**
-
-    Accessing the attribute returns a :class:`~stockings.data.StockingsMoney`
-    object.
-
-    - ``amount`` is stored in :attr:`_costs_amount` as :obj:`decimal.Decimal`.
-    - ``currency`` is fetched from the object's :attr:`currency`.
-    - ``timestamp`` is fetched from the object's :attr:`timestamp`.
-
-    **set**
-
-    *currently not implemented (yet)*
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
-
-    currency = property(_get_currency, _set_currency)
-    """The currency for `costs` and `price` (:obj:`str`, read-only).
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, and its value is actually
-    fetched from the referenced :class:`~stockings.models.portfolio.Portfolio`
-    object.
-
-    Setting this attribute is not possible and will raise
-    :exc:`~stockings.exceptions.StockingsInterfaceError`. Deleting the attribute
-    will raise :exc:`AttributeError`.
-    """
-
-    price = property(_get_price, _set_price)
-    """The price per item of the traded :class:`~stockings.models.stock.StockItem`
-    (:class:`~stockings.data.StockingsMoney`).
-
-    Returns a :class:`~stockings.data.StockingsMoney` instance and accepts these
-    objects as input.
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_price` and :meth:`_set_price`.
-
-    **get**
-
-    Accessing the attribute returns a `StockingsMoney` object.
-
-    - ``amount`` is stored in :attr:`_price_amount` as :obj:`decimal.Decimal`.
-    - ``currency`` is fetched from the object's :attr:`currency`.
-    - ``timestamp`` is fetched from the object's :attr:`timestamp`.
-
-    **set**
-
-    *currently not implemented (yet)*
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """

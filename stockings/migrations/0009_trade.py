@@ -3,7 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import stockings.models.stock
+import stockings.models.stockitem
 
 
 class Migration(migrations.Migration):
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('_price_amount', models.DecimalField(decimal_places=4, default=0, max_digits=19)),
                 ('_price_currency', models.CharField(default='EUR', max_length=3)),
                 ('portfolio', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='stockings.Portfolio')),
-                ('stock_item', models.ForeignKey(on_delete=models.SET(stockings.models.stock.StockItem.get_sentinel_item), related_name='+', to='stockings.StockItem')),
+                ('stock_item', models.ForeignKey(on_delete=models.SET(stockings.models.stockitem.StockItem.get_sentinel_item), related_name='+', to='stockings.StockItem')),
             ],
             options={
                 'verbose_name': 'Trade',
