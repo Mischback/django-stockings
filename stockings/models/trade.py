@@ -36,14 +36,14 @@ class TradeQuerySet(models.QuerySet):
     """
 
     def default(self):
-        """Return a queryset with all app-specific annotations.
+        """Return a queryset with all class-specific annotations.
 
         Returns
         -------
         :class:`django.db.models.QuerySet`
             The fully annotated queryset.
         """
-        return self._annotate_trade_volume()
+        return self._annotate_trade_volume()._annotate_math_count()
 
     def filter_portfolio(self, portfolio):
         """Filter for :class:`~stockings.models.portfolio.Portfolio`.
@@ -102,6 +102,31 @@ class TradeQuerySet(models.QuerySet):
             :class:`~stockings.models.stock.StockItem` instance.
         """
         return self.filter(stock_item=stock_item)
+
+    def _annotate_math_count(self):
+        """Annotate each object with `_math_count`.
+
+        `_math_count` describes the *mathematical count*, which basically means,
+        that the different :attr:`~stockings.models.trade.Trade.trade_type` are
+        used to determine, if the
+        :attr:`~stockings.models.trade.Trade.item_count` should be considered
+        ``positive`` or ``negative``.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        return self.annotate(
+            _math_count=models.Case(
+                models.When(
+                    trade_type=Trade.TRADE_TYPE_SELL,
+                    then=models.Value("-1") * models.F("item_count"),
+                ),
+                default=models.F("item_count"),
+                output_field=models.IntegerField(),
+            )
+        )
 
     def _annotate_trade_volume(self):
         """Annotate each object with `_trade_volume_amount`.
