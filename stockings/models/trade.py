@@ -9,6 +9,9 @@ model cash flows into the :class:`~stockings.models.portfolio.Portfolio` (by
 buying stock) or out of the `Portfolio` (by selling stock).
 """
 
+# Python imports
+import logging
+
 # Django imports
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -20,6 +23,8 @@ from django.utils.translation import ugettext_lazy as _
 # app imports
 from stockings.data import StockingsMoney
 from stockings.models.portfolioitem import PortfolioItem
+
+logger = logging.getLogger(__file__)
 
 
 class TradeQuerySet(models.QuerySet):
@@ -43,7 +48,7 @@ class TradeQuerySet(models.QuerySet):
         :class:`django.db.models.QuerySet`
             The fully annotated queryset.
         """
-        return self._annotate_trade_volume()._annotate_math_count()
+        return self._annotate_currency()._annotate_math_count()._annotate_trade_volume()
 
     def filter_portfolio(self, portfolio):
         """Filter for :class:`~stockings.models.portfolio.Portfolio`.
@@ -102,6 +107,22 @@ class TradeQuerySet(models.QuerySet):
             :class:`~stockings.models.stock.StockItem` instance.
         """
         return self.filter(stock_item=stock_item)
+
+    def _annotate_currency(self):
+        """Annotate each object with `_currency`.
+
+        The `currency` for instances of :class:`~stockings.models.trade.Trade`
+        is actually stored at :class:`stockings.models.portfolio.Portfolio`.
+
+        The annotation uses Django's feature to access related objects to fetch
+        the `currency`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        return self.annotate(_currency=models.F("portfolioitem__portfolio___currency"))
 
     def _annotate_math_count(self):
         """Annotate each object with `_math_count`.
@@ -520,7 +541,11 @@ class Trade(models.Model):
         `currency` is implemented as
         :class:`django.utils.functional.cached_property`
         """
-        return self.portfolioitem.currency
+        try:
+            return self._currency
+        except AttributeError:
+            logger.debug("Fetching 'currency' from parent 'portfolioitem' instance.")
+            return self.portfolioitem.currency
 
     @cached_property
     def price(self):  # noqa: D401
