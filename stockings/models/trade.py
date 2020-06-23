@@ -50,64 +50,6 @@ class TradeQuerySet(models.QuerySet):
         """
         return self._annotate_currency()._annotate_math_count()._annotate_trade_volume()
 
-    def filter_portfolio(self, portfolio):
-        """Filter for :class:`~stockings.models.portfolio.Portfolio`.
-
-        Parameters
-        ----------
-        portfolio : stockings.models.portfolio.Portfolio
-            The instance to be filtered.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The filtered queryset, limited to a single
-            :class:`~stockings.models.portfolio.Portfolio` instance.
-        """
-        return self.filter(portfolio=portfolio)
-
-    def filter_purchases(self):
-        """Filter by :attr:`~stockings.models.trade.Trade.trade_type`.
-
-        Returns only items with :attr:`~stockings.models.trade.Trade.trade_type`
-        ``BUY``.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The filtered queryset, limited to purchases.
-        """
-        return self.filter(trade_type="BUY")
-
-    def filter_sales(self):
-        """Filter by :attr:`~stockings.models.trade.Trade.trade_type`.
-
-        Returns only items with :attr:`~stockings.models.trade.Trade.trade_type`
-        ``SELL``.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The filtered queryset, limited to sales.
-        """
-        return self.filter(trade_type="SELL")
-
-    def filter_stock_item(self, stock_item):
-        """Filter for :class:`~stockings.models.stock.StockItem`.
-
-        Parameters
-        ----------
-        stock_item : stockings.models.stock.StockItem
-            The instance to be filtered.
-
-        Returns
-        -------
-        :class:`django.db.models.QuerySet`
-            The filtered queryset, limited to a single
-            :class:`~stockings.models.stock.StockItem` instance.
-        """
-        return self.filter(stock_item=stock_item)
-
     def _annotate_currency(self):
         """Annotate each object with `_currency`.
 
@@ -187,90 +129,6 @@ class TradeManager(models.Manager):
     :class:`~stockings.models.trade.TradeQuerySet`.
     """
 
-    def aggregation_by_portfolioitem(self, portfolio=None, stock_item=None):
-        """Aggregate trade information by `PortfolioItem` and provide them as annotation.
-
-        The method reduces the queryset to distinct combinations of
-        :class:`stockings.models.portfolio.Portfolio` and
-        :class:`stockings.models.stock.StockItem` and annotates them with
-        aggregated values based on information stored in instances of
-        :meth:`~stockings.models.trade.Trade`.
-
-        Returns
-        -------
-        :class:`django.models.db.QuerySet`
-        """
-        # get the initial queryset
-        internal = self.get_queryset()
-
-        # reduce to only one `portfolio`, if applicable, to minimize the required aggregation
-        if portfolio is not None:
-            internal = internal.filter_portfolio(portfolio)
-
-        # reduce to only one `stock_item`, if applicable, to minimize the required aggregation
-        if stock_item is not None:
-            internal = internal.filter_stock_item(stock_item)
-
-        internal = (
-            internal
-            # Remove any pre-defined `ORDER BY` clause...
-            .order_by()
-            # ...add a `GROUP BY` clause...
-            # Any combination of `portfolio` and `stock_item`, which is effectively
-            # equivalent to a `PortfolioItem`, is annotated separately.
-            .values("portfolio", "stock_item")
-            # ...and actually perform the aggregations and provide them as annotations.
-            .annotate(
-                # trading costs can simply be summed
-                costs_amount=Coalesce(models.Sum("_costs_amount"), models.Value(0)),
-                # the most recent `timestamp` is provided
-                costs_latest_timestamp=models.Max("timestamp"),
-                # money spent to PURCHASE stock
-                purchase_amount=Coalesce(
-                    models.Sum(
-                        "_trade_volume_amount", filter=models.Q(trade_type="BUY")
-                    ),
-                    models.Value(0),
-                ),
-                # count of items PURCHASED (into the portfolio)
-                purchase_count=Coalesce(
-                    models.Sum("item_count", filter=models.Q(trade_type="BUY")),
-                    models.Value(0),
-                ),
-                # the `timestamp` of the most recent PURCHASE
-                purchase_latest_timestamp=models.Max(
-                    "timestamp", filter=models.Q(trade_type="BUY")
-                ),
-                # money earned by SELLING stock
-                sale_amount=Coalesce(
-                    models.Sum(
-                        "_trade_volume_amount", filter=models.Q(trade_type="SELL")
-                    ),
-                    models.Value(0),
-                ),
-                # count of items SOLD (out of the portfolio)
-                sale_count=Coalesce(
-                    models.Sum("item_count", filter=models.Q(trade_type="SELL")),
-                    models.Value(0),
-                ),
-                # the `timestamp` of the most recent SALE
-                # FIXME: There might be no sale; Is a default value (via COALESCE) required?
-                sale_latest_timestamp=models.Max(
-                    "timestamp", filter=models.Q(trade_type="SELL")
-                ),
-            )
-            # In a second annotations step, provide the current `stock_count`,
-            # calculated from information provided by step one.
-            .annotate(
-                current_stock_count=models.ExpressionWrapper(
-                    models.F("purchase_count") - models.F("sale_count"),
-                    output_field=models.PositiveIntegerField(),
-                ),
-            )
-        )
-
-        return internal
-
     def get_queryset(self):
         """Use the app-/model-specific :class:`~stockings.models.trade.TradeQuerySet` by default.
 
@@ -284,31 +142,57 @@ class TradeManager(models.Manager):
         """
         return TradeQuerySet(self.model, using=self._db).default()
 
-    def purchases(self):
-        """Fetch only `Trade` instances with ``trade_type="BUY"``.
+    def trade_summary(self, portfolioitem=None):
+        """Aggregate trade information by `PortfolioItem` and provide them as annotation.
+
+        The method produces a summary of all
+        :class:`~stockings.models.trade.Trade` instances, grouped by
+        `portfolioitem`.
 
         Returns
         -------
         :class:`django.models.db.QuerySet`
-            This queryset is provided by
-            :class:`stockings.models.trade.TradeQuerySet` and applies its
-            :meth:`~stockings.models.trade.TradeQuerySet.full` method. The
-            retrieved objects will be annotated with additional attributes.
         """
-        return self.get_queryset().filter_purchases()
+        _qs = self.get_queryset()
 
-    def sales(self):
-        """Fetch only `Trade` instances with ``trade_type="SELL"``.
+        if portfolioitem is not None:
+            _qs = _qs.filter(portfolioitem=portfolioitem)
 
-        Returns
-        -------
-        :class:`django.models.db.QuerySet`
-            This queryset is provided by
-            :class:`stockings.models.trade.TradeQuerySet` and applies its
-            :meth:`~stockings.models.trade.TradeQuerySet.full` method. The
-            retrieved objects will be annotated with additional attributes.
-        """
-        return self.get_queryset().filter_sales()
+        return (
+            _qs.order_by()
+            .values("portfolioitem")
+            .annotate(
+                # trading costs can simply be summed
+                costs_amount=Coalesce(models.Sum("_costs_amount"), models.Value(0)),
+                # the most recent `timestamp` is provided
+                costs_latest_timestamp=models.Max("timestamp"),
+                # the current stock count
+                current_stock_count=models.Sum("_math_count"),
+                # money spent to PURCHASE stock
+                purchase_amount=Coalesce(
+                    models.Sum(
+                        "_trade_volume_amount", filter=models.Q(trade_type="BUY")
+                    ),
+                    models.Value(0),
+                ),
+                # the `timestamp` of the most recent PURCHASE
+                purchase_latest_timestamp=models.Max(
+                    "timestamp", filter=models.Q(trade_type="BUY")
+                ),
+                # money earned by SELLING stock
+                sale_amount=Coalesce(
+                    models.Sum(
+                        "_trade_volume_amount", filter=models.Q(trade_type="SELL")
+                    ),
+                    models.Value(0),
+                ),
+                # the `timestamp` of the most recent SALE
+                # FIXME: There might be no sale; Is a default value (via COALESCE) required?
+                sale_latest_timestamp=models.Max(
+                    "timestamp", filter=models.Q(trade_type="SELL")
+                ),
+            )
+        )
 
 
 class Trade(models.Model):
