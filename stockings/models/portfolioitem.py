@@ -171,19 +171,6 @@ class PortfolioItem(models.Model):
     def cash_in(self):  # noqa: D401
         """The cash flow into this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
 
-        Warnings
-        --------
-        It is highly recommended to use
-        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
-        retrieve `PortfolioItem` objects from the database, because this will
-        use a (rather complex) SQL statement which includes the required
-        annotations to actually populate this property. However, only one
-        database query is performed. When using
-        :class:`~django.db.models.Manager`, accessing this attribute will result
-        in another database access (and probably more than one, if the
-        attributes :attr:`cash_out`, :attr:`costs`, :attr:`stock_count` or
-        :attr:`stock_value` are accessed aswell).
-
         Notes
         -----
         `cash_in` is implemented as
@@ -194,20 +181,6 @@ class PortfolioItem(models.Model):
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
-
-        This might be done while fetching the `PortfolioItem` object using
-        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
-        as provided by :attr:`stockings_manager`; the required values are then
-        provided as annotations to the `PortfolioItem` instance.
-
-        If the `PortfolioItem` object was fetched using
-        :class:`Django's default manager <django.db.models.Manager>`, as
-        provided by :attr:`objects`, these annotations are missing, so the
-        `getter` implementation performs additional database queries to retrieve
-        these values (the implementation as
-        :class:`~django.utils.functional.cached_property` ensures, that this
-        *expensive* operation is only performed once during the lifetime of this
-        instance).
         """
         try:
             return StockingsMoney(
@@ -227,8 +200,8 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
-                    portfolio=self.portfolio, stock_item=self.stock_item
+                self.trades(manager="stockings_manager").trade_summary(
+                    portfolioitem=self
                 )
             )[0]
 
@@ -242,19 +215,6 @@ class PortfolioItem(models.Model):
     def cash_out(self):  # noqa: D401
         """The cash flow out of this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
 
-        Warnings
-        --------
-        It is highly recommended to use
-        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
-        retrieve `PortfolioItem` objects from the database, because this will
-        use a (rather complex) SQL statement which includes the required
-        annotations to actually populate this property. However, only one
-        database query is performed. When using
-        :class:`~django.db.models.Manager`, accessing this attribute will result
-        in another database access (and probably more than one, if the
-        attributes :attr:`cash_in`, :attr:`costs`, :attr:`stock_count` or
-        :attr:`stock_value` are accessed aswell).
-
         Notes
         -----
         `cash_out` is implemented as
@@ -265,20 +225,6 @@ class PortfolioItem(models.Model):
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
-
-        This might be done while fetching the `PortfolioItem` object using
-        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
-        as provided by :attr:`stockings_manager`; the required values are then
-        provided as annotations to the `PortfolioItem` instance.
-
-        If the `PortfolioItem` object was fetched using
-        :class:`Django's default manager <django.db.models.Manager>`, as
-        provided by :attr:`objects`, these annotations are missing, so the
-        `getter` implementation performs additional database queries to retrieve
-        these values (the implementation as
-        :class:`~django.utils.functional.cached_property` ensures, that this
-        *expensive* operation is only performed once during the lifetime of this
-        instance).
         """
         try:
             return StockingsMoney(
@@ -298,8 +244,8 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
-                    portfolio=self.portfolio, stock_item=self.stock_item
+                self.trades(manager="stockings_manager").trade_summary(
+                    portfolioitem=self
                 )
             )[0]
 
@@ -313,19 +259,6 @@ class PortfolioItem(models.Model):
     def costs(self):  # noqa: D401
         """The costs associated with this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
 
-        Warnings
-        --------
-        It is highly recommended to use
-        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
-        retrieve `PortfolioItem` objects from the database, because this will
-        use a (rather complex) SQL statement which includes the required
-        annotations to actually populate this property. However, only one
-        database query is performed. When using
-        :class:`~django.db.models.Manager`, accessing this attribute will result
-        in another database access (and probably more than one, if the
-        attributes :attr:`cash_in`, :attr:`cash_out`, :attr:`stock_count` or
-        :attr:`stock_value` are accessed aswell).
-
         Notes
         -----
         `costs` is implemented as
@@ -336,20 +269,6 @@ class PortfolioItem(models.Model):
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
-
-        This might be done while fetching the `PortfolioItem` object using
-        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
-        as provided by :attr:`stockings_manager`; the required values are then
-        provided as annotations to the `PortfolioItem` instance.
-
-        If the `PortfolioItem` object was fetched using
-        :class:`Django's default manager <django.db.models.Manager>`, as
-        provided by :attr:`objects`, these annotations are missing, so the
-        `getter` implementation performs additional database queries to retrieve
-        these values (the implementation as
-        :class:`~django.utils.functional.cached_property` ensures, that this
-        *expensive* operation is only performed once during the lifetime of this
-        instance).
         """
         try:
             return StockingsMoney(
@@ -369,8 +288,8 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                self.trades(manager="stockings_manager").aggregation_by_portfolioitem(
-                    portfolio=self.portfolio, stock_item=self.stock_item
+                self.trades(manager="stockings_manager").trade_summary(
+                    portfolioitem=self
                 )
             )[0]
 
@@ -384,19 +303,6 @@ class PortfolioItem(models.Model):
     def stock_count(self):  # noqa: D401
         """The count of stocks in this `PortfolioItem` (:obj:int`, read-only).
 
-        Warnings
-        --------
-        It is highly recommended to use
-        :class:`~stockings.models.portfolioitem.PortfolioItemManager` to
-        retrieve `PortfolioItem` objects from the database, because this will
-        use a (rather complex) SQL statement which includes the required
-        annotations to actually populate this property. However, only one
-        database query is performed. When using
-        :class:`~django.db.models.Manager`, accessing this attribute will result
-        in another database access (and probably more than one, if the
-        attributes :attr:`cash_in`, :attr:`cash_out`, :attr:`costs` or
-        :attr:`stock_value` are accessed aswell).
-
         Notes
         -----
         `stock_count` is implemented as
@@ -407,20 +313,6 @@ class PortfolioItem(models.Model):
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
-
-        This might be done while fetching the `PortfolioItem` object using
-        :class:`the model-specific manager <stockings.models.portfolioitem.PortfolioItemManager>`
-        as provided by :attr:`stockings_manager`; the required values are then
-        provided as annotations to the `PortfolioItem` instance.
-
-        If the `PortfolioItem` object was fetched using
-        :class:`Django's default manager <django.db.models.Manager>`, as
-        provided by :attr:`objects`, these annotations are missing, so the
-        `getter` implementation performs additional database queries to retrieve
-        these values (the implementation as
-        :class:`~django.utils.functional.cached_property` ensures, that this
-        *expensive* operation is only performed once during the lifetime of this
-        instance).
         """
         try:
             return self._stock_count
@@ -438,8 +330,8 @@ class PortfolioItem(models.Model):
 
             # collect the required information
             trade_information = list(
-                self.trade(manager="stockings_manager").aggregation_by_portfolioitem(
-                    portfolio=self.portfolio, stock_item=self.stock_item
+                self.trades(manager="stockings_manager").trade_summary(
+                    portfolioitem=self
                 )
             )[0]
 
