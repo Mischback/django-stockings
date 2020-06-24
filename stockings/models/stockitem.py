@@ -143,6 +143,46 @@ class StockItem(models.Model):
         else:
             return "{}".format(self.isin,)
 
+    @property
+    def currency(self):  # noqa: D401
+        """The currency for money-related fields (:obj:`str`).
+
+        While `StockItem` does not store money-related information, in
+        particular no *amounts*, all related instances of
+        :class:`stockings.models.stockitemprice.StockItemPrice` are to share the
+        same currency, thus, it is provided in the parent element, which is a
+        `StockItem` instance.
+
+        Warnings
+        --------
+        **setting** `currency` will update all related instances of
+        :class:`stockings.models.stockitemprice.StockItemPrice` and will
+        automatically call this object's ``save()`` method to ensure the
+        integrity of data.
+
+        Notes
+        -----
+        This attribute is implemented as a :obj:`property`.
+
+        The **getter** simply returns the
+        :attr:`~stockings.models.stockitem.StockItem._currency`.
+
+        The **setter** applies the ``new_currency`` to all related instances of
+        :class:`stockings.models.stockitemprice.StockItemPrice` and then updates
+        :attr:`~stockings.models.stockitem.StockItem._currency`.
+        """
+        return self._currency
+
+    @currency.setter
+    def currency(self, new_currency):
+        """Setter for `currency`."""
+        for item in self.stockitemprice_set.iterator():
+            item._apply_new_currency(new_currency)
+            item.save()
+
+        self._currency = new_currency
+        self.save()
+
     def get_fullname_by_isin(self):
         """Fetch and update the ``full_name`` of an item.
 
@@ -189,16 +229,6 @@ class StockItem(models.Model):
         """
         return self.portfolioitem_set.filter(is_active=True).count() > 0
 
-    def _get_currency(self):
-        """`getter` for :attr:`currency`.
-
-        Returns
-        -------
-        :obj:`str`
-            The :attr:`currency` of the object.
-        """
-        return self._currency
-
     def _get_latest_price(self):
         """`getter` for :attr:`latest_price`.
 
@@ -210,23 +240,6 @@ class StockItem(models.Model):
         """
         return apps.get_model("stockings.StockItemPrice").get_latest_price(self)
 
-    def _set_currency(self, new_currency):
-        """`setter` for :attr:`currency`.
-
-        Set the currency for all associated
-        :class:`~stockings.models.stock.StockItemPrice` objects.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            The new currency to be applied.
-        """
-        for item in self.stockitemprice_set.iterator():
-            item._apply_new_currency(new_currency)
-            item.save()
-
-        self._currency = new_currency
-
     def _set_latest_price(self, value):
         """`setter`for :attr:`latest_price`.
 
@@ -236,39 +249,6 @@ class StockItem(models.Model):
             The new price information to be set.
         """
         apps.get_model("stockings.StockItemPrice").set_latest_price(self, value)
-
-    currency = property(_get_currency, _set_currency)
-    """The currency for the item's price information (:obj:`str`).
-
-    The actual price information is not stored with
-    :class:`~stockings.models.stock.StockItem` objects but rather with
-    :class:`~stockings.models.stock.StockItemPrice` objects. These, however,
-    rely on this attribute for currency information.
-
-    This implementation ensures, that all price information share the same
-    value for their currency and enables (meaningful) statistical evaluation.
-
-    Notes
-    -------
-    This attribute is implemented as a `property`. You may refer to
-    :meth:`_get_currency` and :meth:`_set_currency`
-    for implementation details.
-
-    **get**
-
-    Accessing the attribute returns a :obj:`str` with the current currency.
-
-    **set**
-
-    Setting this attribute will update all related instances of
-    :class:`~stockings.models.stock.StockItemPrice` by calling their
-    :meth:`~stockings.models.stock.StockItemPrice._apply_new_currency` method.
-    Finally, this object's :attr:`~stockings.models.stock.StockItem._currency`
-    is updated.
-
-    **del**
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
 
     is_active = property(_is_active)
     """Flag to indicate, if this item is active (:obj:`bool`, read-only).
