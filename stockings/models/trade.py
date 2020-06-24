@@ -28,7 +28,7 @@ logger = logging.getLogger(__file__)
 
 
 class TradeQuerySet(models.QuerySet):
-    """App-specific implementation of :class:`django.db.modesl.QuerySet`.
+    """App-specific implementation of :class:`django.db.models.QuerySet`.
 
     Notes
     -----
@@ -43,12 +43,67 @@ class TradeQuerySet(models.QuerySet):
     def default(self):
         """Return a queryset with all class-specific annotations.
 
+        *Class-specific* does mean, the provided annotations are only relying on
+        actual fields of the :class:`~stockings.models.trade.Trade` model, but
+        do not reach out to other models. For this feature see
+        :meth:`~stockings.models.trade.TradeQuerySet.full`.
+
         Returns
         -------
         :class:`django.db.models.QuerySet`
-            The fully annotated queryset.
+            The queryset annotated with :meth:`_annotate_math_count` and
+            :meth:`_annotate_trade_volume`.
+
+        Notes
+        -----
+        The following annotations are applied:
+
+        - :meth:`_annotate_math_count`
+          converts :attr:`~stockings.models.trade.Trade.item_count` into a
+          negative number, if :attr:`~stockings.models.trade.Trade.trade_type`
+          equals :attr:`~stockings.models.trade.Trade.TRADE_TYPE_SELL`.
+        - :meth:`_annotate_trade_volume`
+          adds the *trade volume*, which is defined as product of
+          :attr:`~stockings.models.trade.Trade.item_count` and
+          :attr:`~stockings.models.trade.Trade._price_amount`.
+
+        This method is applied by
+        :meth:`stockings.models.trade.TradeManager.get_queryset`, meaning these
+        annotations are provided by default when using the class-specific
+        manager.
         """
-        return self._annotate_currency()._annotate_math_count()._annotate_trade_volume()
+        return self._annotate_math_count()._annotate_trade_volume()
+
+    def full(self):
+        """Return a fully annotated queryset.
+
+        *Fully annotated* does mean that, beside the class-specific annotations
+        provided by :meth:`~stockings.models.trade.TradeQuerySet.default`,
+        related objects are selected using
+        :meth:`django.db.models.query.QuerySet.select_related`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            A queryset, providing the related
+            :class:`stockings.models.portfolio.Portfolio`,
+            :class:`stockings.models.portfolioitem.PortfolioItem` and
+            :class:`stockings.models.stockitem.StockItem` objects.
+
+        Warnings
+        --------
+        :meth:`~stockings.models.trade.TradeQuerySet._annotate_currency` is
+        **not** applied. This may result in a log message while accessing
+        :attr:`Trade.currency <stockings.models.trade.Trade.currency`, stating
+        that the attribute is retrieved from the parent
+        :class:`~stockings.models.portfolioItem.PortfolioItem` instance.
+        However, this will *not* result in another database query, because the
+        required object (in fact of type
+        :class:`~stockings.models.portfolio.Portfolio`) is already retrieved.
+        """
+        return self.select_related(
+            "portfolioitem__portfolio", "portfolioitem__stock_item"
+        )
 
     def _annotate_currency(self):
         """Annotate each object with `_currency`.
@@ -98,12 +153,6 @@ class TradeQuerySet(models.QuerySet):
         -------
         :class:`django.db.models.QuerySet`
             The annotated queryset.
-
-        Notes
-        -----
-        The attribute :attr:`~stockings.models.trade.Trade.trade_volume` of
-        :class:`stockings.models.trade.Trade` is not actually stored as a
-        Django model field. Instead, it is only provided by this annotation.
         """
         return self.annotate(
             _trade_volume_amount=models.ExpressionWrapper(
