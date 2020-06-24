@@ -1,30 +1,108 @@
 """Provides classes that represent stock items."""
 
+# Python imports
+import logging
+
 # Django imports
 from django.db import models
 from django.db.models.functions import TruncDate
+from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.exceptions import StockingsInterfaceError
 from stockings.models.stockitem import StockItem
+
+# get a module-level logger
+logger = logging.getLogger(__name__)
+
+
+class StockItemPriceQuerySet(models.QuerySet):
+    """App-specific implementation of :class:`django.db.modesl.QuerySet`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.QuerySet` implementation provides
+    app-specific augmentations.
+
+    The provided methods augment/extend the retrieved
+    :class:`stockings.models.stockitemprice.StockItemPrice` instances by
+    annotating them with additional information.
+    """
+
+    def default(self):
+        """Return a queryset with annotations.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+
+        Notes
+        -----
+        The following annotations are provided:
+
+        - :meth:`_annotate_currency`
+          The currency as provided by the parent
+          :model:`stockings.models.stockitem.StockItem` instance. This
+          annotation is provided by default, because instances of
+          :class:`~stockings.models.stockitemprice.StockItemPrice` expose several
+          money-related attributes. The implementation of
+          :attr:`StockItemPrice.currency <stockings.models.stockitemprice.StockItemPrice.currency`
+          ensures, that a database lookup is only performed once, but even this
+          database hit may be mitigated by this annotation.
+        - :meth:`_annotate_date`
+          The date-part of
+          :attr:`StockItemPrice._price_timestamp <stockings.models.stockitemprice.StockItemPrice._price_timestamp>`.
+        """
+        return self._annotate_date()._annotate_currency()
+
+    def _annotate_currency(self):
+        """Annotate each object with `_currency`.
+
+        The `currency` for instances of :class:`~stockings.models.stockitemprice.StockItemPrice`
+        is actually stored at :class:`stockings.models.stockitem.StockItem`.
+        The annotation uses Django's feature to access related objects to fetch
+        the `currency`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        return self.annotate(_currency=models.F("stock_item___currency"))
+
+    def _annotate_date(self):
+        """Annotate each object with `date`.
+
+        `date` is the abstracted/truncated
+        :attr:`StockItemPrice._price_timestamp <stockings.models.stockitemprice.StockItemPrice._price_timestamp>`
+        that is reduced by :obj:`~django.db.models.functions.TruncDate`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        return self.annotate(date=TruncDate("_price_timestamp"))
 
 
 class StockItemPriceManager(models.Manager):
-    """Custom manager for :class:`~stockings.models.stock.StockItemPrice`.
+    """App-/model-specific implementation of :class:`django.db.models.Manager`.
 
-    This manager provides some methods, specific for
-    :class:`~stockings.models.stock.StockItemPrice` objects. It is applied as
-    the default manager (see
-    :attr:`StockItemPrice.objects <stockings.models.stock.StockItemPrice.objects>`)
+    Notes
+    -----
+    This :class:`~django.db.models.Manager` implementation is used as an
+    additional manager of
+    :class:`~stockings.models.stockitemprice.StockItemPrice` (see
+    :attr:`stockings.models.stockitemprice.StockItemPrice.stockings_manager`.
 
-    Warnings
-    --------
-    The class documentation only includes code, that is actually shipped by the
-    `stockings` app. Inherited attributes/methods (provided by Django's
-    :class:`~django.db.models.Manager`) are not documented here.
+    This implementation inherits its functionality from
+    :class:`django.db.models.Manager` and provides identical funtionality.
+    Furthermore, it augments the retrieved objects with additional attributes,
+    using the custom :class:`~django.db.models.QuerySet` implementation
+    :class:`~stockings.models.stockitemprice.StockItemPriceQuerySet`.
     """
 
     def get_latest_price_object(self, stock_item):
@@ -49,22 +127,19 @@ class StockItemPriceManager(models.Manager):
         )
 
     def get_queryset(self):
-        """Provide the base queryset, annotated with a `date` field.
-
-        The :class:`~stockings.models.stock.StockItemPrice` provides date
-        information in its
-        :attr:`~stockings.models.stock.StockItemPrice._price_timestamp`
-        attribute, which provides a :obj:`datetime.datetime` object.
-
-        The provided annotation abstracts/truncates this timestamp and reduces
-        it to the date, using :obj:`~django.db.models.functions.TruncDate`.
+        """Use the app-/model-specific :class:`~stockings.models.stockitemprice.StockItemPriceQuerySet` by default.
 
         Returns
         -------
-        :class:`~django.db.models.query.QuerySet`
-            The annotated base queryset.
+        :class:`django.models.db.QuerySet`
+            This queryset is provided by
+            :class:`stockings.models.stockitemprice.StockItemPriceQuerySet` and
+            applies its
+            :meth:`~stockings.models.stockitemprice.StockItemPriceQuerySet.default`
+            method. The retrieved objects will be annotated with additional
+            attributes.
         """
-        return super().get_queryset().annotate(date=TruncDate("_price_timestamp"))
+        return StockItemPriceQuerySet(self.model, using=self._db).default()
 
 
 class StockItemPrice(models.Model):
@@ -92,8 +167,26 @@ class StockItemPrice(models.Model):
     attribute.
     """
 
-    objects = StockItemPriceManager()
-    """The default manager for these objects."""
+    objects = models.Manager()
+    """The model's default manager.
+
+    The default manager is set to :class:`django.db.models.Manager`, which is
+    the default value. In order to add the custom :attr:`stockings_manager` as
+    an *additional* manager, the default manager has to be provided explicitly
+    (see :djangodoc:`topics/db/managers/#default-managers`).
+    """
+
+    stockings_manager = StockItemPriceManager()
+    """App-/model-specific manager, that provides additional functionality.
+
+    This manager is set to
+    :class:`stockings.models.stockitemprice.StockItemPriceManager`. Its
+    implementation provides augmentations of `Trade` objects, by annotating them
+    on database level.
+
+    For a list of (virtual) attributes, that are solely provided as annotations,
+    refer to :class:`stockings.models.stockitemprice.StockItemPriceQuerySet`.
+    """
 
     stock_item = models.ForeignKey(
         StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp",
@@ -139,6 +232,35 @@ class StockItemPrice(models.Model):
         return "{} - {} {} ({})".format(
             self.stock_item, self.currency, self._price_amount, self._price_timestamp,
         )  # pragma: nocover
+
+    @cached_property
+    def currency(self):  # noqa: D401
+        """The currency for money-related fields (:obj:`str`, read-only).
+
+        The *currency* is actually determined by accessing the parent
+        :class:`stockings.models.stockitem.StockItem`.
+
+        Notes
+        -----
+        `currency` is implemented as
+        :class:`django.utils.functional.cached_property`
+        """
+        try:
+            return self._currency
+        except AttributeError:
+            logger.debug("Fetching 'currency' from parent 'stockitem' instance.")
+            return self.stock_item.currency
+
+    @cached_property
+    def price(self):  # noqa: D401
+        """The price per item (:class:`~stockings.data.StockingsMoney`, read-only).
+
+        Notes
+        -----
+        `price` is implemented as
+        :class:`django.utils.functional.cached_property`.
+        """
+        return StockingsMoney(self._price_amount, self.currency, self._price_timestamp)
 
     @classmethod
     def get_latest_price(cls, stock_item):
@@ -220,119 +342,3 @@ class StockItemPrice(models.Model):
         new_value = self.price.convert(new_currency)
         self._price_amount = new_value.amount
         self._price_timestamp = new_value.timestamp
-
-    def _get_currency(self):
-        """`getter` for :attr:`currency`.
-
-        Returns
-        -------
-        :obj:`str`
-            The :attr:`currency` of the object.
-
-        Notes
-        -----
-        The `currency` is actually fetched from the associated
-        :class:`~stockings.models.stock.StockItem` object.
-        """
-        return self.stock_item.currency
-
-    def _get_price(self):
-        """`getter` for :attr:`price`.
-
-        Returns
-        --------
-        :class:`~stockings.data.StockingsMoney`
-            An instance of :class:`~stockings.data.StockingsMoney`, where
-            :attr:`~stockings.data.StockingsMoney.amount` is
-            :attr:`_price_amount`,
-            :attr:`~stockings.data.StockingsMoney.currency` is :attr:`currency`
-            and :attr:`~stockings.data.StockingsMoney.timestamp` is
-            :attr:`timestamp`.
-        """
-        return StockingsMoney(self._price_amount, self.currency, self._price_timestamp,)
-
-    def _set_currency(self, value):
-        """`setter` for :attr:`currency`.
-
-        This attribute can not be set directly. The :attr:`currency` is
-        actually fetched from the associated
-        :class:`stockings.models.stock.StockItem` object.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            This parameter is only provided to match the required prototype for
-            this `setter`, it is actually not used.
-
-        Raises
-        ------
-        :exc:`~stockings.exceptions.StockingsInterfaceError`
-            This attribute can not be set directly.
-        """
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "The currency may only be set on `StockItem` level."
-        )
-
-    def _set_price(self, value):
-        """`setter` for :attr:`price`.
-
-        Parameters
-        ----------
-        value : :class:`~stockings.data.StockingsMoney`
-            A `StockingsMoney` instance with the new price information.
-        """
-        # only update the price, if the provided value is more recent
-        if self._price_timestamp >= value.timestamp:
-            return
-
-        if self.currency != value.currency:
-            value.amount = value.convert(self.currency)
-            # value.currency = self._price_currency
-
-        self._price_amount = value.amount
-        # self._price_currency = value.currency
-        self._price_timestamp = value.timestamp
-
-    currency = property(_get_currency, _set_currency)
-    """The currency for `price` (:obj:`str`, read-only).
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, and its value is actually
-    fetched from the referenced :class:`~stockings.models.stock.StockItem`
-    object.
-
-    Setting this attribute is not possible and will raise
-    :exc:`~stockings.exceptions.StockingsInterfaceError`. Deleting the attribute
-    will raise :exc:`AttributeError`.
-    """
-
-    price = property(_get_price, _set_price)
-    """The actual price information (:class:`~stockings.data.StockingsMoney`).
-
-    Returns a :class:`~stockings.data.StockingsMoney` instance and accepts these
-    objects as input.
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_price` and :meth:`_set_price`.
-
-    **get**
-
-    Accessing the attribute returns a `StockingsMoney` object.
-
-    - ``amount`` is stored in :attr:`_price_amount` as :obj:`decimal.Decimal`.
-    - ``currency`` is fetched from the object's :attr:`currency`.
-    - ``timestamp`` is fetched from the object's :attr:`_price_timestamp`.
-
-    **set**
-
-    Set the `price` by providing a :class:`~stockings.data.StockingsMoney`
-    instance.
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
