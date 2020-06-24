@@ -33,14 +33,43 @@ class PortfolioItemQuerySet(models.QuerySet):
     """
 
     def default(self):
-        """Return a queryset with all app-specific annotations.
+        """Return a queryset with annotations.
 
         Returns
         -------
         :class:`django.db.models.QuerySet`
-            The fully annotated queryset.
+            The annotated queryset.
+
+        Notes
+        -----
+        The following annotations are provided:
+
+        - :meth:`_annotate_currency`
+          The currency as provided by the parent
+          :model:`stockings.models.portfolio.Portfolio` instance. This
+          annotation is provided by default, because instances of
+          :class:`~stockings.models.portfolioitem.PortfolioItem` expose several
+          money-related attributes. The implementation of
+          :attr:`PortfolioItem.currency <stockings.models.portfolioitem.PortfolioItem.currency`
+          ensures, that a database lookup is only performed once, but even this
+          database hit may be mitigated by this annotation.
         """
-        return self._annotate_trade_information()
+        return self._annotate_currency()
+
+    def _annotate_currency(self):
+        """Annotate each object with `_currency`.
+
+        The `currency` for instances of
+        :class:`~stockings.models.portfolioitem.PortfolioItem` is actually
+        stored at :class:`stockings.models.portfolio.Portfolio`. The annotation
+        uses Django's feature to access related objects to fetch the `currency`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+        """
+        return self.annotate(_currency=models.F("portfolio___currency"))
 
 
 class PortfolioItemManager(models.Manager):
@@ -300,6 +329,24 @@ class PortfolioItem(models.Model):
             )
 
     @cached_property
+    def currency(self):  # noqa: D401
+        """The currency for all money-related fields (:obj:`str`, read-only).
+
+        The *currency* is actually determined by accessing the parent
+        :class:`stockings.models.portfolio.Portfolio`
+
+        Notes
+        -----
+        `currency` is implemented as
+        :class:`django.utils.functional.cached_property`
+        """
+        try:
+            return self._currency
+        except AttributeError:
+            logger.debug("Fetching 'currency' from parent 'portfolio' instance.")
+            return self.portfolio.currency
+
+    @cached_property
     def stock_count(self):  # noqa: D401
         """The count of stocks in this `PortfolioItem` (:obj:int`, read-only).
 
@@ -384,21 +431,6 @@ class PortfolioItem(models.Model):
         self._stock_value_amount = new_value.amount
         self._stock_value_timestamp = new_value.timestamp
 
-    def _get_currency(self):
-        """`getter` for :attr:`currency`.
-
-        Returns
-        -------
-        :obj:`str`
-            The :attr:`currency` of the object.
-
-        Notes
-        -----
-        The `currency` is actually fetched from the associated
-        :class:`~stockings.models.portfolio.Portfolio` object.
-        """
-        return self.portfolio.currency
-
     def _get_stock_value(self):
         """`getter` for :attr:`stock_value`.
 
@@ -413,33 +445,6 @@ class PortfolioItem(models.Model):
         """
         return self._return_money(
             self._stock_value_amount, timestamp=self._stock_value_timestamp
-        )
-
-    def _set_currency(self, value):
-        """`setter` for :attr:`currency`.
-
-        This attribute can not be set directly. The :attr:`currency` is
-        actually fetched from the associated
-        :class:`stockings.models.portfolio.Portfolio` object.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            This parameter is only provided to match the required prototype for
-            this `setter`, it is actually not used.
-
-        Raises
-        ------
-        :exc:`~stockings.exceptions.StockingsInterfaceError`
-            This attribute can not be set directly.
-
-        See Also
-        --------
-        :meth:`_apply_new_currency`
-        """
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "The currency may only be set on `Portfolio` level."
         )
 
     def _set_stock_value(self, value):
@@ -466,20 +471,6 @@ class PortfolioItem(models.Model):
             "This attribute may not be set directly! "
             "You might want to use 'update_stock_value()'."
         )
-
-    currency = property(_get_currency, _set_currency)
-    """The currency for all money-related fields (:obj:`str`, read-only).
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, and its value is actually
-    fetched from the referenced :class:`~stockings.models.portfolio.Portfolio`
-    object.
-
-    Setting this attribute is not possible and will raise
-    :exc:`~stockings.exceptions.StockingsInterfaceError`. Deleting the attribute
-    will raise :exc:`AttributeError`.
-    """
 
     stock_value = property(_get_stock_value, _set_stock_value)
     """The value of stocks of this `PortfolioItem`
