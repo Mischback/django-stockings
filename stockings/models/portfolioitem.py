@@ -156,7 +156,7 @@ class PortfolioItem(models.Model):
     referencing `PortfolioItem` objects are discarded aswell.
     """
 
-    stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
+    stockitem = models.ForeignKey(StockItem, on_delete=models.PROTECT)
     """Reference to a :class:`~stockings.models.stock.StockItem`.
 
     Notes
@@ -189,12 +189,12 @@ class PortfolioItem(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
-        unique_together = ["portfolio", "stock_item"]
+        unique_together = ["portfolio", "stockitem"]
         verbose_name = _("Portoflio Item")
         verbose_name_plural = _("Portfolio Items")
 
     def __str__(self):  # noqa: D105
-        return "{} - {}".format(self.portfolio, self.stock_item)  # pragma: nocover
+        return "{} - {}".format(self.portfolio, self.stockitem)  # pragma: nocover
 
     @cached_property
     def cash_in(self):  # noqa: D401
@@ -387,7 +387,7 @@ class PortfolioItem(models.Model):
     def update_stock_value(self, item_price=None, item_count=None):
         """TODO."""
         if item_price is None:
-            item_price = self.stock_item.latest_price
+            item_price = self.stockitem.latest_price
 
         if item_count is None:
             item_count = self._stock_count
@@ -414,7 +414,7 @@ class PortfolioItem(models.Model):
 
         # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
         # instance stock item.
-        portfolio_item_set = cls.objects.filter(stock_item=instance.stock_item)
+        portfolio_item_set = cls.objects.filter(stockitem=instance.stockitem)
 
         # Store the new price outside of the loop.
         new_price = instance.price
@@ -477,7 +477,7 @@ class PortfolioItem(models.Model):
     (:class:`~stockings.data.StockingsMoney`).
 
     This is the total value. The *price per item* of the referenced
-    :attr:`stock_item` is multiplied with this object's :attr:`stock_count`.
+    :attr:`stockitem` is multiplied with this object's :attr:`stock_count`.
 
     Notes
     -----

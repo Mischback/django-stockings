@@ -102,7 +102,7 @@ class TradeQuerySet(models.QuerySet):
         :class:`~stockings.models.portfolio.Portfolio`) is already retrieved.
         """
         return self.select_related(
-            "portfolioitem__portfolio", "portfolioitem__stock_item"
+            "portfolioitem__portfolio", "portfolioitem__stockitem"
         )
 
     def _annotate_currency(self):
@@ -249,7 +249,7 @@ class Trade(models.Model):
 
     Objects of this class are the central mean to modify the portfolio of a
     user. By performing a purchase (object with ``trade_type="BUY"``), the
-    given stock (specified by :attr:`stock_item`) is added to the portfolio, by
+    given stock (specified by :attr:`stockitem`) is added to the portfolio, by
     updating or creating a :class:`~stockings.models.portfolio.PortfolioItem`
     with the provided :attr:`item_count`.
 
@@ -402,7 +402,7 @@ class Trade(models.Model):
         return "[{}] {} - {} ({})".format(
             self.trade_type,
             self.portfolioitem.portfolio,
-            self.portfolioitem.stock_item,
+            self.portfolioitem.stockitem,
             self.timestamp,
         )  # pragma: nocover
 
@@ -436,7 +436,7 @@ class Trade(models.Model):
         performed here.
         """
         # There are some restrictions for 'SELL' trades:
-        # 1. The ``stock_item`` must have a corresponding ``PortfolioItem``
+        # 1. The ``stockitem`` must have a corresponding ``PortfolioItem``
         #   object in ``portfolio``.
         # 2. You are not able to sell more items than available in your
         #   portfolio.

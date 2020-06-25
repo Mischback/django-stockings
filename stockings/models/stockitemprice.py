@@ -71,7 +71,7 @@ class StockItemPriceQuerySet(models.QuerySet):
         :class:`django.db.models.QuerySet`
             The annotated queryset.
         """
-        return self.annotate(_currency=models.F("stock_item___currency"))
+        return self.annotate(_currency=models.F("stockitem___currency"))
 
     def _annotate_date(self):
         """Annotate each object with `date`.
@@ -105,7 +105,7 @@ class StockItemPriceManager(models.Manager):
     :class:`~stockings.models.stockitemprice.StockItemPriceQuerySet`.
     """
 
-    def get_latest_price_object(self, stock_item):
+    def get_latest_price_object(self, stockitem):
         """Return the most recent `StockItemPrice` object.
 
         The most recent object is defined as the one with the most recent
@@ -113,7 +113,7 @@ class StockItemPriceManager(models.Manager):
 
         Parameters
         ----------
-        stock_item : :class:`~stockings.models.stock.StockItem`
+        stockitem : :class:`~stockings.models.stock.StockItem`
             The `StockItem` for which the latest price information should be
             retrieved.
 
@@ -123,7 +123,7 @@ class StockItemPriceManager(models.Manager):
             The most recent `StockItemPrice` object.
         """
         return (
-            self.get_queryset().filter(stock_item=stock_item).latest("_price_timestamp")
+            self.get_queryset().filter(stockitem=stockitem).latest("_price_timestamp")
         )
 
     def get_queryset(self):
@@ -188,7 +188,7 @@ class StockItemPrice(models.Model):
     refer to :class:`stockings.models.stockitemprice.StockItemPriceQuerySet`.
     """
 
-    stock_item = models.ForeignKey(
+    stockitem = models.ForeignKey(
         StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp",
     )
     """Reference to a :class:`~stockings.models.stock.StockItem`.
@@ -230,7 +230,7 @@ class StockItemPrice(models.Model):
 
     def __str__(self):  # noqa: D105
         return "{} - {} {} ({})".format(
-            self.stock_item, self.currency, self._price_amount, self._price_timestamp,
+            self.stockitem, self.currency, self._price_amount, self._price_timestamp,
         )  # pragma: nocover
 
     @cached_property
@@ -249,7 +249,7 @@ class StockItemPrice(models.Model):
             return self._currency
         except AttributeError:
             logger.debug("Fetching 'currency' from parent 'stockitem' instance.")
-            return self.stock_item.currency
+            return self.stockitem.currency
 
     @cached_property
     def price(self):  # noqa: D401
@@ -263,12 +263,12 @@ class StockItemPrice(models.Model):
         return StockingsMoney(self._price_amount, self.currency, self._price_timestamp)
 
     @classmethod
-    def get_latest_price(cls, stock_item):
+    def get_latest_price(cls, stockitem):
         """Return the most recent price information.
 
         Parameters
         ----------
-        stock_item : :class:`~stockings.models.stock.StockItem`
+        stockitem : :class:`~stockings.models.stock.StockItem`
             The `StockItem` for which the latest price information should be
             retrieved.
 
@@ -281,15 +281,15 @@ class StockItemPrice(models.Model):
         --------
         stockings.models.stock.StockItemPriceManager.get_latest_price_object
         """
-        return cls.objects.get_latest_price_object(stock_item=stock_item).price
+        return cls.objects.get_latest_price_object(stockitem=stockitem).price
 
     @classmethod
-    def set_latest_price(cls, stock_item, value):
+    def set_latest_price(cls, stockitem, value):
         """Set latest price information.
 
         Parameters
         ----------
-        stock_item : :class:`~stockings.models.stock.StockItem`
+        stockitem : :class:`~stockings.models.stock.StockItem`
             The `StockItem` for which the latest price information should be
             updated.
         value : :class:`~stockings.data.StockingsMoney`
@@ -306,7 +306,7 @@ class StockItemPrice(models.Model):
         If new price information is applied, the object is saved.
         """
         # get the latest available object
-        latest_obj = cls.objects.get_latest_price_object(stock_item=stock_item)
+        latest_obj = cls.objects.get_latest_price_object(stockitem=stockitem)
 
         # `latest_obj` is more recent than the provided value -> do nothing
         if latest_obj._price_timestamp >= value.timestamp:
@@ -315,7 +315,7 @@ class StockItemPrice(models.Model):
         # provided value is actually on a new day/date
         if latest_obj._price_timestamp.date() < value.timestamp.date():
             latest_obj = cls.objects.create(
-                stock_item=stock_item, _price_timestamp=value.timestamp
+                stockitem=stockitem, _price_timestamp=value.timestamp
             )
 
         # actually set the new price
