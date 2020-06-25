@@ -4,13 +4,20 @@ Instances of :class:`~stockings.models.stockitem.StockItem` represent the
 actual stocks, providing general data about the items.
 """
 
+# Python imports
+import logging
+
 # Django imports
-from django.apps import apps
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
+
+# get a module-level logger
+logger = logging.getLogger(__name__)
 
 
 class StockItem(models.Model):
@@ -219,6 +226,38 @@ class StockItem(models.Model):
             },
         )[0]
 
+    @property
+    def latest_price(self):
+        """TODO."""
+        return self.__cached_latest_price
+
+    @cached_property
+    def __cached_latest_price(self):
+        try:
+            return StockingsMoney(
+                self._latest_price_amount, self.currency, self._latest_price_timestamp
+            )
+        except AttributeError:
+            logger.info(
+                "Missing values while accessing attribute 'latest_price'. "
+                "Performing required database queries!"
+            )
+            logger.debug(
+                "'latest_price' is accessed while required values are not available. Most "
+                "likely, the 'StockItem' was not fetched using "
+                "'StockItem.stockings_manager', so that the specific annotations "
+                "are missing."
+            )
+            latest_price_obj = self.prices(
+                manager="stockings_manager"
+            ).get_latest_price_object(stockitem=self)
+
+            return StockingsMoney(
+                latest_price_obj.price.amount,
+                self.currency,
+                latest_price_obj.price.timestamp,
+            )
+
     def _is_active(self):
         """`getter` for :attr:`is_active`.
 
@@ -228,27 +267,6 @@ class StockItem(models.Model):
             The :attr:`is_active` of the object.
         """
         return self.portfolioitem_set.filter(is_active=True).count() > 0
-
-    def _get_latest_price(self):
-        """`getter` for :attr:`latest_price`.
-
-        Returns
-        -------
-        :class:`~stockings.data.StockingsMoney`
-            The :attr:`latest_price` of the object, as provided by an
-            associated :class:`~stockings.models.stock.StockItemPrice` object.
-        """
-        return apps.get_model("stockings.StockItemPrice").get_latest_price(self)
-
-    def _set_latest_price(self, value):
-        """`setter`for :attr:`latest_price`.
-
-        Parameters
-        ----------
-        value : :class:`~stockings.data.StockingsMoney`
-            The new price information to be set.
-        """
-        apps.get_model("stockings.StockItemPrice").set_latest_price(self, value)
 
     is_active = property(_is_active)
     """Flag to indicate, if this item is active (:obj:`bool`, read-only).
@@ -265,36 +283,4 @@ class StockItem(models.Model):
         as an annotation to :class:`~stockings.models.portfolio.PortfolioItem`
         by its associated
         :class:`Manager implementation <stockings.models.portfolio.PortfolioItemManager>`.
-    """
-
-    latest_price = property(_get_latest_price, _set_latest_price)
-    """The most recent price information for this item
-    (:class:`~stockings.data.StockingsMoney`).
-
-    The actual price information is not stored with :class:`StockItem` objects
-    but rather with :class:`~stockings.models.stock.StockItemPrice` objects.
-
-    This implementation allows statistical evaluation of price information,
-    because the app can keep historical prices aswell.
-
-    Notes
-    -------
-    This attribute is implemented as a `property`. You may refer to
-    :meth:`_get_latest_price` and :meth:`_set_latest_price` for implementation
-    details.
-
-    **get**
-
-    Accessing the attribute returns a :class:`~stockings.data.StockingsMoney`
-    instance with the most recent price information. This relies on
-    :meth:`stockings.models.stock.StockItemPrice.get_latest_price`.
-
-    **set**
-
-    Setting the attribute requires an instance of
-    :class:`~stockings.data.StockingsMoney` and relies on
-    :meth:`stockings.models.stock.StockItemPrice.set_latest_price`.
-
-    **del**
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
     """

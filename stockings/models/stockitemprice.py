@@ -189,21 +189,26 @@ class StockItemPrice(models.Model):
     """
 
     stockitem = models.ForeignKey(
-        StockItem, on_delete=models.CASCADE, unique_for_date="_price_timestamp",
+        StockItem,
+        on_delete=models.CASCADE,
+        related_name="prices",
+        unique_for_date="_price_timestamp",
     )
-    """Reference to a :class:`~stockings.models.stock.StockItem`.
+    """Reference to a :class:`~stockings.models.stockitem.StockItem`.
 
     Notes
-    -------
-    This is implemented as a :class:`~django.db.models.ForeignKey` with
-    ``on_delete=CASCADE``, meaning if the referenced
-    :class:`~stockings.models.stock.StockItem` object is deleted, all
-    referencing `StockItemPrice` objects are discarded aswell.
+    -----
+    This attribute is implemented as :class:`~django.db.models.ForeignKey` to
+    :class:`~stockings.models.stockitem.StockItem` with
+    ``on_delete=CASCADE``, meaning that, if the
+    :class:`~stockings.models.stockitem.StockItem` object is deleted, all
+    referencing `StockItemPrice` objects will be discarded aswell.
 
-    Additionally, ``unique_for_date=_price_timestamp`` is applied. This
-    constraint ensures, that there exists only one `StockItemPrice` object for
-    any given :class:`~stockings.models.stock.StockItem` per day / date.
-    Technically, :attr:`_price_timestamp` stores a :obj:`datetime.datetime`.
+    As an additional constraint, there might be only one `StockItemPrice`
+    instance for any given date per
+    :class:`~stockings.models.stockitem.StockItem`.
+
+    The name of the backward relation (``related_name``) is set to ``"prices"``.
     """
 
     _price_amount = models.DecimalField(decimal_places=4, default=0, max_digits=19)
