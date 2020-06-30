@@ -141,6 +141,72 @@ class StockItemPriceManager(models.Manager):
         """
         return StockItemPriceQuerySet(self.model, using=self._db).default()
 
+    def set_latest_price(self, stockitem, value):
+        """Create a new or update an existing instance of :class:`~stockings.models.stockitemprice.StockItemPrice`.
+
+        Parameters
+        ----------
+        stockitem : :class:`~stockings.models.stock.StockItem`
+            The `StockItem` to set new price information for.
+        value : :class:`~stockings.data.StockingsMoney`
+            The new price information to be set.
+
+        Returns
+        -------
+        :obj:`bool`
+            Returns ``True``, if new price information is stored, either by
+            creating a new instance or updating an existing one.
+            Returns ``False``, if the provided stored value is more recent than
+            the provided one.
+
+        Warnings
+        --------
+        This method does **not** perform any validation of the provided values.
+        """
+        # get the latest available object
+        try:
+            latest_obj = self.get_latest_price_object(stockitem=stockitem)
+        except StockItemPrice.DoesNotExist:
+            logger.debug(
+                "No existing 'StockItemPrice' objects. Creating the first one!"
+            )
+            latest_obj = self.create(
+                stockitem=stockitem,
+                _price_amount=value.amount,
+                _price_timestamp=value.timestamp,
+            )
+            logger.info(
+                "Created new 'StockItemPrice' instance for {}!".format(stockitem.isin)
+            )
+
+            return True
+
+        # `latest_obj` is more recent than the provided value -> do nothing
+        if latest_obj._price_timestamp >= value.timestamp:
+            return False
+
+        # provided value is actually on a new day/date
+        if latest_obj._price_timestamp.date() < value.timestamp.date():
+            latest_obj = self.create(
+                stockitem=stockitem,
+                _price_amount=value.amount,
+                _price_timestamp=value.timestamp,
+            )
+            logger.info(
+                "Created new 'StockItemPrice' instance for {}!".format(stockitem.isin)
+            )
+        else:
+            latest_obj._price_amount = value.amount
+            latest_obj._price_timestamp = value.timestamp
+            latest_obj.save()
+            logger.debug(
+                "Updated existing 'StockItemPrice' instance for {}!".format(
+                    stockitem.isin
+                )
+            )
+
+        return True
+
 
 class StockItemPrice(models.Model):
     """Tracks the price of a given :class:`~stockings.models.stock.StockItem`.
@@ -287,45 +353,6 @@ class StockItemPrice(models.Model):
         stockings.models.stock.StockItemPriceManager.get_latest_price_object
         """
         return cls.objects.get_latest_price_object(stockitem=stockitem).price
-
-    @classmethod
-    def set_latest_price(cls, stockitem, value):
-        """Set latest price information.
-
-        Parameters
-        ----------
-        stockitem : :class:`~stockings.models.stock.StockItem`
-            The `StockItem` for which the latest price information should be
-            updated.
-        value : :class:`~stockings.data.StockingsMoney`
-            A `StockingsMoney` instance with the new price information.
-
-        Notes
-        -----
-        The method evaluates ``value.timestamp`` to determine if either:
-
-            - an existing `StockItemPrice` object can be updated
-            - a new `StockItemPrice` object has to be created
-            - no action is required
-
-        If new price information is applied, the object is saved.
-        """
-        # get the latest available object
-        latest_obj = cls.objects.get_latest_price_object(stockitem=stockitem)
-
-        # `latest_obj` is more recent than the provided value -> do nothing
-        if latest_obj._price_timestamp >= value.timestamp:
-            return None
-
-        # provided value is actually on a new day/date
-        if latest_obj._price_timestamp.date() < value.timestamp.date():
-            latest_obj = cls.objects.create(
-                stockitem=stockitem, _price_timestamp=value.timestamp
-            )
-
-        # actually set the new price
-        latest_obj._set_price(value)
-        latest_obj.save()
 
     def _apply_new_currency(self, new_currency):
         """Convert the :attr:`price` to a new currency.

@@ -231,6 +231,26 @@ class StockItem(models.Model):
         """TODO."""
         return self.__cached_latest_price
 
+    @latest_price.setter
+    def latest_price(self, new_value):
+
+        retval = self.prices(manager="stockings_manager").set_latest_price(
+            self, new_value
+        )
+
+        if retval:
+            try:
+                logger.debug("'latest_price' was updated, invalidating cached value!")
+                del self.__cached_latest_price
+            except AttributeError:
+                # AttributeError is raised, if the cached property was not
+                # accessed before it gets deleted
+                pass
+        else:
+            logger.debug(
+                "The provided value was older than the stored one. No update performed!"
+            )
+
     @cached_property
     def __cached_latest_price(self):
         try:
