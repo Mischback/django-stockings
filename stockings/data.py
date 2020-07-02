@@ -55,6 +55,13 @@ class StockingsMoney:
         self.currency = currency
         self.timestamp = timestamp or now()
 
+    def __eq__(self, other):
+        """Determine equality of two instances."""
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+
+        return False
+
     def __str__(self):
         """Return a string representation of the instance."""
         return "{} {} ({})".format(
