@@ -11,7 +11,6 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.exceptions import StockingsInterfaceError
 from stockings.models.portfolio import Portfolio
 from stockings.models.stockitem import StockItem
 
@@ -384,122 +383,54 @@ class PortfolioItem(models.Model):
 
             return trade_information["current_stock_count"]
 
-    def update_stock_value(self, item_price=None, item_count=None):
-        """TODO."""
-        if item_price is None:
-            item_price = self.stockitem.latest_price
+    @cached_property
+    def stock_value(self):  # noqa: D401
+        """The current value of stocks in this `PortfolioItem`(:class:`~stockings.data.StockingsMoney`, read-only).
 
-        if item_count is None:
-            item_count = self._stock_count
-
-        # calculate new value (item_price * item_count)
-        new_value = item_price.multiply(item_count)
-
-        self._stock_value_amount = new_value.amount
-        self._stock_value_timestamp = new_value.timestamp
-        self._stock_count = item_count
-
-    @classmethod
-    def callback_stockitemprice_update_stock_value(
-        cls, sender, instance, created, raw, *args, **kwargs
-    ):
-        """Update PortfolioItem's `stock_value` with new price information.
-
-        This is a signal handler, that is attached as a post_save handler in
-        the app's ``StockingsConfig``'s ``ready`` method.
-        """
-        # Do nothing, if this is a raw save-operation.
-        if raw:
-            return None
-
-        # Fetch all ``PortfolioItem`` objects, that are linked to the sender's
-        # instance stock item.
-        portfolio_item_set = cls.objects.filter(stockitem=instance.stockitem)
-
-        # Store the new price outside of the loop.
-        new_price = instance.price
-
-        # Update all relevant ``PortfolioItem`` objects.
-        for item in portfolio_item_set.iterator():
-            item.update_stock_value(item_price=new_price)
-            item.save()
-
-    def _apply_new_currency(self, new_currency):
-        """Set a new currency for the object and update all money-related fields."""
-        # stock_value
-        new_value = self.stock_value.convert(new_currency)
-        self._stock_value_amount = new_value.amount
-        self._stock_value_timestamp = new_value.timestamp
-
-    def _get_stock_value(self):
-        """`getter` for :attr:`stock_value`.
-
-        Returns
+        Warnings
         --------
-        :class:`~stockings.data.StockingsMoney`
-            The total value of stocks of this object.
+        Instances of `PortfolioItem` and
+        :class:`~stockings.models.stockitemprice.StockItemPrice` do not
+        necessarily share the same currency. While calculating the value of this
+        attribute, coversion of currency is applied. Please note, that this is
+        currently not implemented and will raise a :exc:`NotImplementedError`.
 
-        See Also
-        --------
-        :meth:`_return_money`
+        Notes
+        -----
+        `stock_value` is implemented as
+        :class:`django.utils.functional.cached_property`.
+
+        The required values to populate the
+        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        as attributes of this `PortfolioItem` object. Instead, they are
+        dynamically calculated by evaluating other models, most notable
+        :class:`stockings.models.stockitemprice.StockItemPrice` (and, by using
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.stock_count`,
+        :class:`stockings.models.trade.Trade`).
         """
-        return self._return_money(
-            self._stock_value_amount, timestamp=self._stock_value_timestamp
-        )
-
-    def _set_stock_value(self, value):
-        """`setter` for :attr:`stock_value`.
-
-        This attribute can not be set directly.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            This parameter is only provided to match the required prototype for
-            this `setter`, it is actually not used.
-
-        Raises
-        ------
-        :exc:`~stockings.exceptions.StockingsInterfaceError`
-            This attribute can not be set directly.
-
-        See Also
-        --------
-        :meth:`update_stock_value`
-        """
-        raise StockingsInterfaceError(
-            "This attribute may not be set directly! "
-            "You might want to use 'update_stock_value()'."
-        )
-
-    stock_value = property(_get_stock_value, _set_stock_value)
-    """The value of stocks of this `PortfolioItem`
-    (:class:`~stockings.data.StockingsMoney`).
-
-    This is the total value. The *price per item* of the referenced
-    :attr:`stockitem` is multiplied with this object's :attr:`stock_count`.
-
-    Notes
-    -----
-    This attribute is implemented as a `property`, you may refer to
-    :meth:`_get_stock_value` and :meth:`_set_stock_value`.
-
-    **get**
-
-    Accessing the attribute returns a `StockingsMoney` object.
-
-    - ``amount`` is stored in :attr:`_stock_value_amount` as :obj:`decimal.Decimal`.
-    - ``currency`` is fetched from the object's :attr:`currency`.
-    - ``timestamp`` is fetched from the object's :attr:`_stock_value_timestamp`.
-
-    **set**
-
-    This property may not be set directly, trying to do so will raise a
-    :exc:`~stockings.exceptions.StockingsInterfaceException`.
-
-    To update `stock_value`, use :meth:`update_stock_value`.
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
+        try:
+            # TODO: ENSURE correct currency
+            return (
+                StockingsMoney(
+                    self._price_per_item_amount,
+                    self._price_per_item_currency,
+                    self._price_per_item_timestamp,
+                )
+                .multiply(self.stock_count)
+                .convert(self.currency)
+            )
+        except AttributeError:
+            logger.info(
+                "Missing value while accessing attribute 'stock_value'. "
+                "Performing required database queries!"
+            )
+            logger.debug(
+                "'stock_value' is accessed while required values are not available. "
+                "Most likely, the 'PortfolioItem' was not fetched using "
+                "'PortfolioItem.stockings_manager', so that the specific annotation "
+                "is missing."
+            )
+            # TODO: ENSURE correct currency
+            return self.stockitem.latest_price.multiply(self.stock_count).convert(
+                self.currency
+            )

@@ -111,13 +111,6 @@ class StockingsMoney:
     def convert(self, target_currency):
         """Convert the value of the object to another currency.
 
-        Currency conversion is currently **not implemented** and calling this
-        method will raise `NotImplementedError`.
-
-        It is intended to provide functionality for automatic currency conversions
-        in a future release. Most of the code already *handles* the conversion by
-        calling this method, **without** catching the raised error.
-
         Parameters
         ------------
         target_currency : str
@@ -138,7 +131,7 @@ class StockingsMoney:
         Warnings
         ----------
         Currency conversion is currently **not implemented** and calling this method
-        will raise `NotImplementedError`.
+        will most likely raise `NotImplementedError`.
 
         Notes
         -------
@@ -149,6 +142,9 @@ class StockingsMoney:
         Furthermore, to reduce required conversion rate updates, only a specific
         set of target currencies should be available.
         """
+        if self.currency == target_currency:
+            return self
+
         raise NotImplementedError("Currency conversion is currently not implemented!")
 
     def multiply(self, multiplier):
