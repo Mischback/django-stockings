@@ -45,7 +45,7 @@ class StockItemPriceQuerySet(models.QuerySet):
 
         - :meth:`_annotate_currency`
           The currency as provided by the parent
-          :model:`stockings.models.stockitem.StockItem` instance. This
+          :class:`stockings.models.stockitem.StockItem` instance. This
           annotation is provided by default, because instances of
           :class:`~stockings.models.stockitemprice.StockItemPrice` expose several
           money-related attributes. The implementation of

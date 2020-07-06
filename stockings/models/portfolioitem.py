@@ -45,7 +45,7 @@ class PortfolioItemQuerySet(models.QuerySet):
 
         - :meth:`_annotate_currency`
           The currency as provided by the parent
-          :model:`stockings.models.portfolio.Portfolio` instance. This
+          :class:`stockings.models.portfolio.Portfolio` instance. This
           annotation is provided by default, because instances of
           :class:`~stockings.models.portfolioitem.PortfolioItem` expose several
           money-related attributes. The implementation of
