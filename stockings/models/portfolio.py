@@ -82,70 +82,44 @@ class Portfolio(models.Model):
     def __str__(self):  # noqa: D105
         return "{} ({})".format(self.name, self.user)  # pragma: nocover
 
-    def _get_currency(self):
-        """`getter` for :attr:`currency`.
+    @property
+    def currency(self):  # noqa: D401
+        """The currency for all money-related attributes (:obj:`str`).
 
-        Returns
-        -------
-        :obj:`str`
-            The :attr:`currency` of the object.
+        This attribute also determines the currency for all associated instances
+        of :class:`stockings.models.portfolioitem.PortfolioItem` and all
+        instances of :class:`stockings.models.trade.Trade`, that are created
+        for this `Portfolio`.
+
+        Warnings
+        --------
+        **setting** `currency` will update all related instances of
+        :class:`stockings.models.portfolioitem.PortfolioItem` and
+        :class:`stockings.models.trade.Trade` and will
+        automatically call this object's ``save()`` method to ensure the
+        integrity of data.
+
+        Notes
+        -----
+        This attribute is implemented as a :obj:`property`.
+
+        The **getter** simply returns the
+        :attr:`~stockings.models.portfolio.Portfolio._currency`.
+
+        The **setter** applies the ``new_currency`` to all related instances of
+        :class:`stockings.models.portfolioitem.PortfoliItem` and
+        :class:`stockings.models.trade.Trade` and then updates
+        :attr:`~stockings.models.portfolio.Portfolio._currency`.
         """
         return self._currency
 
-    def _set_currency(self, new_currency):
-        """`setter` for :attr:`currency`.
-
-        Set the currency for all associated instances of
-        :class:`~stockings.models.portfolio.PortfolioItem` and
-        :class:`~stockings.models.trade.Trade`.
-
-        Parameters
-        ----------
-        new_currency : :obj:`str`
-            The new currency to be applied.
-        """
+    @currency.setter
+    def currency(self, new_currency):
         # Update all relevant `PortfolioItem` objects.
         for item in self.portfolioitem_set.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 
-        # Update all relevant `Trade` objects.
-        for item in self.trade_set.iterator():
-            item._apply_new_currency(new_currency)
-            item.save()
-
         # actually update the object's attribute
         self._currency = new_currency
-
-    currency = property(_get_currency, _set_currency)
-    """The currency for all money-related attributes (:obj:`str`).
-
-    The value of `currency` is also used for logically related objects,
-    including instances of :class:`~stockings.models.portfolio.PortfolioItem`
-    and :class:`~stockings.models.trade.Trade`.
-
-    Notes
-    -------
-    This attribute is implemented as a `property`. You may refer to
-    :meth:`_get_currency` and :meth:`_set_currency`
-    for implementation details.
-
-    **get**
-
-    Accessing the attribute returns a :obj:`str` with the current currency.
-
-    **set**
-
-    Setting this attribute will update all related instances of
-    :class:`~stockings.models.portfolio.PortfolioItem` and
-    :class:`~stockings.models.trade.Trade` by calling their
-    :meth:`PortfolioItem._apply_new_currency <~stockings.models.portfolio.PortfolioItem._apply_new_currency>`
-    and
-    :meth:`Trade._apply_new_currency <~stockings.models.trade.Trade._apply_new_currency>` methods.
-
-    Finally, this object's :attr:`_currency` is updated.
-
-    **del**
-
-    This is not implemented, thus an :exc:`AttributeError` will be raised.
-    """
+        self.save()

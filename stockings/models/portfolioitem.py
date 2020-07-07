@@ -6,7 +6,6 @@ import logging
 # Django imports
 from django.db import models
 from django.utils.functional import cached_property
-from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
@@ -167,25 +166,6 @@ class PortfolioItem(models.Model):
     `PortfolioItem` object.
     """
 
-    _stock_value_amount = models.DecimalField(
-        decimal_places=4, default=0, max_digits=19
-    )
-    """The `amount` part of :attr:`stock_value` (:obj:`decimal.Decimal`).
-
-    Notes
-    -----
-    This is implemented as :class:`django.db.models.DecimalField`.
-    """
-
-    _stock_value_timestamp = models.DateTimeField(default=now)
-    """The `timestamp` part of :attr:`stock_value` (:obj:`datetime.datetime`).
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DateTimeField`,
-    providing :obj:`django.utils.timezone.now` as its default value.
-    """
-
     class Meta:  # noqa: D106
         app_label = "stockings"
         unique_together = ["portfolio", "stockitem"]
@@ -194,6 +174,9 @@ class PortfolioItem(models.Model):
 
     def __str__(self):  # noqa: D105
         return "{} - {}".format(self.portfolio, self.stockitem)  # pragma: nocover
+
+    def _apply_new_currency(self, new_currency):
+        raise NotImplementedError
 
     @cached_property
     def cash_in(self):  # noqa: D401
