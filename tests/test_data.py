@@ -1,3 +1,5 @@
+"""Tests for module `stockings.data`."""
+
 # Python imports
 from unittest import mock, skip  # noqa
 
@@ -21,8 +23,8 @@ class StockingsMoneyTest(StockingsTestCase):
 
         Yeah, this is kind of redundant, because it should be a given fact,
         that Python works. But for the sake of completeness and to be prepared
-        for further extensions of the constructor, here we go."""
-
+        for further extensions of the constructor, here we go.
+        """
         with self.assertRaises(TypeError):
             a = StockingsMoney()
 
@@ -44,8 +46,8 @@ class StockingsMoneyTest(StockingsTestCase):
         """Constructor receives or provides timestamp.
 
         This test case includes receiving a `timestamp` at creation aswell as
-        providing a `timestamp` (set to the current date/time)."""
-
+        providing a `timestamp` (set to the current date/time).
+        """
         a = StockingsMoney(1337, "EUR", timestamp="foobar")
 
         # Note: the mocked `now()` isn't actually called.
@@ -66,8 +68,8 @@ class StockingsMoneyTest(StockingsTestCase):
 
         It is **not** tested, if unexpected object types for `summand.currency`
         are handled correctly, because this is out of scope for `add()`.
-        Instead, this will have to be done in `convert()`."""
-
+        Instead, this will have to be done in `convert()`.
+        """
         # create a (valid) `StockingsMoney` object
         a = StockingsMoney(1337, "EUR")
 
@@ -110,7 +112,6 @@ class StockingsMoneyTest(StockingsTestCase):
     @mock.patch("stockings.data.StockingsMoney.convert")
     def test_add_converts_summand(self, mock_convert):
         """`add()` applies currency conversion."""
-
         # set up the mock
         mock_convert.return_value = StockingsMoney(6, "EUR")
 
@@ -126,7 +127,6 @@ class StockingsMoneyTest(StockingsTestCase):
     @mock.patch("stockings.data.now")
     def test_add_updates_timestamp(self, mock_now):
         """`add()` updates the timestamp."""
-
         # create a (valid) `StockingsMoney` object
         a = StockingsMoney(1337, "EUR", timestamp="foo")
 
@@ -137,15 +137,16 @@ class StockingsMoneyTest(StockingsTestCase):
 
     def test_currency_conversion(self):
         """Currency conversion is currently not implemented, an error should be raised."""
-
         a = StockingsMoney(1337, "EUR")
+
+        self.assertEqual(a, a.convert("EUR"))
+
         with self.assertRaises(NotImplementedError):
             a.convert("USD")
 
     @mock.patch("stockings.data.now")
     def test_multiply(self, mock_now):
         """Validates input to `multiply()` and correctly perform operation."""
-
         # create a (valid) `StockingsMoney` object
         a = StockingsMoney(1337, "EUR")
 
@@ -163,3 +164,20 @@ class StockingsMoneyTest(StockingsTestCase):
         self.assertEqual(b.amount, 1337 * 5)
         self.assertEqual(mock_now.called, True)
         self.assertEqual(b.timestamp, mock_now.return_value)
+
+    @mock.patch("stockings.data.now")
+    def test_eq(self, mock_now):
+        """Implements equality check."""
+        a = StockingsMoney(1.1, "EUR")
+        b = StockingsMoney(1.1, "EUR")
+
+        self.assertEqual(a, b)
+
+        c = StockingsMoney(1.2, "EUR")
+        self.assertNotEqual(a, c)
+
+        d = StockingsMoney(1.1, "USD")
+        self.assertNotEqual(a, d)
+
+        e = {"amount": 1.1, "currency": "EUR"}
+        self.assertNotEqual(a, e)

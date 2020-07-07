@@ -20,6 +20,10 @@ coverage: clean test
 	- tox -q -e util -- coverage combine
 	tox -q -e util -- coverage report
 
+coverage/tag: clean test/tag
+	- tox -q -e util -- coverage combine
+	tox -q -e util -- coverage report
+
 flake: flake8
 flake8:
 	$(MAKE) pre-commit pre-commit_id="flake8"
