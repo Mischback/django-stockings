@@ -102,8 +102,16 @@ class PortfolioItemManager(models.Manager):
         return PortfolioItemQuerySet(self.model, using=self._db).default()
 
 
-class PortfolioItem(models.Model):
-    """Tracks one single ``StockItem`` in a user's ``Portfolio``."""
+class PortfolioItem(models.Model):  # noqa: D205, D400
+    """Tracks one :class:`~stockings.models.stockitem.StockItem` in a user's
+    :model:`~stockings.models.portfolio.Portfolio`.
+
+    Warnings
+    ----------
+    The class documentation only includes code, that is actually shipped by the
+    `stockings` app. Inherited attributes/methods (provided by Django's
+    :class:`~django.db.models.Model`) are not documented here.
+    """
 
     objects = models.Manager()
     """The model's default manager.
@@ -120,27 +128,10 @@ class PortfolioItem(models.Model):
     This manager is set to
     :class:`stockings.models.portfolio.PortfolioItemManager`. Its implementation
     provides augmentations of `PortfolioItem` objects, by annotating them on
-    database level.
+    database level. This will reduce the number of required database queries,
+    if attributes of the object are accessed.
 
-    The manager has to be used explicitly, see **Examples** section below.
-
-    For a list of (virtual) attributes, that are solely provided as annotations,
-    refer to :class:`stockings.models.portfolio.PortfolioItemQuerySet`.
-
-    Warnings
-    --------
-    The attributes :attr:`cash_in`, :attr:`cash_out` and :attr:`costs` are only
-    available, when the `PortfolioItem` instance is retrieved using
-    :attr:`stockings_manager` (see **Examples** section below).
-
-    Examples
-    --------
-    >>> pi = PortfolioItem.object.first()
-    >>> pi.cash_in
-    AttributeError
-    >>> pi = PortfolioItem.stockings_manager.first()
-    >>> pi.cash_in
-    StockingsMoney instance
+    The manager has to be used explicitly.
     """
 
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
@@ -173,7 +164,21 @@ class PortfolioItem(models.Model):
         verbose_name = _("Portoflio Item")
         verbose_name_plural = _("Portfolio Items")
 
-    def __str__(self):  # noqa: D105
+    def __str__(self):  # noqa: D401
+        """The string representation of the `PortfolioItem`.
+
+        Returns
+        -------
+        str
+            The returned string has the form "[portfolio] - [stockitem]"
+
+        Warnings
+        --------
+        The returned string includes the name of the parent
+        :class:`~stockings.models.portfolio.Portfolio` aswell as the name of the
+        :class:`~stockings.models.stockitem.StockItem`, so using this method may
+        result in additional database queries.
+        """
         return "{} - {}".format(self.portfolio, self.stockitem)  # pragma: nocover
 
     def _apply_new_currency(self, new_currency):
