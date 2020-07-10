@@ -17,21 +17,9 @@ from ..util.testcases import StockingsTestCase
 class PortfolioTest(StockingsTestCase):
     """Provide tests for `Portfolio` class."""
 
-    @mock.patch("stockings.models.portfolio.Portfolio.portfolioitem_set")
-    def test_property_currency(self, mock_objects):
-        """Property's getter works, setter applies currency to all associated `PortfolioItem`s."""
+    def test_property_currency_get(self):
+        """Property's getter simply returns the stored attribute."""
         # get a Portfolio object
         a = Portfolio()
 
         self.assertEqual(a._currency, a.currency)
-
-        mock_item = mock.MagicMock()
-        mock_objects.iterator.return_value.__iter__.return_value = iter([mock_item])
-
-        a.currency = "FOO"
-
-        mock_item._apply_new_currency.assert_called_with("FOO")
-        self.assertTrue(mock_item.save.called)
-
-        with self.assertRaises(AttributeError):
-            del a.currency
