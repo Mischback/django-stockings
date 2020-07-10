@@ -9,9 +9,10 @@ from django.test import override_settings, tag  # noqa
 # app imports
 from stockings.data import StockingsMoney
 from stockings.models.portfolioitem import PortfolioItem
+from stockings.models.trade import Trade
 
 # app imports
-from ..util.testcases import StockingsTestCase
+from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 
 
 @tag("models", "portfolioitem", "unittest")
@@ -20,7 +21,7 @@ class PortfolioItemTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolioitem.PortfolioItem.currency")
     @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
-    def test_property_cash_in_with_annotations(self, mock_trades, mock_currency):
+    def test_cash_in_get_with_annotations(self, mock_trades, mock_currency):
         """Property's getter uses annotated attributes."""
         # get a PortfolioItem
         a = PortfolioItem()
@@ -39,7 +40,7 @@ class PortfolioItemTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolioitem.PortfolioItem.currency")
     @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
-    def test_cash_in_without_annotations(self, mock_trades, mock_currency):
+    def test_cash_in_get_without_annotations(self, mock_trades, mock_currency):
         """Property's getter retrieves missing attributes."""
         # set up the mock
         mock_amount = mock.MagicMock()
@@ -66,3 +67,43 @@ class PortfolioItemTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             a.cash_in = "foobar"
+
+
+@tag("integrationtest", "models", "portfolioitem")
+class PortfolioItemORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    @skip("to be done")
+    def test_cash_in_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        raise NotImplementedError
+
+    def test_cash_in_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=a, trade_type=Trade.TRADE_TYPE_BUY
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        self.assertAlmostEqual(trade_amount, a.cash_in.amount)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=b, trade_type=Trade.TRADE_TYPE_BUY
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        self.assertAlmostEqual(trade_amount, b.cash_in.amount)
