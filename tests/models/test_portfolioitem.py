@@ -201,6 +201,46 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             a.currency = "foobar"
 
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
+    def test_stock_count_get_with_annotations(self, mock_trades):
+        """Property's getter uses annotated attributes."""
+        # get a PortfolioItem
+        a = PortfolioItem()
+        # This attribute can't be mocked by patch, because it is no part of the
+        # actual class. Provide it here to simulate Django's annotation
+        a._stock_count = mock.MagicMock()
+
+        # actually access the attribute
+        b = a.stock_count
+
+        self.assertFalse(mock_trades.return_value.trade_summary.called)
+        self.assertEqual(b, a._stock_count)
+
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
+    def test_stock_count_get_without_annotations(self, mock_trades):
+        """Property's getter retrieves missing attributes."""
+        # set up the mock
+        mock_stock_count = mock.MagicMock()
+        mock_trades.return_value.trade_summary.return_value = [
+            {"current_stock_count": mock_stock_count},
+        ]
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        # actually access the attribute
+        b = a.stock_count
+
+        self.assertTrue(mock_trades.return_value.trade_summary.called)
+        self.assertEqual(b, mock_stock_count)
+
+    def test_stock_count_set(self):
+        """Property is read-only."""
+        a = PortfolioItem()
+
+        with self.assertRaises(AttributeError):
+            a.stock_count = "foobar"
+
 
 @tag("integrationtest", "models", "portfolioitem")
 class PortfolioItemORMTest(StockingsORMTestCase):
@@ -358,3 +398,46 @@ class PortfolioItemORMTest(StockingsORMTestCase):
             ).currency
 
         self.assertEqual(portfolio.currency, portfolioitem_currency)
+
+    @skip("to be done")
+    def test_stock_count_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        raise NotImplementedError
+
+    def test_stock_count_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the stock_count
+        stock_count = 0
+        for item in Trade.objects.filter(portfolioitem=a).iterator():
+            if item.trade_type == Trade.TRADE_TYPE_BUY:
+                stock_count += item.item_count
+            if item.trade_type == Trade.TRADE_TYPE_SELL:
+                stock_count -= item.item_count
+
+        # without the annotation, one more database query is required
+        # 1) access the Trade model to get the summary
+        with self.assertNumQueries(1):
+            self.assertEqual(stock_count, a.stock_count)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the stock_count
+        stock_count = 0
+        for item in Trade.objects.filter(portfolioitem=b).iterator():
+            if item.trade_type == Trade.TRADE_TYPE_BUY:
+                stock_count += item.item_count
+            if item.trade_type == Trade.TRADE_TYPE_SELL:
+                stock_count -= item.item_count
+
+        # without the annotation, one more database query is required
+        # 1) access the Trade model to get the summary
+        with self.assertNumQueries(1):
+            self.assertEqual(stock_count, b.stock_count)

@@ -366,20 +366,28 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
             logger.debug("Fetching 'currency' from parent 'portfolio' instance.")
             return self.portfolio.currency
 
-    @cached_property
+    @property
     def stock_count(self):  # noqa: D401
-        """The count of stocks in this `PortfolioItem` (:obj:int`, read-only).
+        """The count of stocks in this `PortfolioItem` (:obj:`int`, read-only).
 
         Notes
         -----
-        `stock_count` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `stock_count` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__stock_count`.
 
         The required values to populate the
         :class:`~stockings.data.StockingsMoney` instance are not directly stored
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
+        """
+        return self.__stock_count
+
+    @cached_property
+    def __stock_count(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.stock_count`.
         """
         try:
             return self._stock_count
