@@ -236,20 +236,28 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
                 trade_information["purchase_latest_timestamp"],
             )
 
-    @cached_property
+    @property
     def cash_out(self):  # noqa: D401
-        """The cash flow out of this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
+        """The cash flow out of this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`, read-only).
 
         Notes
         -----
-        `cash_out` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `cash_out` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__cash_out`.
 
         The required values to populate the
         :class:`~stockings.data.StockingsMoney` instance are not directly stored
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
+        """
+        return self.__cash_out
+
+    @cached_property
+    def __cash_out(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.cash_out`.
         """
         try:
             return StockingsMoney(
