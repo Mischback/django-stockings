@@ -340,7 +340,7 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
                 trade_information["costs_latest_timestamp"],
             )
 
-    @cached_property
+    @property
     def currency(self):  # noqa: D401
         """The currency for all money-related fields (:obj:`str`, read-only).
 
@@ -349,8 +349,16 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
 
         Notes
         -----
-        `currency` is implemented as
+        `currency` is implemented as :obj:`property` that wraps the
         :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__currency`.
+        """
+        return self.__currency
+
+    @cached_property
+    def __currency(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.currency`.
         """
         try:
             return self._currency

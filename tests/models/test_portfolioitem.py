@@ -8,6 +8,7 @@ from django.test import override_settings, tag  # noqa
 
 # app imports
 from stockings.data import StockingsMoney
+from stockings.models.portfolio import Portfolio
 from stockings.models.portfolioitem import PortfolioItem
 from stockings.models.trade import Trade
 
@@ -160,6 +161,46 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             a.costs = "foobar"
 
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_currency_get_with_annotations(self, mock_portfolio):
+        """Property's getter uses annotated attributes."""
+        # get a PortfolioItem
+        a = PortfolioItem()
+        # This attribute can't be mocked by patch, because it is no part of the
+        # actual class. Provide it here to simulate Django's annotation
+        a._currency = mock.MagicMock()
+
+        # actually access the attribute
+        b = a.currency
+
+        self.assertFalse(mock_portfolio.called)
+        self.assertEqual(b, a._currency)
+
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.portfolio",
+        new_callable=mock.PropertyMock,
+    )
+    def test_currency_get_without_annotations(self, mock_portfolio):
+        """Property's getter retrieves missing attributes."""
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        # actually access the attribute
+        b = a.currency
+
+        self.assertTrue(mock_portfolio.called)
+        self.assertEqual(b, mock_portfolio.return_value.currency)
+
+    def test_currency_set(self):
+        """Property is read-only."""
+        a = PortfolioItem()
+
+        with self.assertRaises(AttributeError):
+            a.currency = "foobar"
+
 
 @tag("integrationtest", "models", "portfolioitem")
 class PortfolioItemORMTest(StockingsORMTestCase):
@@ -184,7 +225,11 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         ).iterator():
             trade_amount += item._price_amount * item.item_count
 
-        self.assertAlmostEqual(trade_amount, a.cash_in.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_amount, a.cash_in.amount)
 
         # get the PortfolioItem (two "BUY" trades)
         b = PortfolioItem.objects.get(
@@ -198,7 +243,11 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         ).iterator():
             trade_amount += item._price_amount * item.item_count
 
-        self.assertAlmostEqual(trade_amount, b.cash_in.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_amount, b.cash_in.amount)
 
     @skip("to be done")
     def test_cash_out_get_with_annotations(self):
@@ -219,7 +268,11 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         ).iterator():
             trade_amount += item._price_amount * item.item_count
 
-        self.assertAlmostEqual(trade_amount, a.cash_out.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_amount, a.cash_out.amount)
 
         # get the PortfolioItem (two "SELL" trades)
         b = PortfolioItem.objects.get(
@@ -233,7 +286,11 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         ).iterator():
             trade_amount += item._price_amount * item.item_count
 
-        self.assertAlmostEqual(trade_amount, b.cash_out.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_amount, b.cash_out.amount)
 
     @skip("to be done")
     def test_costs_get_with_annotations(self):
@@ -252,7 +309,11 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         for item in Trade.objects.filter(portfolioitem=a).iterator():
             trade_costs += item._costs_amount
 
-        self.assertAlmostEqual(trade_costs, a.costs.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_costs, a.costs.amount)
 
         # get the PortfolioItem (two "BUY" trades)
         b = PortfolioItem.objects.get(
@@ -264,4 +325,36 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         for item in Trade.objects.filter(portfolioitem=b).iterator():
             trade_costs += item._costs_amount
 
-        self.assertAlmostEqual(trade_costs, b.costs.amount)
+        # without the annotation, two more database queries are required
+        # 1) access the Trade model to get the summary
+        # 2) access the Portfolio model to get the currency
+        with self.assertNumQueries(2):
+            self.assertAlmostEqual(trade_costs, b.costs.amount)
+
+    def test_currency_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        # get the Portfolio
+        portfolio = Portfolio.objects.get(name="PortfolioA")
+
+        # with annotation, no additional database query is required (total = 1)
+        with self.assertNumQueries(1):
+            # get one of the PortfolioItems
+            portfolioitem_currency = PortfolioItem.stockings_manager.get(
+                portfolio=portfolio, stockitem__isin="XX0000000001"
+            ).currency
+
+        self.assertEqual(portfolio.currency, portfolioitem_currency)
+
+    def test_currency_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        # get the Portfolio
+        portfolio = Portfolio.objects.get(name="PortfolioA")
+
+        # without annotation, another database query is required (total = 2)
+        with self.assertNumQueries(2):
+            # get one of the PortfolioItems
+            portfolioitem_currency = PortfolioItem.objects.get(
+                portfolio=portfolio, stockitem__isin="XX0000000001"
+            ).currency
+
+        self.assertEqual(portfolio.currency, portfolioitem_currency)
