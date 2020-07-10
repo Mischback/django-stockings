@@ -1,4 +1,4 @@
-"""These classes represent a portfolio and its items."""
+"""This module provides the :class:`~stockings.models.portfolio.Portfolio` model."""
 
 # Django imports
 from django.conf import settings
@@ -6,7 +6,6 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
-# from stockings.models.portfolioitem import PortfolioItem
 from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
 
 
@@ -20,7 +19,6 @@ class Portfolio(models.Model):
     :class:`~django.db.models.Model`) are not documented here.
     """
 
-    # A human-readable name of the ``Portolio`` object.
     name = models.CharField(max_length=50,)
     """The name of this `Portfolio` instance (:py:obj:`str`).
 
@@ -31,11 +29,6 @@ class Portfolio(models.Model):
     The name **must be** unique for the associated :attr:`user`.
     """
 
-    # Reference to Django's ``User`` object.
-    # In fact, the project may have substituted Django's default user object,
-    # so this is as pluggable as possible.
-    # Please note, that Django's ``User`` object (or its substitute) will not
-    # have a backwards relation to this object.
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
     )
@@ -79,7 +72,20 @@ class Portfolio(models.Model):
         verbose_name = _("Portfolio")
         verbose_name_plural = _("Portfolios")
 
-    def __str__(self):  # noqa: D105
+    def __str__(self):  # noqa: D401
+        """The string representation of the `Portfolio`.
+
+        Returns
+        -------
+        str
+            The returned string has the form "[portfolioname] ([username])"
+
+        Warnings
+        --------
+        The returned string includes the Django user (as provided by
+        :attr:`~stockings.models.portfolio.Portfolio.user`), so using this
+        magic method may result in another database query.
+        """
         return "{} ({})".format(self.name, self.user)  # pragma: nocover
 
     @property
@@ -107,7 +113,7 @@ class Portfolio(models.Model):
         :attr:`~stockings.models.portfolio.Portfolio._currency`.
 
         The **setter** applies the ``new_currency`` to all related instances of
-        :class:`stockings.models.portfolioitem.PortfoliItem` and
+        :class:`stockings.models.portfolioitem.PortfolioItem` and
         :class:`stockings.models.trade.Trade` and then updates
         :attr:`~stockings.models.portfolio.Portfolio._currency`.
         """
