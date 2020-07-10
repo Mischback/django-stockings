@@ -104,7 +104,7 @@ class PortfolioItemManager(models.Manager):
 
 class PortfolioItem(models.Model):  # noqa: D205, D400
     """Tracks one :class:`~stockings.models.stockitem.StockItem` in a user's
-    :model:`~stockings.models.portfolio.Portfolio`.
+    :class:`~stockings.models.portfolio.Portfolio`.
 
     Warnings
     ----------
@@ -184,20 +184,28 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
     def _apply_new_currency(self, new_currency):
         raise NotImplementedError
 
-    @cached_property
+    @property
     def cash_in(self):  # noqa: D401
-        """The cash flow into this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
+        """The cash flow into this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`, read-only).
 
         Notes
         -----
-        `cash_in` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `cash_in` is implemented as a :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__cash_in`.
 
         The required values to populate the
         :class:`~stockings.data.StockingsMoney` instance are not directly stored
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
+        """
+        return self.__cash_in
+
+    @cached_property
+    def __cash_in(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.cash_in`.
         """
         try:
             return StockingsMoney(
