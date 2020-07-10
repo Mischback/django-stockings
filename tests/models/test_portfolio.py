@@ -10,10 +10,10 @@ from django.test import override_settings, tag  # noqa
 from stockings.models.portfolio import Portfolio
 
 # app imports
-from ..util.testcases import StockingsTestCase
+from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 
 
-@tag("models", "portfolio")
+@tag("models", "portfolio", "unittest")
 class PortfolioTest(StockingsTestCase):
     """Provide tests for `Portfolio` class."""
 
@@ -52,3 +52,20 @@ class PortfolioTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             del a.currency
+
+
+@tag("integrationtest", "models", "portfolio")
+class PortfolioORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    def test_property_currency_set(self):
+        """Property's setter also updates `PortfolioItem` instances.
+
+        As of now, `PortfolioITem._apply_new_currency()` is not implemented.
+        This method will have to be updated, once applying new currencies is
+        included (and will fail at this point)!
+        """
+        a = Portfolio.objects.get(name="PortfolioA")
+
+        with self.assertRaises(NotImplementedError):
+            a.currency = "FOO"
