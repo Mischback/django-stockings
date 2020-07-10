@@ -141,6 +141,7 @@ class StockItem(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
+        ordering = ["name", "isin"]
         verbose_name = _("Stock Item")
         verbose_name_plural = _("Stock Items")
 

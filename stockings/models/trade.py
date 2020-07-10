@@ -394,6 +394,7 @@ class Trade(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
+        get_latest_by = "timestamp"
         ordering = ["-timestamp"]
         verbose_name = _("Trade")
         verbose_name_plural = _("Trades")

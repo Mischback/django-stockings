@@ -296,6 +296,8 @@ class StockItemPrice(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
+        get_latest_by = "_price_timestamp"
+        ordering = ["-_price_timestamp", "stockitem"]
         verbose_name = _("Stock Item Price")
         verbose_name_plural = _("Stock Item Prices")
 

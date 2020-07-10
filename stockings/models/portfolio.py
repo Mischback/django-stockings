@@ -68,6 +68,7 @@ class Portfolio(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
+        ordering = ["user", "name"]
         unique_together = ["name", "user"]
         verbose_name = _("Portfolio")
         verbose_name_plural = _("Portfolios")
