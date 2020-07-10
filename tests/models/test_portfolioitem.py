@@ -114,6 +114,52 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             a.cash_out = "foobar"
 
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.currency")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
+    def test_costs_get_with_annotations(self, mock_trades, mock_currency):
+        """Property's getter uses annotated attributes."""
+        # get a PortfolioItem
+        a = PortfolioItem()
+        # These attributes can't be mocked by patch, because they are not part
+        # of the actual class. Provide them here to simulate Django's annotation
+        a._costs_amount = mock.MagicMock()
+        a._costs_timestamp = mock.MagicMock()
+
+        # actually access the attribute
+        b = a.costs
+
+        self.assertFalse(mock_trades.return_value.trade_summary.called)
+        self.assertEqual(
+            b, StockingsMoney(a._costs_amount, mock_currency, a._costs_timestamp)
+        )
+
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.currency")
+    @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
+    def test_costs_get_without_annotations(self, mock_trades, mock_currency):
+        """Property's getter retrieves missing attributes."""
+        # set up the mock
+        mock_amount = mock.MagicMock()
+        mock_timestamp = mock.MagicMock()
+        mock_trades.return_value.trade_summary.return_value = [
+            {"costs_amount": mock_amount, "costs_latest_timestamp": mock_timestamp},
+        ]
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        # actually access the attribute
+        b = a.costs
+
+        self.assertTrue(mock_trades.return_value.trade_summary.called)
+        self.assertEqual(b, StockingsMoney(mock_amount, mock_currency, mock_timestamp))
+
+    def test_costs_set(self):
+        """Property is read-only."""
+        a = PortfolioItem()
+
+        with self.assertRaises(AttributeError):
+            a.costs = "foobar"
+
 
 @tag("integrationtest", "models", "portfolioitem")
 class PortfolioItemORMTest(StockingsORMTestCase):
@@ -188,3 +234,34 @@ class PortfolioItemORMTest(StockingsORMTestCase):
             trade_amount += item._price_amount * item.item_count
 
         self.assertAlmostEqual(trade_amount, b.cash_out.amount)
+
+    @skip("to be done")
+    def test_costs_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        raise NotImplementedError
+
+    def test_costs_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_costs = 0
+        for item in Trade.objects.filter(portfolioitem=a).iterator():
+            trade_costs += item._costs_amount
+
+        self.assertAlmostEqual(trade_costs, a.costs.amount)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_costs = 0
+        for item in Trade.objects.filter(portfolioitem=b).iterator():
+            trade_costs += item._costs_amount
+
+        self.assertAlmostEqual(trade_costs, b.costs.amount)

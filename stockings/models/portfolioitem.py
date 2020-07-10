@@ -288,14 +288,15 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
                 trade_information["sale_latest_timestamp"],
             )
 
-    @cached_property
+    @property
     def costs(self):  # noqa: D401
-        """The costs associated with this `PortfolioItem` (:class:~stockings.data.StockingsMoney`, read-only).
+        """The costs associated with this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`, read-only).
 
         Notes
         -----
-        `costs` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `costs` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__costs`.
 
         The required values to populate the
         :class:`~stockings.data.StockingsMoney` instance are not directly stored
@@ -303,9 +304,16 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
         """
+        return self.__costs
+
+    @cached_property
+    def __costs(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.costs`.
+        """
         try:
             return StockingsMoney(
-                self._cash_out_amount, self.currency, self._cash_out_timestamp
+                self._costs_amount, self.currency, self._costs_timestamp
             )
         except AttributeError:
             logger.info(
