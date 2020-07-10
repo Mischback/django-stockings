@@ -1,0 +1,711 @@
+[
+{
+  "model": "stockings.stockitem",
+  "pk": "XX0000000001",
+  "fields": {
+    "full_name": "StockItem01",
+    "name": "StockItem01",
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.stockitem",
+  "pk": "XX0000000002",
+  "fields": {
+    "full_name": "StockItem02",
+    "name": "StockItem02",
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.stockitem",
+  "pk": "XX0000000003",
+  "fields": {
+    "full_name": "StockItem03",
+    "name": "StockItem03",
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.stockitem",
+  "pk": "XX0000000004",
+  "fields": {
+    "full_name": "StockItem04",
+    "name": "StockItem04",
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.stockitem",
+  "pk": "XX0000000005",
+  "fields": {
+    "full_name": "StockItem05",
+    "name": "StockItem05",
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 1,
+  "fields": {
+    "portfolio": 1,
+    "stockitem": "XX0000000001"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 2,
+  "fields": {
+    "portfolio": 1,
+    "stockitem": "XX0000000002"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 3,
+  "fields": {
+    "portfolio": 1,
+    "stockitem": "XX0000000003"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 4,
+  "fields": {
+    "portfolio": 2,
+    "stockitem": "XX0000000001"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 5,
+  "fields": {
+    "portfolio": 2,
+    "stockitem": "XX0000000004"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 6,
+  "fields": {
+    "portfolio": 2,
+    "stockitem": "XX0000000005"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 7,
+  "fields": {
+    "portfolio": 3,
+    "stockitem": "XX0000000002"
+  }
+},
+{
+  "model": "stockings.portfolioitem",
+  "pk": 8,
+  "fields": {
+    "portfolio": 3,
+    "stockitem": "XX0000000004"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 18,
+  "fields": {
+    "item_count": 4,
+    "portfolioitem": 1,
+    "timestamp": "2020-07-01T09:28:11",
+    "trade_type": "BUY",
+    "_costs_amount": "2.9000",
+    "_price_amount": "33.1000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 19,
+  "fields": {
+    "item_count": 4,
+    "portfolioitem": 1,
+    "timestamp": "2020-07-08T09:29:08",
+    "trade_type": "SELL",
+    "_costs_amount": "2.9000",
+    "_price_amount": "34.5000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 20,
+  "fields": {
+    "item_count": 5,
+    "portfolioitem": 2,
+    "timestamp": "2020-07-02T09:31:36",
+    "trade_type": "BUY",
+    "_costs_amount": "2.9000",
+    "_price_amount": "25.5000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 21,
+  "fields": {
+    "item_count": 5,
+    "portfolioitem": 2,
+    "timestamp": "2020-07-06T09:32:26",
+    "trade_type": "SELL",
+    "_costs_amount": "2.9000",
+    "_price_amount": "27.5500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 22,
+  "fields": {
+    "item_count": 10,
+    "portfolioitem": 2,
+    "timestamp": "2020-07-08T09:33:20",
+    "trade_type": "BUY",
+    "_costs_amount": "2.9000",
+    "_price_amount": "24.9700"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 23,
+  "fields": {
+    "item_count": 7,
+    "portfolioitem": 3,
+    "timestamp": "2020-07-05T09:35:27",
+    "trade_type": "BUY",
+    "_costs_amount": "2.9000",
+    "_price_amount": "110.2500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 24,
+  "fields": {
+    "item_count": 3,
+    "portfolioitem": 4,
+    "timestamp": "2020-07-03T09:36:59",
+    "trade_type": "BUY",
+    "_costs_amount": "1.9000",
+    "_price_amount": "32.1500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 25,
+  "fields": {
+    "item_count": 4,
+    "portfolioitem": 5,
+    "timestamp": "2020-07-06T09:42:02",
+    "trade_type": "BUY",
+    "_costs_amount": "1.9000",
+    "_price_amount": "45.9000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 26,
+  "fields": {
+    "item_count": 6,
+    "portfolioitem": 5,
+    "timestamp": "2020-07-07T09:42:42",
+    "trade_type": "BUY",
+    "_costs_amount": "1.9000",
+    "_price_amount": "46.1000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 27,
+  "fields": {
+    "item_count": 5,
+    "portfolioitem": 5,
+    "timestamp": "2020-07-10T09:43:23",
+    "trade_type": "SELL",
+    "_costs_amount": "1.9000",
+    "_price_amount": "46.5000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 28,
+  "fields": {
+    "item_count": 1,
+    "portfolioitem": 6,
+    "timestamp": "2020-07-06T09:44:04",
+    "trade_type": "BUY",
+    "_costs_amount": "1.9000",
+    "_price_amount": "79.0000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 29,
+  "fields": {
+    "item_count": 1,
+    "portfolioitem": 6,
+    "timestamp": "2020-07-06T09:46:19",
+    "trade_type": "SELL",
+    "_costs_amount": "1.9000",
+    "_price_amount": "79.5000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 30,
+  "fields": {
+    "item_count": 5,
+    "portfolioitem": 6,
+    "timestamp": "2020-07-07T09:47:14",
+    "trade_type": "BUY",
+    "_costs_amount": "1.9000",
+    "_price_amount": "79.0000"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 31,
+  "fields": {
+    "item_count": 3,
+    "portfolioitem": 6,
+    "timestamp": "2020-07-10T09:47:53",
+    "trade_type": "SELL",
+    "_costs_amount": "1.9000",
+    "_price_amount": "76.6500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 32,
+  "fields": {
+    "item_count": 3,
+    "portfolioitem": 7,
+    "timestamp": "2020-07-02T09:49:46",
+    "trade_type": "BUY",
+    "_costs_amount": "3.5000",
+    "_price_amount": "25.7500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 33,
+  "fields": {
+    "item_count": 3,
+    "portfolioitem": 7,
+    "timestamp": "2020-07-09T09:50:35",
+    "trade_type": "SELL",
+    "_costs_amount": "3.5000",
+    "_price_amount": "25.2500"
+  }
+},
+{
+  "model": "stockings.trade",
+  "pk": 34,
+  "fields": {
+    "item_count": 20,
+    "portfolioitem": 8,
+    "timestamp": "2020-07-07T09:51:17",
+    "trade_type": "BUY",
+    "_costs_amount": "3.5000",
+    "_price_amount": "46.2000"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 1,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "33.7300",
+    "_price_timestamp": "2020-07-10T07:28:09"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 2,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "34.0100",
+    "_price_timestamp": "2020-07-09T07:28:13"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 3,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "34.0500",
+    "_price_timestamp": "2020-07-08T07:28:31"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 4,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "34.9500",
+    "_price_timestamp": "2020-07-07T07:28:46"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 5,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "34.6200",
+    "_price_timestamp": "2020-07-06T07:29:06"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 6,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "32.5300",
+    "_price_timestamp": "2020-07-05T07:29:22"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 7,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "32.4600",
+    "_price_timestamp": "2020-07-04T07:29:40"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 8,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "32.1100",
+    "_price_timestamp": "2020-07-03T07:30:02"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 9,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "32.7100",
+    "_price_timestamp": "2020-07-02T07:30:37"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 10,
+  "fields": {
+    "stockitem": "XX0000000001",
+    "_price_amount": "33.2000",
+    "_price_timestamp": "2020-07-01T07:30:53"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 11,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "24.3700",
+    "_price_timestamp": "2020-07-10T07:32:57"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 12,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "25.2800",
+    "_price_timestamp": "2020-07-09T07:33:11"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 13,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "25.5800",
+    "_price_timestamp": "2020-07-08T07:33:26"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 14,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "26.2400",
+    "_price_timestamp": "2020-07-07T07:33:41"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 15,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "27.0100",
+    "_price_timestamp": "2020-07-06T07:34:19"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 16,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "27.6300",
+    "_price_timestamp": "2020-07-05T07:34:34"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 17,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "26.9200",
+    "_price_timestamp": "2020-07-04T07:34:50"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 18,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "26.8000",
+    "_price_timestamp": "2020-07-03T07:35:08"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 19,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "25.8700",
+    "_price_timestamp": "2020-07-02T07:35:24"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 20,
+  "fields": {
+    "stockitem": "XX0000000002",
+    "_price_amount": "26.6800",
+    "_price_timestamp": "2020-07-01T07:35:42"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 21,
+  "fields": {
+    "stockitem": "XX0000000003",
+    "_price_amount": "116.8100",
+    "_price_timestamp": "2020-07-10T08:02:03"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 22,
+  "fields": {
+    "stockitem": "XX0000000003",
+    "_price_amount": "116.5100",
+    "_price_timestamp": "2020-07-09T08:02:15"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 23,
+  "fields": {
+    "stockitem": "XX0000000003",
+    "_price_amount": "113.4800",
+    "_price_timestamp": "2020-07-08T08:02:32"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 24,
+  "fields": {
+    "stockitem": "XX0000000003",
+    "_price_amount": "113.6300",
+    "_price_timestamp": "2020-07-07T08:02:48"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 25,
+  "fields": {
+    "stockitem": "XX0000000003",
+    "_price_amount": "113.8300",
+    "_price_timestamp": "2020-07-06T08:03:07"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 26,
+  "fields": {
+    "stockitem": "XX0000000004",
+    "_price_amount": "46.7000",
+    "_price_timestamp": "2020-07-10T08:04:00"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 27,
+  "fields": {
+    "stockitem": "XX0000000004",
+    "_price_amount": "46.6000",
+    "_price_timestamp": "2020-07-09T08:04:35"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 28,
+  "fields": {
+    "stockitem": "XX0000000004",
+    "_price_amount": "45.5900",
+    "_price_timestamp": "2020-07-08T08:04:52"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 29,
+  "fields": {
+    "stockitem": "XX0000000004",
+    "_price_amount": "46.1200",
+    "_price_timestamp": "2020-07-07T08:05:08"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 30,
+  "fields": {
+    "stockitem": "XX0000000004",
+    "_price_amount": "46.0700",
+    "_price_timestamp": "2020-07-06T08:05:32"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 31,
+  "fields": {
+    "stockitem": "XX0000000005",
+    "_price_amount": "76.6900",
+    "_price_timestamp": "2020-07-10T08:07:02"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 32,
+  "fields": {
+    "stockitem": "XX0000000005",
+    "_price_amount": "77.9400",
+    "_price_timestamp": "2020-07-09T08:07:13"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 33,
+  "fields": {
+    "stockitem": "XX0000000005",
+    "_price_amount": "78.6300",
+    "_price_timestamp": "2020-07-08T08:07:28"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 34,
+  "fields": {
+    "stockitem": "XX0000000005",
+    "_price_amount": "79.0000",
+    "_price_timestamp": "2020-07-07T08:07:49"
+  }
+},
+{
+  "model": "stockings.stockitemprice",
+  "pk": 35,
+  "fields": {
+    "stockitem": "XX0000000005",
+    "_price_amount": "79.2400",
+    "_price_timestamp": "2020-07-06T08:08:08"
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$180000$kqeEQMwqcqjG$IApE6lMspCGY1oiyarPWHtvi1wlR9ALbfID5TlK0WpM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Alice",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2020-07-10T04:39:31.188",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$180000$7gxGDWx4jwsF$ftT3Z9V7Qv8MmuRXA17tp8OzBSaXwF94Ho3Z2rW876k=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Bob",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2020-07-10T04:39:47.724",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$180000$zaYM7JDkX3j2$/oVCOe86n3eLYI0EK6NRTsxZXtMKjKe+huB0tQbPkfU=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "Charly",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2020-07-10T04:39:58",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "stockings.portfolio",
+  "pk": 1,
+  "fields": {
+    "name": "PortfolioA",
+    "user": 2,
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.portfolio",
+  "pk": 2,
+  "fields": {
+    "name": "PortfolioB1",
+    "user": 3,
+    "_currency": "EUR"
+  }
+},
+{
+  "model": "stockings.portfolio",
+  "pk": 3,
+  "fields": {
+    "name": "PortfolioB2",
+    "user": 3,
+    "_currency": "EUR"
+  }
+}
+]
