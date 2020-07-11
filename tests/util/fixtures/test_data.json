@@ -45,6 +45,15 @@
   }
 },
 {
+  "model": "stockings.stockitem",
+  "pk": "XX0000000006",
+  "fields": {
+    "full_name": "StockItem06_unused",
+    "name": "StockItem06",
+    "_currency": "EUR"
+  }
+},
+{
   "model": "stockings.portfolioitem",
   "pk": 1,
   "fields": {

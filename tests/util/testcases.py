@@ -54,6 +54,7 @@ class StockingsORMTestCase(StockingsTestCase):
         - StockItem03 (XX0000000003); 5 StockItemPrice instances (Walt Disney)
         - StockItem04 (XX0000000004); 5 StockItemPrice instances (Cisco)
         - StockItem05 (XX0000000005); 5 StockItemPrice instances (Merck)
+        - StockItem06 (XX0000000006); no StockItemPrice instances
     - 35 StockItemPrice instances
         - see above
     - 3 Portfolio instances

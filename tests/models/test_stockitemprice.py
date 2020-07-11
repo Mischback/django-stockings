@@ -1,12 +1,15 @@
 """Provides tests for module `stockings.models.stockitemprice`."""
 
 # Python imports
+from datetime import timedelta
+from decimal import Decimal
 from unittest import mock, skip  # noqa
 
 # Django imports
 from django.test import override_settings, tag  # noqa
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.models.stockitem import StockItem
 from stockings.models.stockitemprice import StockItemPrice
 
@@ -165,3 +168,94 @@ class StockItemPriceManagerORMTest(StockingsORMTestCase):
 
         # assert equality
         self.assertEqual(test_object, reference)
+
+    def test_set_latest_price_new_date(self):
+        """Create a new instance, if new date."""
+        # get a StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # get the most recent StockItemPrice
+        latest_price = StockItemPrice.stockings_manager.get_latest_price_object(
+            stockitem
+        ).price
+
+        # build the new value
+        new_price = StockingsMoney(
+            latest_price.amount,
+            latest_price.currency,
+            timestamp=latest_price.timestamp + timedelta(days=1),
+        )
+
+        self.assertTrue(
+            StockItemPrice.stockings_manager.set_latest_price(stockitem, new_price)
+        )
+
+        self.assertNotEqual(latest_price, stockitem.latest_price)
+        self.assertEqual(new_price, stockitem.latest_price)
+
+    def test_set_latest_price_existing_date_new_data(self):
+        """Update an existing instance, if newer value."""
+        # get a StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # get the most recent StockItemPrice
+        latest_price = StockItemPrice.stockings_manager.get_latest_price_object(
+            stockitem
+        ).price
+
+        # build the new value
+        new_price = StockingsMoney(
+            latest_price.amount,
+            latest_price.currency,
+            timestamp=latest_price.timestamp + timedelta(minutes=10),
+        )
+
+        self.assertTrue(
+            StockItemPrice.stockings_manager.set_latest_price(stockitem, new_price)
+        )
+
+        self.assertNotEqual(latest_price, stockitem.latest_price)
+        self.assertEqual(new_price, stockitem.latest_price)
+
+    def test_set_latest_price_no_existing_price_objects(self):
+        """Create first StockItemPrice instance."""
+        # get a StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000006")
+
+        # build the new value
+        new_price = StockingsMoney(
+            Decimal(1.11),
+            stockitem.currency,
+            # timestamp=datetime.now()
+        )
+
+        self.assertTrue(
+            StockItemPrice.stockings_manager.set_latest_price(stockitem, new_price)
+        )
+        self.assertAlmostEqual(new_price.amount, stockitem.latest_price.amount)
+        self.assertEqual(new_price.currency, stockitem.latest_price.currency)
+        self.assertEqual(new_price.timestamp, stockitem.latest_price.timestamp)
+
+    def test_set_latest_price_old_data(self):
+        """Old data does not perform any action."""
+        # get a StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # get the most recent StockItemPrice
+        latest_price = StockItemPrice.stockings_manager.get_latest_price_object(
+            stockitem
+        ).price
+
+        # build the new value
+        new_price = StockingsMoney(
+            latest_price.amount,
+            latest_price.currency,
+            timestamp=latest_price.timestamp - timedelta(days=1),
+        )
+
+        self.assertFalse(
+            StockItemPrice.stockings_manager.set_latest_price(stockitem, new_price)
+        )
+
+        self.assertEqual(latest_price, stockitem.latest_price)
+        self.assertNotEqual(new_price, stockitem.latest_price)
