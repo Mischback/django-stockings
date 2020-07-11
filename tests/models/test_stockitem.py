@@ -108,10 +108,15 @@ class StockItemTest(StockingsTestCase):
         self.assertTrue(mock_prices.return_value.get_latest_price_object.called)
         self.assertEqual(b, StockingsMoney(mock_amount, mock_currency, mock_timestamp))
 
-    @skip("to be done")
-    def test_latest_price_set(self):
+    @mock.patch("stockings.models.stockitem.StockItem.prices")
+    def test_latest_price_set(self, mock_prices):
         """Property's setter accesses StockItemPrice."""
-        raise NotImplementedError
+        # get a StockItem object
+        a = StockItem()
+
+        a.latest_price = StockingsMoney(1.1, "FOO")
+
+        self.assertTrue(mock_prices.return_value.set_latest_price.called)
 
     def test_latest_price_del(self):
         """Property can not be deleted."""

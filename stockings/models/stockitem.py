@@ -276,7 +276,7 @@ class StockItem(models.Model):
         else:
             logger.debug(
                 "The provided value was older than the stored one. No update performed!"
-            )
+            )  # pragma: nocover
 
     @cached_property
     def __latest_price(self):  # noqa: D205, D400, D401
