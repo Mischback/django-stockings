@@ -1,6 +1,7 @@
 """Provides tests for module `stockings.models.stockitem`."""
 
 # Python imports
+from datetime import timedelta
 from unittest import mock, skip  # noqa
 
 # Django imports
@@ -9,6 +10,7 @@ from django.test import override_settings, tag  # noqa
 # app imports
 from stockings.data import StockingsMoney
 from stockings.models.stockitem import StockItem
+from stockings.models.stockitemprice import StockItemPrice
 
 # app imports
 from ..util.testcases import StockingsORMTestCase, StockingsTestCase
@@ -140,6 +142,7 @@ class StockItemORMTest(StockingsORMTestCase):
         will raise `NotImplementedError`. So, while this test method is already
         implemented, it does not produce real results.
         """
+        # get a StockItem instance
         a = StockItem.objects.get(isin="XX0000000003")
 
         with self.assertRaises(NotImplementedError):
@@ -150,12 +153,35 @@ class StockItemORMTest(StockingsORMTestCase):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
 
-    @skip("to be done")
     def test_latest_price_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
-        raise NotImplementedError
+        # get a StockItem instance
+        a = StockItem.objects.get(isin="XX0000000003")
 
-    @skip("to be done")
+        # get the most recent StockItemPrice
+        latest_price = StockItemPrice.objects.filter(stockitem=a).latest().price
+
+        # without the annotation, another database query is required
+        # 1) access StockItemPrice to get the most-recent price
+        with self.assertNumQueries(1):
+            self.assertEqual(a.latest_price, latest_price)
+
     def test_latest_price_set(self):
         """Property's setter accesses StockItemPrice."""
-        raise NotImplementedError
+        # get a StockItem instance
+        a = StockItem.objects.get(isin="XX0000000003")
+
+        # get the most recent StockItemPrice
+        latest_price = StockItemPrice.objects.filter(stockitem=a).latest().price
+
+        new_price = StockingsMoney(
+            latest_price.amount,
+            latest_price.currency,
+            timestamp=latest_price.timestamp + timedelta(days=1),
+        )
+
+        # print("original: {} / new: {}".format(latest_price.timestamp, new_price.timestamp))
+
+        a.latest_price = new_price
+
+        self.assertNotEqual(latest_price, a.latest_price)
