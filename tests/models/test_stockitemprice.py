@@ -87,3 +87,24 @@ class StockItemPriceTest(StockingsTestCase):
         self.assertEqual(
             a, mock_manager.return_value.get_latest_price_object.return_value.price
         )
+
+    @mock.patch(
+        "stockings.models.stockitemprice.StockItemPrice.currency",
+        new_callable=mock.PropertyMock,
+    )
+    def test_price_get(self, mock_currency):
+        """Return the instances attributes as StockingsMoney instance."""
+        a = StockItemPrice()
+
+        b = a.price
+
+        self.assertEqual(a._price_amount, b.amount)
+        self.assertEqual(mock_currency.return_value, b.currency)
+        self.assertEqual(a._price_timestamp, b.timestamp)
+
+    def test_price_set(self):
+        """Property is read-only."""
+        a = StockItemPrice()
+
+        with self.assertRaises(AttributeError):
+            a.price = "foobar"

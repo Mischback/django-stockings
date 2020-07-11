@@ -332,14 +332,22 @@ class StockItemPrice(models.Model):
             logger.debug("Fetching 'currency' from parent 'stockitem' instance.")
             return self.stockitem.currency
 
-    @cached_property
+    @property
     def price(self):  # noqa: D401
         """The price per item (:class:`~stockings.data.StockingsMoney`, read-only).
 
         Notes
         -----
-        `price` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `price` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.stockitemprice.StockItemPrice.__price`.
+        """
+        return self.__price
+
+    @cached_property
+    def __price(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.price`.
         """
         return StockingsMoney(self._price_amount, self.currency, self._price_timestamp)
 
