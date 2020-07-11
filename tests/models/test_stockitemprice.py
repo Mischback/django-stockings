@@ -144,3 +144,24 @@ class StockItemPriceORMTest(StockingsORMTestCase):
             )
 
         self.assertEqual(stockitem.currency, stockitemprice_currency)
+
+
+@tag("integrationtest", "manager", "stockitemprice", "stockitempricemanager")
+class StockItemPriceManagerORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    def test_get_latest_price_object(self):
+        """Fetches the correct StockItemPrice object."""
+        # get a StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # get a StockItemPrice by the tested method
+        test_object = StockItemPrice.stockings_manager.get_latest_price_object(
+            stockitem
+        )
+
+        # find the StockItemPrice object by Django ORM
+        reference = StockItemPrice.objects.filter(stockitem=stockitem).latest()
+
+        # assert equality
+        self.assertEqual(test_object, reference)
