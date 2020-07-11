@@ -7,10 +7,11 @@ from unittest import mock, skip  # noqa
 from django.test import override_settings, tag  # noqa
 
 # app imports
+from stockings.models.stockitem import StockItem
 from stockings.models.stockitemprice import StockItemPrice
 
 # app imports
-from ..util.testcases import StockingsTestCase
+from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 
 
 @tag("models", "stockitemprice", "unittest")
@@ -108,3 +109,38 @@ class StockItemPriceTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             a.price = "foobar"
+
+
+@tag("integrationtest", "models", "stockitemprice")
+class StockItemPriceORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    def test_currency_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        # get the StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # with annotation, no additional database query is required (total = 1)
+        with self.assertNumQueries(1):
+            # get one of the StockItemPrice instances
+            stockitemprice_currency = (
+                StockItemPrice.stockings_manager.filter(stockitem=stockitem)
+                .latest()
+                .currency
+            )
+
+        self.assertEqual(stockitem.currency, stockitemprice_currency)
+
+    def test_currency_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        # get the StockItem
+        stockitem = StockItem.objects.get(isin="XX0000000001")
+
+        # with annotation, one additional database query is required (total = 2)
+        with self.assertNumQueries(2):
+            # get one of the StockItemPrice instances
+            stockitemprice_currency = (
+                StockItemPrice.objects.filter(stockitem=stockitem).latest().currency
+            )
+
+        self.assertEqual(stockitem.currency, stockitemprice_currency)
