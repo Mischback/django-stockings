@@ -184,7 +184,7 @@ class StockItem(models.Model):
     @currency.setter
     def currency(self, new_currency):
         """Setter for `currency`."""
-        for item in self.stockitemprice_set.iterator():
+        for item in self.prices.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 
