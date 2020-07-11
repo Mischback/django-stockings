@@ -58,10 +58,11 @@ class PortfolioTest(StockingsTestCase):
 class PortfolioORMTest(StockingsORMTestCase):
     """Provide tests with fixture data."""
 
+    @skip("depends on currency conversion")
     def test_currency_set(self):
         """Property's setter also updates `PortfolioItem` instances.
 
-        As of now, `PortfolioITem._apply_new_currency()` is not implemented.
+        As of now, `PortfolioItem._apply_new_currency()` is not implemented.
         This method will have to be updated, once applying new currencies is
         included (and will fail at this point)!
         """

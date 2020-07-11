@@ -11,7 +11,7 @@ from stockings.data import StockingsMoney
 from stockings.models.stockitem import StockItem
 
 # app imports
-from ..util.testcases import StockingsTestCase
+from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 
 
 @tag("models", "stockitem", "unittest")
@@ -125,3 +125,37 @@ class StockItemTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             del a.latest_price
+
+
+@tag("integrationtest", "models", "stockitem")
+class StockItemORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    @skip("depends on currency conversion")
+    def test_currency_set(self):
+        """Property's setter updates `StockItemPrice` instances.
+
+        While `StockItemPrice._apply_new_currency()` is already implemented, it
+        relies on `StockingsMoney.convert()`, which is not implemented yet and
+        will raise `NotImplementedError`. So, while this test method is already
+        implemented, it does not produce real results.
+        """
+        a = StockItem.objects.get(isin="XX0000000003")
+
+        with self.assertRaises(NotImplementedError):
+            a.currency = "FOO"
+
+    @skip("to be done")
+    def test_latest_price_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        raise NotImplementedError
+
+    @skip("to be done")
+    def test_latest_price_get_without_annotations(self):
+        """Property's getter retrieves missing attributes."""
+        raise NotImplementedError
+
+    @skip("to be done")
+    def test_latest_price_set(self):
+        """Property's setter accesses StockItemPrice."""
+        raise NotImplementedError
