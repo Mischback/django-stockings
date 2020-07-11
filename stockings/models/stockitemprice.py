@@ -354,7 +354,7 @@ class StockItemPrice(models.Model):
         --------
         stockings.models.stock.StockItemPriceManager.get_latest_price_object
         """
-        return cls.objects.get_latest_price_object(stockitem=stockitem).price
+        return cls.stockings_manager.get_latest_price_object(stockitem=stockitem).price
 
     def _apply_new_currency(self, new_currency):
         """Convert the :attr:`price` to a new currency.
