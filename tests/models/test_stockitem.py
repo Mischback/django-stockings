@@ -7,6 +7,7 @@ from unittest import mock, skip  # noqa
 from django.test import override_settings, tag  # noqa
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.models.stockitem import StockItem
 
 # app imports
@@ -61,3 +62,61 @@ class StockItemTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             del a.currency
+
+    @mock.patch("stockings.models.stockitem.StockItem.currency")
+    @mock.patch("stockings.models.stockitem.StockItem.prices")
+    def test_latest_price_get_with_annotations(self, mock_prices, mock_currency):
+        """Property's getter uses annotated attributes."""
+        # get a StockItem object
+        a = StockItem()
+        # These attributes can't be mocked by patch, because they are not part
+        # of the actual class. Provide them here to simulate Django's annotation
+        a._latest_price_amount = mock.MagicMock()
+        a._latest_price_timestamp = mock.MagicMock()
+
+        # actually access the attribute
+        b = a.latest_price
+
+        self.assertFalse(mock_prices.return_value.get_latest_price_object.called)
+        self.assertEqual(
+            b,
+            StockingsMoney(
+                a._latest_price_amount, mock_currency, a._latest_price_timestamp
+            ),
+        )
+
+    @mock.patch("stockings.models.stockitem.StockItem.currency")
+    @mock.patch("stockings.models.stockitem.StockItem.prices")
+    def test_latest_price_get_without_annotations(self, mock_prices, mock_currency):
+        """Property's getter retrieves missing attributes."""
+        # set up the mock
+        mock_amount = mock.MagicMock()
+        mock_timestamp = mock.MagicMock()
+        mock_prices.return_value.get_latest_price_object.return_value.price.amount = (
+            mock_amount
+        )
+        mock_prices.return_value.get_latest_price_object.return_value.price.timestamp = (
+            mock_timestamp
+        )
+
+        # get a StockItem object
+        a = StockItem()
+
+        # actually access the attribute
+        b = a.latest_price
+
+        self.assertTrue(mock_prices.return_value.get_latest_price_object.called)
+        self.assertEqual(b, StockingsMoney(mock_amount, mock_currency, mock_timestamp))
+
+    @skip("to be done")
+    def test_latest_price_set(self):
+        """Property's setter accesses StockItemPrice."""
+        raise NotImplementedError
+
+    def test_latest_price_del(self):
+        """Property can not be deleted."""
+        # get a StockItem object
+        a = StockItem()
+
+        with self.assertRaises(AttributeError):
+            del a.latest_price
