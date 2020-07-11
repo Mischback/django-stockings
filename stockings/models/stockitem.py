@@ -307,30 +307,3 @@ class StockItem(models.Model):
                 self.currency,
                 latest_price_obj.price.timestamp,
             )
-
-    def _is_active(self):
-        """`getter` for :attr:`is_active`.
-
-        Returns
-        -------
-        :obj:`bool`
-            The :attr:`is_active` of the object.
-        """
-        return self.portfolioitem_set.filter(is_active=True).count() > 0
-
-    is_active = property(_is_active)
-    """Flag to indicate, if this item is active (:obj:`bool`, read-only).
-
-    A `StockItem` is considered active, if it is referenced by at least one
-    :class:`~stockings.models.portfolio.PortfolioItem` object, that is active
-    itsself.
-
-    See Also
-    ---------
-    stockings.models.portfolio.PortfolioItemManager.get_queryset :
-        The corresponding
-        :attr:`~stockings.models.portfolio.PortfolioItem.is_active` is provided
-        as an annotation to :class:`~stockings.models.portfolio.PortfolioItem`
-        by its associated
-        :class:`Manager implementation <stockings.models.portfolio.PortfolioItemManager>`.
-    """
