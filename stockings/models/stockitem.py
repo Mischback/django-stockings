@@ -145,7 +145,15 @@ class StockItem(models.Model):
         verbose_name = _("Stock Item")
         verbose_name_plural = _("Stock Items")
 
-    def __str__(self):  # noqa: D105
+    def __str__(self):  # noqa: D401
+        """The string representation of the `StockItem`.
+
+        Returns
+        -------
+        str
+            The returned string has either the form "[name] ([isin])" or
+            just "[isin]".
+        """
         if self.name != "":
             return "{} ({})".format(self.name, self.isin,)
         else:
@@ -228,9 +236,27 @@ class StockItem(models.Model):
         )[0]
 
     @property
-    def latest_price(self):
-        """TODO."""
-        return self.__cached_latest_price
+    def latest_price(self):  # noqa: D401
+        """The costs associated with this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`).
+
+        Notes
+        -----
+        `latest_price` is implemented as :obj:`property`. The getter wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.stockitem.StockItem.__latest_price`, while the
+        setter uses
+        :meth:`stockings.models.stockitemprice.StockItemPriceManager.set_latest_price`
+        to actually update the most recent price information.
+
+        The required values to populate the
+        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        as attributes of this `StockItem` object. Instead, the ``amount`` and
+        ``timestamp`` are dynamically fetched from
+        :class:`stockings.models.stockitemprice.StockItemPrice`; the
+        ``currency`` is actually
+        :attr:`~stockings.models.stockitem.StockItem.currency`.
+        """
+        return self.__latest_price
 
     @latest_price.setter
     def latest_price(self, new_value):
@@ -253,7 +279,10 @@ class StockItem(models.Model):
             )
 
     @cached_property
-    def __cached_latest_price(self):
+    def __latest_price(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.stockitem.StockItem.latest_price`.
+        """
         try:
             return StockingsMoney(
                 self._latest_price_amount, self.currency, self._latest_price_timestamp
