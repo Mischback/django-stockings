@@ -17,7 +17,7 @@ from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 class PortfolioTest(StockingsTestCase):
     """Provide tests for `Portfolio` class."""
 
-    def test_property_currency_get(self):
+    def test_currency_get(self):
         """Property's getter simply returns the stored attribute."""
         # get a Portfolio object
         a = Portfolio()
@@ -26,7 +26,7 @@ class PortfolioTest(StockingsTestCase):
 
     @mock.patch("stockings.models.portfolio.Portfolio.save")
     @mock.patch("stockings.models.portfolio.Portfolio.portfolioitem_set")
-    def test_property_currency_set(self, mock_portfolioitem_set, mock_save):
+    def test_currency_set(self, mock_portfolioitem_set, mock_save):
         """Property's setter updates associated `PortfolioItem` objects."""
         # set up the mock
         mock_item = mock.MagicMock()
@@ -45,7 +45,7 @@ class PortfolioTest(StockingsTestCase):
         self.assertEqual(a._currency, "FOO")
         self.assertTrue(mock_save.called)
 
-    def test_property_currency_del(self):
+    def test_currency_del(self):
         """Property can not be deleted."""
         # get a Portfolio object
         a = Portfolio()
@@ -58,7 +58,7 @@ class PortfolioTest(StockingsTestCase):
 class PortfolioORMTest(StockingsORMTestCase):
     """Provide tests with fixture data."""
 
-    def test_property_currency_set(self):
+    def test_currency_set(self):
         """Property's setter also updates `PortfolioItem` instances.
 
         As of now, `PortfolioITem._apply_new_currency()` is not implemented.
