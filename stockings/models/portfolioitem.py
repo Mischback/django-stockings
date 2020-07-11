@@ -376,8 +376,7 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
         :class:`django.utils.functional.cached_property`
         :attr:`~stockings.models.portfolioitem.PortfolioItem.__stock_count`.
 
-        The required values to populate the
-        :class:`~stockings.data.StockingsMoney` instance are not directly stored
+        The required values to determine the `stock_count` are not directly stored
         as attributes of this `PortfolioItem` object. Instead, they are
         dynamically calculated by evaluating other models, most notably
         :class:`stockings.models.trade.Trade`.
@@ -412,9 +411,9 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
 
             return trade_information["current_stock_count"]
 
-    @cached_property
+    @property
     def stock_value(self):  # noqa: D401
-        """The current value of stocks in this `PortfolioItem`(:class:`~stockings.data.StockingsMoney`, read-only).
+        """The current value of stocks in this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`, read-only).
 
         Warnings
         --------
@@ -426,8 +425,9 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
 
         Notes
         -----
-        `stock_value` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `stock_value` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.__stock_value`.
 
         The required values to populate the
         :class:`~stockings.data.StockingsMoney` instance are not directly stored
@@ -436,6 +436,13 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
         :class:`stockings.models.stockitemprice.StockItemPrice` (and, by using
         :attr:`~stockings.models.portfolioitem.PortfolioItem.stock_count`,
         :class:`stockings.models.trade.Trade`).
+        """
+        return self.__stock_value
+
+    @cached_property
+    def __stock_value(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.stock_value`.
         """
         try:
             # TODO: ENSURE correct currency
