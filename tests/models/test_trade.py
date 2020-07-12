@@ -78,3 +78,27 @@ class TradeTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             a.currency = "foobar"
+
+    @mock.patch("stockings.models.trade.Trade.currency", new_callable=mock.PropertyMock)
+    @mock.patch(
+        "stockings.models.trade.Trade.timestamp", new_callable=mock.PropertyMock
+    )
+    def test_price_get(self, mock_timestamp, mock_currency):
+        """Return the instances attributes as StockingsMoney instance."""
+        # get a Trade instance
+        a = Trade()
+
+        # actually access the attribute
+        b = a.price
+
+        self.assertEqual(a._price_amount, b.amount)
+        self.assertEqual(mock_currency.return_value, b.currency)
+        self.assertEqual(mock_timestamp.return_value, b.timestamp)
+
+    def test_price_set(self):
+        """Property is read-only."""
+        # get a Trade instance
+        a = Trade()
+
+        with self.assertRaises(AttributeError):
+            a.price = "foobar"
