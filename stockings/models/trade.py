@@ -448,17 +448,25 @@ class Trade(models.Model):
             if self.item_count > self.portfolioitem.stock_count:
                 self.item_count = self.portfolioitem.stock_count
 
-    @cached_property
+    @property
     def costs(self):  # noqa: D401
         """The costs of this trade operation (:class:`~stockings.data.StockingsMoney`, read-only).
 
-        In the context of this class, *costs* refer to whatever your broker is
+        In the context of this class, *costs* refer to whatever the broker is
         charging for the trade.
 
         Notes
         -----
-        `costs` is implemented as
-        :class:`django.utils.functional.cached_property`.
+        `price` is implemented as :obj:`property` that wraps the
+        :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.trade.Trade.__costs`.
+        """
+        return self.__costs
+
+    @cached_property
+    def __costs(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.trade.Trade.costs`.
         """
         return StockingsMoney(self._costs_amount, self.currency, self.timestamp)
 
