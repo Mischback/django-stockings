@@ -40,3 +40,41 @@ class TradeTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             a.costs = "foobar"
+
+    @mock.patch(
+        "stockings.models.trade.Trade.portfolioitem", new_callable=mock.PropertyMock,
+    )
+    def test_currency_get_with_annotations(self, mock_portfolioitem):
+        """Property's getter uses annotated attributes."""
+        # get a Trade instance
+        a = Trade()
+        # This attribute can't be mocked by patch, because it is no part of the
+        # actual class. Provide it here to simulate Django's annotation
+        a._currency = mock.MagicMock()
+
+        # actually access the attribute
+        b = a.currency
+
+        self.assertFalse(mock_portfolioitem.called)
+        self.assertEqual(b, a._currency)
+
+    @mock.patch(
+        "stockings.models.trade.Trade.portfolioitem", new_callable=mock.PropertyMock,
+    )
+    def test_currency_get_wihtout_annotations(self, mock_portfolioitem):
+        """Property's getter retrieves missing attributes."""
+        # get a Trade instance
+        a = Trade()
+
+        # actually access the attribute
+        b = a.currency
+
+        self.assertTrue(mock_portfolioitem.called)
+        self.assertEqual(b, mock_portfolioitem.return_value.currency)
+
+    def test_currency_set(self):
+        """Property is read-only."""
+        a = Trade()
+
+        with self.assertRaises(AttributeError):
+            a.currency = "foobar"

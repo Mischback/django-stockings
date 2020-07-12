@@ -470,7 +470,7 @@ class Trade(models.Model):
         """
         return StockingsMoney(self._costs_amount, self.currency, self.timestamp)
 
-    @cached_property
+    @property
     def currency(self):  # noqa: D401
         """The currency for `costs` and `price` (:obj:`str`, read-only).
 
@@ -480,8 +480,16 @@ class Trade(models.Model):
 
         Notes
         -----
-        `currency` is implemented as
+        `price` is implemented as :obj:`property` that wraps the
         :class:`django.utils.functional.cached_property`
+        :attr:`~stockings.models.trade.Trade.__currency`.
+        """
+        return self.__currency
+
+    @cached_property
+    def __currency(self):  # noqa: D205, D400, D401
+        """The actual :class:`django.utils.functional.cached_property` for
+        :attr:`~stockings.models.trade.Trade.currency`.
         """
         try:
             return self._currency
