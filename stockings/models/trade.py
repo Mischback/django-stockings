@@ -72,7 +72,7 @@ class TradeQuerySet(models.QuerySet):
         annotations are provided by default when using the class-specific
         manager.
         """
-        return self._annotate_math_count()._annotate_trade_volume()
+        return self._annotate_math_count()._annotate_trade_volume()._annotate_currency()
 
     def full(self):
         """Return a fully annotated queryset.
@@ -503,25 +503,3 @@ class Trade(models.Model):
         result in another database query on first access.
         """
         return StockingsMoney(self._price_amount, self.currency, self.timestamp)
-
-    @cached_property
-    def trade_volume(self):  # noqa: D401
-        """The total trade volume (:class:`~stockings.data.StockingsMoney`, read-only).
-
-        *trade volume* is semantically defined as
-        ``price per item * item count``. It does **not** include the trade's
-        :attr:`costs`.
-
-        Notes
-        -----
-        `trade_volume` is implemented as
-        :class:`django.utils.functional.cached_property`.
-        """
-        try:
-            return StockingsMoney(
-                self._trade_volume_amount, self.currency, self.timestamp
-            )
-        except AttributeError:
-            return StockingsMoney(
-                self.item_count * self._price_amount, self.currency, self.timestamp
-            )

@@ -7,13 +7,15 @@ from unittest import mock, skip  # noqa
 from django.test import override_settings, tag  # noqa
 
 # app imports
+from stockings.models.portfolio import Portfolio
+from stockings.models.portfolioitem import PortfolioItem
 from stockings.models.trade import Trade
 
 # app imports
-from ..util.testcases import StockingsTestCase
+from ..util.testcases import StockingsORMTestCase, StockingsTestCase
 
 
-@tag("current")
+@tag("models", "trade", "unittest")
 class TradeTest(StockingsTestCase):
     """Provide tests for `Trade` class."""
 
@@ -102,3 +104,42 @@ class TradeTest(StockingsTestCase):
 
         with self.assertRaises(AttributeError):
             a.price = "foobar"
+
+
+@tag("integrationtest", "models", "trade")
+class TradeORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    def test_currency_get_with_annotations(self):
+        """Property's getter uses annotated attributes."""
+        portfolio = Portfolio.objects.get(name="PortfolioA")
+        portfolioitem = PortfolioItem.objects.get(
+            portfolio=portfolio, stockitem__isin="XX0000000001"
+        )
+
+        # with annotation, no additional database query is required (total = 1)
+        with self.assertNumQueries(1):
+            # get one of the StockItemPrice instances
+            trade_currency = (
+                Trade.stockings_manager.filter(portfolioitem=portfolioitem)
+                .first()
+                .currency
+            )
+
+        self.assertEqual(portfolio.currency, trade_currency)
+
+    def test_currency_get_without_annotations(self):
+        """Property's getter uses annotated attributes."""
+        portfolio = Portfolio.objects.get(name="PortfolioA")
+        portfolioitem = PortfolioItem.objects.get(
+            portfolio=portfolio, stockitem__isin="XX0000000001"
+        )
+
+        # with annotation, no additional database query is required (total = 1)
+        with self.assertNumQueries(3):
+            # get one of the StockItemPrice instances
+            trade_currency = (
+                Trade.objects.filter(portfolioitem=portfolioitem).first().currency
+            )
+
+        self.assertEqual(portfolio.currency, trade_currency)
