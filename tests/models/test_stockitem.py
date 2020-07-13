@@ -148,7 +148,7 @@ class StockItemORMTest(StockingsORMTestCase):
         with self.assertRaises(NotImplementedError):
             a.currency = "FOO"
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_latest_price_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError

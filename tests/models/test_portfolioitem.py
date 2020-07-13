@@ -310,7 +310,7 @@ class PortfolioItemTest(StockingsTestCase):
 class PortfolioItemORMTest(StockingsORMTestCase):
     """Provide tests with fixture data."""
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_cash_in_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
@@ -353,7 +353,7 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(2):
             self.assertAlmostEqual(trade_amount, b.cash_in.amount)
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_cash_out_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
@@ -396,7 +396,7 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(2):
             self.assertAlmostEqual(trade_amount, b.cash_out.amount)
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_costs_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
@@ -463,7 +463,7 @@ class PortfolioItemORMTest(StockingsORMTestCase):
 
         self.assertEqual(portfolio.currency, portfolioitem_currency)
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_stock_count_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
@@ -506,7 +506,7 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(1):
             self.assertEqual(stock_count, b.stock_count)
 
-    @skip("to be done")
+    @skip("the required annotation is not yet implemented")
     def test_stock_value_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
         raise NotImplementedError
