@@ -36,10 +36,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
+    "debug_toolbar",
     "stockings.apps.StockingsConfig",
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -48,6 +50,10 @@ MIDDLEWARE = [
 ROOT_URLCONF = "tests.util.urls_dev"
 
 SECRET_KEY = "only-for-development"  # nosec: this is on purpose, just for development
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": "tests.util.callback_show_debug_toolbar",
+}
 
 STATIC_URL = "/static/"
 
