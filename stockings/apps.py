@@ -2,7 +2,14 @@
 
 # Django imports
 from django.apps import AppConfig
+from django.core.checks import register as register_check
 from django.db.models.signals import post_save  # noqa: F401
+
+# app imports
+from stockings.checks import (
+    check_use_django_auth_permissions,
+    check_use_django_auth_permissions_requires_django_contrib_auth,
+)
 
 
 class StockingsConfig(AppConfig):
@@ -23,8 +30,9 @@ class StockingsConfig(AppConfig):
         -----
         This method is executed, when the application is (completely) loaded.
 
-        As of now, this method does not execute anything. Anyhow, it is
-        considered best practice to use this method to connect signal handlers,
-        which might be needed.
+        It registers the app-specific contribution to Django's check framework
+        (see :djangoapi:`checks/` and :mod:`stockings.checks`).
         """
-        pass
+        # register check functions
+        register_check(check_use_django_auth_permissions)
+        register_check(check_use_django_auth_permissions_requires_django_contrib_auth)
