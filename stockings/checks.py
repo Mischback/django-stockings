@@ -32,12 +32,20 @@ def check_use_django_auth_permissions(app_configs, **kwargs):
     ----------
     app_configs : list
         A list of applications that should be in inspected (see
-        :djangodoc:`topics/checks/#writing-your-own-checks`)
+        :djangodoc:`topics/checks/#writing-your-own-checks`).
 
     Returns
     -------
     list
         A list of :djangodoc:`Messages <topics/checks/#messages>`.
+
+    Warnings
+    --------
+    Please note that, in Python, any non-zero value is considered ``True``,
+    while values like ``None``, ``[]``, ``{}`` or ``0`` are considered
+    ``False``. The unittests are considering some of these possibilities, but
+    not all of them. Actually, no unittest is available, that verifies that the
+    error is correctly appended.
     """
     errors = []
 
@@ -70,12 +78,19 @@ def check_use_django_auth_permissions_requires_django_contrib_auth(
     ----------
     app_configs : list
         A list of applications that should be in inspected (see
-        :djangodoc:`topics/checks/#writing-your-own-checks`)
+        :djangodoc:`topics/checks/#writing-your-own-checks`).
 
     Returns
     -------
     list
         A list of :djangodoc:`Messages <topics/checks/#messages>`.
+
+    Warnings
+    --------
+    Please note that, in Python, any non-zero value is considered ``True``,
+    while values like ``None``, ``[]``, ``{}`` or ``0`` are considered
+    ``False``. The unittests are considering some of these possibilities, but
+    not all of them.
     """
     errors = []
 
