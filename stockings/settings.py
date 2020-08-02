@@ -39,6 +39,12 @@ STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS = getattr(
 
 **Default value:** ``True``
 
+Warnings
+--------
+Please note that, in Python, any non-zero value is considered ``True``, while
+values like ``None``, ``[]``, ``{}`` or ``0`` are considered ``False``. The
+unittests are considering some of these possibilities, but not all of them.
+
 Notes
 -----
 If activated, all app-specific views check the requesting user's permissions,
