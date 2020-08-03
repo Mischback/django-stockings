@@ -3,9 +3,12 @@
 # Django imports
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.utils.translation import ugettext_lazy as _
+from django.views import generic
 
 # app imports
 from stockings.models.portfolio import Portfolio
+from stockings.views.mixins import StockingsPermissionRequiredMixin
 
 
 @login_required
@@ -37,7 +40,35 @@ def detail(request, portfolio_id):
     raise NotImplementedError("Show a single Portfolio instance.")
 
 
-@login_required
-def listing(request):
-    """List all available Portfolio instances of a given user."""
-    raise NotImplementedError("List all Portfolio instances.")
+class PortfolioListView(StockingsPermissionRequiredMixin, generic.ListView):
+    """Provides a list of :class:`stockings.models.portfolio.Portfolio` items.
+
+    Notes
+    -----
+    This implementation makes use of Django's generic class-based view
+    :class:`django.views.generic.ListView`.
+    """
+
+    model = Portfolio
+    """Required attribute to control, which model will be listed."""
+
+    permission_denied_message = _(
+        "You have insufficient permissions and may not access this page."
+    )
+    """Optional attribute to provide a custom permission denied message.
+
+    This will be used by
+    :class:`stockings.views.mixins.StockingsPermissionRequiredMixin` if the
+    user does not have sufficient permissions to access the page.
+
+    Notes
+    -----
+    This message is prepared to be localized.
+    """
+
+    permission_required = "stockings.view_portfolio"
+    """The required permission to access this view.
+
+    This is not an app-specific permission, but automatically created and
+    assigned by `django.contrib.auth`.
+    """
