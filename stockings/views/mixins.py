@@ -1,10 +1,8 @@
 """Provides app-specific mixins to be used with class-based views (CBV)."""
 
 # Django imports
+from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
-
-# app imports
-from stockings.settings import STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS
 
 
 class StockingsPermissionRequiredMixin(PermissionRequiredMixin):  # noqa: D205, D400
@@ -36,7 +34,7 @@ class StockingsPermissionRequiredMixin(PermissionRequiredMixin):  # noqa: D205, 
             ``True`` if the user is allowed to access the view, ``False``
             otherwise.
         """
-        if STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS:
+        if settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS:
             return super().has_permission()
 
         return True

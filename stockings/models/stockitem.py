@@ -14,7 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # app imports
 from stockings.data import StockingsMoney
-from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
+from stockings.settings import _read_default_currency
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class StockItem(models.Model):
 
     # The currency for all money-related fields.
     # See the property ``currency`` and the methods ``_get_currency()`` / ``_set_currency()`` .
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    _currency = models.CharField(default=_read_default_currency, max_length=3)
     """The actual database representation of :attr:`currency`.
 
     Notes

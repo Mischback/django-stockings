@@ -6,7 +6,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # app imports
-from stockings.settings import STOCKINGS_DEFAULT_CURRENCY
+from stockings.settings import _read_default_currency
 
 
 class Portfolio(models.Model):
@@ -52,7 +52,7 @@ class Portfolio(models.Model):
     :djangodoc:`Reusable Apps and AUTH_USER_MODEL <topics/auth/customizing/#reusable-apps-and-auth-user-model>`).
     """
 
-    _currency = models.CharField(default=STOCKINGS_DEFAULT_CURRENCY, max_length=3)
+    _currency = models.CharField(default=_read_default_currency, max_length=3)
     """The actual database representation of :attr:`currency`.
 
     Notes

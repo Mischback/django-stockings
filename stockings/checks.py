@@ -18,9 +18,6 @@ from django.conf import settings
 from django.core.checks import Error
 from django.utils.translation import ugettext_lazy as _
 
-# app imports
-from stockings.settings import STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS
-
 # get a module-level logger
 logger = logging.getLogger(__name__)
 
@@ -50,7 +47,7 @@ def check_use_django_auth_permissions(app_configs, **kwargs):
     errors = []
 
     logger.debug("Is STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS of type bool?")
-    if not isinstance(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS, bool):
+    if not isinstance(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS, bool):
         errors.append(
             Error(
                 _("STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be a boolean value!"),
@@ -94,7 +91,7 @@ def check_use_django_auth_permissions_requires_django_contrib_auth(
     """
     errors = []
 
-    if STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS:
+    if settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS:
         logger.debug("Is 'django.contrib.auth' present in INSTALLED_APPS?")
         if "django.contrib.auth" not in settings.INSTALLED_APPS:
             errors.append(

@@ -9,7 +9,7 @@ The settings may be provided in the project's settings module.
 # Django imports
 from django.conf import settings
 
-STOCKINGS_DEFAULT_CURRENCY = getattr(settings, "STOCKINGS_DEFAULT_CURRENCY", "EUR")
+STOCKINGS_DEFAULT_CURRENCY = "EUR"
 """Determines the default value for all currency fields (:obj:`str`).
 
 **Default value:** ``"EUR"``
@@ -32,9 +32,7 @@ The currency is stored as its
 :wiki:`currency code as described by ISO 4217 <ISO_4217>`.
 """
 
-STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS = getattr(
-    settings, "STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS", True
-)
+STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS = True
 """Make the app rely on Django's `django.contrib.auth` permission system (:obj:`bool`).
 
 **Default value:** ``True``
@@ -63,3 +61,18 @@ in :setting:`INSTALLED_APPS`. This is ensured (or at least checked) by the app's
 If this setting is deactivated (set to ``False``), the views will not check the
 user's permissions. But of course, the user still needs to be authenticated.
 """
+
+
+def _read_default_currency():
+    """Return the app-specific setting :attr:`stockings.settings.STOCKINGS_DEFAULT_CURRENCY`.
+
+    This utility function is required, to make the app-specific setting actually
+    usable by the app's models :class:`stockings.models.portfolio.Portfolio` and
+    :class:`stockings.models.stockitem.StockItem`.
+
+    Returns
+    -------
+    str
+        The value of :attr:`stockings.settings.STOCKINGS_DEFAULT_CURRENCY`.
+    """
+    return settings.STOCKINGS_DEFAULT_CURRENCY

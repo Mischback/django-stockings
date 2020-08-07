@@ -35,27 +35,67 @@ class StockingsChecksTest(StockingsTestCase):
         self.assertFalse(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS)
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=None)
-    def test_e001_none_is_false(self):
+    def test_e001_invalid_none(self):
         """``None`` is treated as ``False``."""
-        self.assertEqual(check_use_django_auth_permissions(None), [])
+        self.assertEqual(
+            check_use_django_auth_permissions(None),
+            [
+                Error(
+                    "STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be a boolean value!",
+                    hint="STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be either True or "
+                    "False.",
+                    id="stockings.e001",
+                )
+            ],
+        )
         self.assertFalse(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS)
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS="foo")
-    def test_e001_string_is_true(self):
+    def test_e001_invalid_string(self):
         """Non-empty string is treated as ``True``."""
-        self.assertEqual(check_use_django_auth_permissions(None), [])
+        self.assertEqual(
+            check_use_django_auth_permissions(None),
+            [
+                Error(
+                    "STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be a boolean value!",
+                    hint="STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be either True or "
+                    "False.",
+                    id="stockings.e001",
+                )
+            ],
+        )
         self.assertTrue(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS)
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=1)
-    def test_e001_number_is_true(self):
+    def test_e001_invalid_number(self):
         """Non-zero number is treated as ``True``."""
-        self.assertEqual(check_use_django_auth_permissions(None), [])
+        self.assertEqual(
+            check_use_django_auth_permissions(None),
+            [
+                Error(
+                    "STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be a boolean value!",
+                    hint="STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be either True or "
+                    "False.",
+                    id="stockings.e001",
+                )
+            ],
+        )
         self.assertTrue(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS)
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=0)
-    def test_e001_zero_is_false(self):
+    def test_e001_invalid_zero(self):
         """Numerical zero is treated as ``False``."""
-        self.assertEqual(check_use_django_auth_permissions(None), [])
+        self.assertEqual(
+            check_use_django_auth_permissions(None),
+            [
+                Error(
+                    "STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be a boolean value!",
+                    hint="STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS has to be either True or "
+                    "False.",
+                    id="stockings.e001",
+                )
+            ],
+        )
         self.assertFalse(settings.STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS)
 
     @override_settings(
@@ -98,7 +138,6 @@ class StockingsChecksTest(StockingsTestCase):
             ],
         )
 
-    @skip("Overwriting app-specific settings is not working!")
     @override_settings(
         STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=False,
         INSTALLED_APPS=["django.contrib.auth"],
@@ -114,7 +153,6 @@ class StockingsChecksTest(StockingsTestCase):
             check_use_django_auth_permissions_requires_django_contrib_auth(None), []
         )
 
-    @skip("Overwriting app-specific settings is not working!")
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=False, INSTALLED_APPS=[])
     def test_e002_deactivated_not_satisfied(self):
         """Deactivated permissions check does not require 'django.contrib.auth'.
