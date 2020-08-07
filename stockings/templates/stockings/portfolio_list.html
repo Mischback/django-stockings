@@ -1,1 +1,27 @@
-portfolio_list.html
+{% extends "stockings/base.html" %}
+
+{% block html_title %}Portfolio List{% endblock %}
+
+{% block main_content %}
+<header>
+    <h2>Portfolio List</h2>
+</header>
+
+<section>
+    <table>
+        {% if object_list %}
+            {% for portfolio in object_list %}
+        <tr>
+            <td>
+                <a href="{{ portfolio.get_absolute_url }}">{{ portfolio.name }}</a>
+            </td>
+        </tr>
+            {% endfor %}
+        {% else %}
+        <tr>
+            <td>Could not fetch Portfolio list.</td>
+        </tr>
+        {% endif %}
+    </table>
+</section>
+{% endblock %}

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>{% block html_title %}base.html{% endblock %} | django-stockings</title>
+    </head>
+    <body>
+
+        <header>
+            <h1>django-stockings</h1>
+        </header>
+
+        <nav>
+
+        </nav>
+
+        <section>
+            {% block main_content %}Main Content{% endblock %}
+        </section>
+
+        <footer>
+            &copy; 2020 by <a href="https://github.com/Mischback/django-stockings">Mischback</a>
+        </footer>
+
+    </body>
+</html>
