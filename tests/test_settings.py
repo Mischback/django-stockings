@@ -20,7 +20,6 @@ class StockingsSettingsTest(StockingsTestCase):
     The actual settings are not tested here, but the utility functions.
     """
 
-    @tag("current")
     @override_settings(STOCKINGS_DEFAULT_CURRENCY="FOO")
     def test_read_default_currency(self):
         """Return the setting as specified in the project's settings module."""
