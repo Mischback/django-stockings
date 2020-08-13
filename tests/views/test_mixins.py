@@ -4,15 +4,18 @@
 from unittest import mock, skip  # noqa
 
 # Django imports
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.test import RequestFactory, override_settings, tag  # noqa
 from django.views.generic import View
 
 # app imports
-from stockings.views.mixins import StockingsPermissionRequiredMixin
-
-# app imports
 from ..util.testcases import StockingsTestCase
+
+from stockings.views.mixins import (  # isort:skip
+    StockingsLimitToUserMixin,
+    StockingsPermissionRequiredMixin,
+)
 
 
 class EmptyResponseView(View):
@@ -23,7 +26,25 @@ class EmptyResponseView(View):
         return HttpResponse()
 
 
-class MixinAppliedView(StockingsPermissionRequiredMixin, EmptyResponseView):
+class QuerySetView(View):
+    """Just a dummy CBV to test the app's mixins with database access."""
+
+    def get(self, request, *args, **kwargs):
+        """Hit the database and return an empty HTTP response."""
+        objects = self.get_queryset()  # noqa: F841
+
+        return HttpResponse()
+
+
+class LimitToUserMixinAppliedView(StockingsLimitToUserMixin, QuerySetView):
+    """Combines the app's mixin with a dummy CBV."""
+
+    model = None
+
+
+class PermissionRequiredMixinAppliedView(
+    StockingsPermissionRequiredMixin, EmptyResponseView
+):
     """Combines the app's mixin with the dummy CBV."""
 
     # actually the tests won't trigger any exceptions, because they are only
@@ -32,6 +53,38 @@ class MixinAppliedView(StockingsPermissionRequiredMixin, EmptyResponseView):
     # mixins.
     # May be useful for future mixin tests.
     raise_exception = True
+
+
+@tag("views", "mixins")
+class StockingsLimitToUserMixinTest(StockingsTestCase):
+    """Provides the tests for `StockingsLimitToUserMixin`."""
+
+    factory = RequestFactory()
+
+    def test_mixin_raises_error_on_missing_model(self):
+        """The attribute `model` is required."""
+        request = self.factory.get("/rand")
+        request.user = "foo"
+        view = LimitToUserMixinAppliedView.as_view()
+
+        with self.assertRaises(ImproperlyConfigured):
+            response = view(request)  # noqa: F841
+
+    def test_mixin_uses_stockings_manager_method(self):
+        """The app-specific manager is correctly called."""
+        cbv = LimitToUserMixinAppliedView
+        cbv.model = mock.MagicMock()
+
+        request = self.factory.get("/rand")
+        request.user = "foo"
+        view = cbv.as_view()
+
+        response = view(request)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(cbv.model.stockings_manager.filter_by_user.called)
+        cbv.model.stockings_manager.filter_by_user.assert_called_with(request.user)
 
 
 @tag("views", "mixins")
@@ -49,7 +102,7 @@ class StockingsPermissionRequiredMixinTest(StockingsTestCase):
         """The real permission check is done by django.contrib.auth's own mixin."""
         request = self.factory.get("/rand")
         request.user = "foo"
-        view = MixinAppliedView.as_view()
+        view = PermissionRequiredMixinAppliedView.as_view()
         response = view(request)
 
         self.assertEqual(response.status_code, 200)
@@ -65,7 +118,7 @@ class StockingsPermissionRequiredMixinTest(StockingsTestCase):
         """Permission checks are skipped."""
         request = self.factory.get("/rand")
         request.user = "foo"
-        view = MixinAppliedView.as_view()
+        view = PermissionRequiredMixinAppliedView.as_view()
         response = view(request)
 
         self.assertEqual(response.status_code, 200)
