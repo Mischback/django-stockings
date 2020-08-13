@@ -8,7 +8,11 @@ from django.views import generic
 
 # app imports
 from stockings.models.portfolio import Portfolio
-from stockings.views.mixins import StockingsPermissionRequiredMixin
+
+from stockings.views.mixins import (  # isort:skip
+    StockingsLimitToUserMixin,
+    StockingsPermissionRequiredMixin,
+)
 
 
 @login_required
@@ -40,7 +44,9 @@ def detail(request, portfolio_id):
     raise NotImplementedError("Show a single Portfolio instance.")
 
 
-class PortfolioListView(StockingsPermissionRequiredMixin, generic.ListView):
+class PortfolioListView(
+    StockingsPermissionRequiredMixin, StockingsLimitToUserMixin, generic.ListView
+):
     """Provides a list of :class:`stockings.models.portfolio.Portfolio` items.
 
     Notes
