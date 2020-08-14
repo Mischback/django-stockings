@@ -245,4 +245,4 @@ class Portfolio(models.Model):
         str
             The absolute URL for instances of this model.
         """
-        return reverse("portfolio-detail", args=[self.id])
+        return reverse("portfolio-detail", args=[self.id])  # pragma: nocover

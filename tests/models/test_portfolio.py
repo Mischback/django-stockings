@@ -77,7 +77,6 @@ class PortfolioORMTest(StockingsORMTestCase):
 class PortfolioQuerySetORMTest(StockingsORMTestCase):
     """Provide tests with fixture data."""
 
-    @tag("current")
     def test_filter_by_user(self):
         """Returned queryset returns only items belonging to the provided user."""
         user_a = get_user_model().objects.get(username="Alice")
