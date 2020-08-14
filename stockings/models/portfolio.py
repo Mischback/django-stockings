@@ -10,6 +10,90 @@ from django.utils.translation import ugettext_lazy as _
 from stockings.settings import _read_default_currency
 
 
+class PortfolioQuerySet(models.QuerySet):
+    """App-specific implementation of :class:`django.db.models.QuerySet`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.QuerySet` implementation provides
+    app-specific augmentations.
+
+    The provided methods augment/extend the retrieved
+    :class:`stockings.models.portfolioitem.PortfolioItem` instances by
+    annotating them with additional information and allows specific filtering.
+    """
+
+    def default(self):
+        """Return a queryset with annotations.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+
+        Warnings
+        --------
+        Currently, this method does nothing on its own, but is kept to keep the
+        app's specific QuerySets consistent.
+        """
+        return self
+
+    def filter_by_user(self, user):
+        """Return a queryset filtered by the :attr:`Portfolio.user <stockings.models.portfolio.Portfolio.user>` attribute.
+
+        Parameters
+        ----------
+        user :
+            An instance of the project's user model, as specified by
+            :setting:`AUTH_USER_MODEL`.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The filtered queryset.
+
+        Notes
+        -----
+        Effectively, this method is used to ensure, that any user may only
+        access :class:`~stockings.models.portfolio.Portfolio` objects, that
+        he `owns`. This is the app's way of ensuring `row-level permissions`,
+        because only owners are allowed to view (and modify) their portfolio.
+        """
+        return self.filter(user=user)
+
+
+class PortfolioManager(models.Manager):
+    """App-/model-specific implementation of :class:`django.db.models.Manager`.
+
+    Notes
+    -----
+    This :class:`~django.db.models.Manager` implementation is used as an
+    additional manager of :class:`~stockings.models.portfolio.Portfolio` (see
+    :attr:`stockings.models.portfolio.Portfolio.stockings_manager`).
+
+    This implementation inherits its functionality from
+    :class:`django.db.models.Manager` and provides identical funtionality.
+    Furthermore, it augments the retrieved objects with additional attributes,
+    using the custom :class:`~django.db.models.QuerySet` implementation
+    :class:`~stockings.models.portfolio.PortfolioQuerySet`.
+    """
+
+    def get_queryset(self):
+        """Use the app-/model-specific :class:`~stockings.models.portfolio.PortfolioQuerySet` by default.
+
+        Returns
+        -------
+        :class:`django.models.db.QuerySet`
+            This queryset is provided by
+            :class:`stockings.models.portfolio.PortfolioQuerySet` and
+            applies its
+            :meth:`~stockings.models.portfolio.PortfolioQuerySet.default`
+            method. The retrieved objects will be annotated with additional
+            attributes.
+        """
+        return PortfolioQuerySet(self.model, using=self._db).default()
+
+
 class Portfolio(models.Model):
     """Represents a portolio of stocks.
 
@@ -18,6 +102,27 @@ class Portfolio(models.Model):
     The class documentation only includes code, that is actually shipped by the
     `stockings` app. Inherited attributes/methods (provided by Django's
     :class:`~django.db.models.Model`) are not documented here.
+    """
+
+    objects = models.Manager()
+    """The model's default manager.
+
+    The default manager is set to :class:`django.db.models.Manager`, which is
+    the default value. In order to add the custom :attr:`stockings_manager` as
+    an *additional* manager, the default manager has to be provided explicitly
+    (see :djangodoc:`topics/db/managers/#default-managers`).
+    """
+
+    stockings_manager = PortfolioManager()
+    """App-/model-specific manager, that provides additional functionality.
+
+    This manager is set to
+    :class:`stockings.models.portfolio.PortfolioManager`. Its
+    implementation provides augmentations of `Portfolio` objects, by
+    annotating them on database level. This will reduce the number of required
+    database queries, if attributes of the object are accessed.
+
+    The manager has to be used explicitly.
     """
 
     name = models.CharField(max_length=50,)
