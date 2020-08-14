@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class PortfolioItemQuerySet(models.QuerySet):
-    """App-specific implementation of :class:`django.db.modesl.QuerySet`.
+    """App-specific implementation of :class:`django.db.models.QuerySet`.
 
     Notes
     -----
@@ -48,7 +48,7 @@ class PortfolioItemQuerySet(models.QuerySet):
           annotation is provided by default, because instances of
           :class:`~stockings.models.portfolioitem.PortfolioItem` expose several
           money-related attributes. The implementation of
-          :attr:`PortfolioItem.currency <stockings.models.portfolioitem.PortfolioItem.currency`
+          :attr:`PortfolioItem.currency <stockings.models.portfolioitem.PortfolioItem.currency>`
           ensures, that a database lookup is only performed once, but even this
           database hit may be mitigated by this annotation.
         """
@@ -76,26 +76,26 @@ class PortfolioItemManager(models.Manager):
     Notes
     -----
     This :class:`~django.db.models.Manager` implementation is used as an
-    additional manager of :class:`~stockings.models.portfolio.PortfolioItem` (see
-    :attr:`stockings.models.portfolio.PortfolioItem.stockings_manager`.
+    additional manager of :class:`~stockings.models.portfolioitem.PortfolioItem`
+    (see :attr:`stockings.models.portfolioitem.PortfolioItem.stockings_manager`).
 
     This implementation inherits its functionality from
     :class:`django.db.models.Manager` and provides identical funtionality.
     Furthermore, it augments the retrieved objects with additional attributes,
     using the custom :class:`~django.db.models.QuerySet` implementation
-    :class:`~stockings.models.portfolio.PortfolioItemQuerySet`.
+    :class:`~stockings.models.portfolioitem.PortfolioItemQuerySet`.
     """
 
     def get_queryset(self):
-        """Use the app-/model-specific :class:`~stockings.models.portfolio.PortfolioItemQuerySet` by default.
+        """Use the app-/model-specific :class:`~stockings.models.portfolioitem.PortfolioItemQuerySet` by default.
 
         Returns
         -------
         :class:`django.models.db.QuerySet`
             This queryset is provided by
-            :class:`stockings.models.portfolio.PortfolioItemQuerySet` and
+            :class:`stockings.models.portfolioitem.PortfolioItemQuerySet` and
             applies its
-            :meth:`~stockings.models.portfolio.PortfolioItemQuerySet.full`
+            :meth:`~stockings.models.portfolioitem.PortfolioItemQuerySet.default`
             method. The retrieved objects will be annotated with additional
             attributes.
         """
@@ -126,10 +126,10 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
     """App-/model-specific manager, that provides additional functionality.
 
     This manager is set to
-    :class:`stockings.models.portfolio.PortfolioItemManager`. Its implementation
-    provides augmentations of `PortfolioItem` objects, by annotating them on
-    database level. This will reduce the number of required database queries,
-    if attributes of the object are accessed.
+    :class:`stockings.models.portfolioitem.PortfolioItemManager`. Its
+    implementation provides augmentations of `PortfolioItem` objects, by
+    annotating them on database level. This will reduce the number of required
+    database queries, if attributes of the object are accessed.
 
     The manager has to be used explicitly.
     """
