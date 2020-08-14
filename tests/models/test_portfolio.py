@@ -4,6 +4,7 @@
 from unittest import mock, skip  # noqa
 
 # Django imports
+from django.contrib.auth import get_user_model
 from django.test import override_settings, tag  # noqa
 
 # app imports
@@ -70,3 +71,25 @@ class PortfolioORMTest(StockingsORMTestCase):
 
         with self.assertRaises(NotImplementedError):
             a.currency = "FOO"
+
+
+@tag("integrationtest", "portfolio", "portfolioqueryset", "queryset")
+class PortfolioQuerySetORMTest(StockingsORMTestCase):
+    """Provide tests with fixture data."""
+
+    @tag("current")
+    def test_filter_by_user(self):
+        """Returned queryset returns only items belonging to the provided user."""
+        user_a = get_user_model().objects.get(username="Alice")
+        user_b = get_user_model().objects.get(username="Bob")
+        portfolios_a = Portfolio.objects.filter(user=user_a)
+        portfolios_b = Portfolio.objects.filter(user=user_b)
+
+        self.assertEqual(
+            list(portfolios_a),
+            list(Portfolio.stockings_manager.get_queryset().filter_by_user(user_a)),
+        )
+        self.assertEqual(
+            list(portfolios_b),
+            list(Portfolio.stockings_manager.get_queryset().filter_by_user(user_b)),
+        )
