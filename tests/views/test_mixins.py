@@ -83,8 +83,12 @@ class StockingsLimitToUserMixinTest(StockingsTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        self.assertTrue(cbv.model.stockings_manager.filter_by_user.called)
-        cbv.model.stockings_manager.filter_by_user.assert_called_with(request.user)
+        self.assertTrue(
+            cbv.model.stockings_manager.get_queryset.return_value.filter_by_user.called
+        )
+        cbv.model.stockings_manager.get_queryset.return_value.filter_by_user.assert_called_with(
+            request.user
+        )
 
 
 @tag("views", "mixins")

@@ -20,9 +20,12 @@ class StockingsLimitToUserMixin:
     def get_queryset(self):
         """Return a queryset that only contains objects, that belong to the current user.
 
-        Internally, the returned queryset will use the app-specific manager as
-        provided by ``stockings_manager`` on all of the app's models. All of
-        these managers provide a method ``filter_by_user()``.
+        Internally, the returned queryset will use the app- and model-specific
+        implementation of :class:`django.db.models.Manager` as provided by
+        ``stockings_manager`` on all of the app's models. All of these managers
+        rely on an app- and model-specific implementation of
+        :class:`django.db.models.QuerySet` that provide a model-specific method
+        ``filter_by_user()``.
 
         Returns
         -------
@@ -40,7 +43,9 @@ class StockingsLimitToUserMixin:
                 "{} is missing the `model` attribute!".format(self.__class__.__name__)
             )
 
-        return self.model.stockings_manager.filter_by_user(self.request.user)
+        return self.model.stockings_manager.get_queryset().filter_by_user(
+            self.request.user
+        )
 
 
 class StockingsPermissionRequiredMixin(PermissionRequiredMixin):  # noqa: D205, D400
