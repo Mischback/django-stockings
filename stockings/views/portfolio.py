@@ -38,10 +38,48 @@ def default(request):  # noqa: D401
         return redirect("portfolio-list")
 
 
-@login_required
-def detail(request, portfolio_id):
-    """Show the details of one Portfolio instance."""
-    raise NotImplementedError("Show a single Portfolio instance.")
+class PortfolioDetailView(
+    StockingsPermissionRequiredMixin, StockingsLimitToUserMixin, generic.DetailView
+):
+    """Provides the details of a :class:`stockings.models.portfolio.Portfolio` item.
+
+    Notes
+    -----
+    This implementation makes use of Django's generic class-based view
+    :class:`django.views.generic.DetailView`.
+    """
+
+    model = Portfolio
+    """Required attribute to control, which model will be listed."""
+
+    permission_denied_message = _(
+        "You have insufficient permissions and may not access this page."
+    )
+    """Optional attribute to provide a custom permission denied message.
+
+    This will be used by
+    :class:`stockings.views.mixins.StockingsPermissionRequiredMixin` if the
+    user does not have sufficient permissions to access the page.
+
+    Notes
+    -----
+    This message is prepared to be localized.
+    """
+
+    permission_required = "stockings.view_portfolio"
+    """The required permission to access this view.
+
+    This is not an app-specific permission, but automatically created and
+    assigned by `django.contrib.auth`.
+    """
+
+    pk_url_kwarg = "portfolio_id"
+    """The name of the keyword argument as provided in the app's url configuration.
+
+    By default, this is simply ``"pk"``, but for clarity, the app's url
+    configuration (:module:`stockings.urls`) uses the more explicit
+    ``"portfolio_id"``.
+    """
 
 
 class PortfolioListView(
