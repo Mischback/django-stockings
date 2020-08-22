@@ -5,6 +5,7 @@ import logging
 
 # Django imports
 from django.db import models
+from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
@@ -51,8 +52,12 @@ class PortfolioItemQuerySet(models.QuerySet):
           :attr:`PortfolioItem.currency <stockings.models.portfolioitem.PortfolioItem.currency>`
           ensures, that a database lookup is only performed once, but even this
           database hit may be mitigated by this annotation.
+        - :meth:`_annotate_trade_information`
+          The method annotates several attributes, that are derived from or
+          calculated by evaluating :class:`~stockings.models.trade.Trade`
+          objects.
         """
-        return self._annotate_currency()
+        return self._annotate_currency()._annotate_trade_information()
 
     def _annotate_currency(self):
         """Annotate each object with `_currency`.
@@ -68,6 +73,76 @@ class PortfolioItemQuerySet(models.QuerySet):
             The annotated queryset.
         """
         return self.annotate(_currency=models.F("portfolio___currency"))
+
+    def _annotate_trade_information(self):
+        """Annotate each object with trade-related information.
+
+        Several attributes of
+        :class:`~stockings.models.portfolioitem.PortfolioItem` are actually
+        dynamically calculated by evaluating the associated
+        :class:`Trade objects <stockings.models.trade.Trade>`:
+
+        - :attr:`~stockings.models.portfolioitem.PortfolioItem.cash_in`
+        - :attr:`~stockings.models.portfolioitem.PortfolioItem.cash_out`
+        - :attr:`~stockings.models.portfolioitem.PortfolioItem.costs`
+        - :attr:`~stockings.models.portfolioitem.PortfolioItem.stock_count`
+
+        The annotations provided by this method makes dedicated database queries
+        unnecessary.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+
+        See Also
+        --------
+        :meth:`stockings.models.trade.TradeManager.trade_summary`
+        """
+        return self.annotate(
+            _cash_in_amount=Coalesce(
+                models.Sum(
+                    models.ExpressionWrapper(
+                        models.F("trades__item_count")
+                        * models.F("trades___price_amount"),
+                        output_field=models.DecimalField(),
+                    ),
+                    filter=models.Q(trades__trade_type="BUY"),
+                ),
+                models.Value(0),
+            ),
+            _cash_in_timestamp=models.Max(
+                "trades__timestamp", filter=models.Q(trades__trade_type="BUY")
+            ),
+            _cash_out_amount=Coalesce(
+                models.Sum(
+                    models.ExpressionWrapper(
+                        models.F("trades__item_count")
+                        * models.F("trades___price_amount"),
+                        output_field=models.DecimalField(),
+                    ),
+                    filter=models.Q(trades__trade_type="SELL"),
+                ),
+                models.Value(0),
+            ),
+            _cash_out_timestamp=models.Max(
+                "trades__timestamp", filter=models.Q(trades__trade_type="SELL")
+            ),
+            _costs_amount=Coalesce(
+                models.Sum("trades___costs_amount"), models.Value(0)
+            ),
+            _costs_timestamp=models.Max("trades__timestamp"),
+            _stock_count=models.Sum(
+                models.Case(
+                    models.When(
+                        trades__trade_type="SELL",
+                        then=models.Value("-1") * models.F("trades__item_count"),
+                    ),
+                    default=models.F("trades__item_count"),
+                    output_field=models.IntegerField(),
+                )
+            ),
+        )
 
 
 class PortfolioItemManager(models.Manager):
