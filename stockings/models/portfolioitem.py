@@ -13,6 +13,7 @@ from django.utils.translation import ugettext_lazy as _
 from stockings.data import StockingsMoney
 from stockings.models.portfolio import Portfolio
 from stockings.models.stockitem import StockItem
+from stockings.models.stockitemprice import StockItemPrice
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -52,12 +53,19 @@ class PortfolioItemQuerySet(models.QuerySet):
           :attr:`PortfolioItem.currency <stockings.models.portfolioitem.PortfolioItem.currency>`
           ensures, that a database lookup is only performed once, but even this
           database hit may be mitigated by this annotation.
+        - :meth:`_annotate_stock_price`
+          The method annotates relevant information fetched from
+          :class:`stockings.models.stockitemprice.StockItemPrice`.
         - :meth:`_annotate_trade_information`
           The method annotates several attributes, that are derived from or
           calculated by evaluating :class:`~stockings.models.trade.Trade`
           objects.
         """
-        return self._annotate_currency()._annotate_trade_information()
+        return (
+            self._annotate_currency()
+            ._annotate_stock_price()
+            ._annotate_trade_information()
+        )
 
     def _annotate_currency(self):
         """Annotate each object with `_currency`.
@@ -73,6 +81,36 @@ class PortfolioItemQuerySet(models.QuerySet):
             The annotated queryset.
         """
         return self.annotate(_currency=models.F("portfolio___currency"))
+
+    def _annotate_stock_price(self):
+        """Annotate each object with price information.
+
+        The actual price information is determined by evaluating
+        :class:`stockings.models.stockitemprice.StockItemPrice` objects.
+
+        Returns
+        -------
+        :class:`django.db.models.QuerySet`
+            The annotated queryset.
+
+        Notes
+        -----
+        This is implemented using Django's ``Subquery`` and is currently not
+        yet evaluated in real life environments.
+        """
+        _inner_qs = StockItemPrice.stockings_manager.filter(
+            stockitem=models.OuterRef("stockitem")
+        ).order_by("-_price_timestamp")
+
+        return self.annotate(
+            _price_per_item_amount=models.Subquery(
+                _inner_qs.values("_price_amount")[:1]
+            ),
+            _price_per_item_currency=models.F("stockitem___currency"),
+            _price_per_item_timestamp=models.Subquery(
+                _inner_qs.values("_price_timestamp")[:1]
+            ),
+        )
 
     def _annotate_trade_information(self):
         """Annotate each object with trade-related information.
