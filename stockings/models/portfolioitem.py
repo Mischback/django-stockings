@@ -247,7 +247,9 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
     The manager has to be used explicitly.
     """
 
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="portfolioitems"
+    )
     """Reference to the :class:`~stockings.models.portfolio.Portfolio`.
 
     Notes

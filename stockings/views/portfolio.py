@@ -2,12 +2,14 @@
 
 # Django imports
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from django.shortcuts import redirect
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
 
 # app imports
 from stockings.models.portfolio import Portfolio
+from stockings.models.portfolioitem import PortfolioItem
 
 from stockings.views.mixins import (  # isort:skip
     StockingsLimitToUserMixin,
@@ -80,6 +82,29 @@ class PortfolioDetailView(
     configuration (:module:`stockings.urls`) uses the more explicit
     ``"portfolio_id"``.
     """
+
+    def get_queryset(self):
+        """Get the object with related/associated objects.
+
+        Notes
+        -----
+        The method fetches the :class:`~stockings.models.portfolio.Portfolio`
+        object, as requested. Additionally, it `pre-fetches` all related
+        instances of :class:`stockings.models.portfolioitem.PortfolioItem`.
+        """
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    "portfolioitems",
+                    queryset=PortfolioItem.stockings_manager.select_related(
+                        "stockitem"
+                    ),
+                    to_attr="portfolioitems_list",
+                )
+            )
+        )
 
 
 class PortfolioListView(

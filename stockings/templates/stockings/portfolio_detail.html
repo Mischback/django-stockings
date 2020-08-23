@@ -13,10 +13,36 @@
 
 <section>
     <h3>Active Items</h3>
+    <table>
+    {% for item in portfolio.portfolioitems_list %}
+        {% if item.stock_count > 0 %}
+        <tr>
+            <td>{{ item.stockitem.name }}</td>
+            <td>{{ item.stock_value }}</td>
+            <td>{{ item.stock_count }}</td>
+            <td>{{ item.profit }}</td>
+            <td>{{ item.profit_rate }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+    </table>
 </section>
 
 <section>
     <h3>Inactive Items</h3>
+    <table>
+    {% for item in portfolio.portfolioitems_list %}
+        {% if item.stock_count < 1 %}
+        <tr>
+            <td>{{ item.stockitem.name }}</td>
+            <td>{{ item.stock_value }}</td>
+            <td>{{ item.stock_count }}</td>
+            <td>{{ item.profit }}</td>
+            <td>{{ item.profit_rate }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+    </table>
 </section>
 
 <section>
