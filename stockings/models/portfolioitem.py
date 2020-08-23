@@ -480,6 +480,47 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
             return self.portfolio.currency
 
     @property
+    def profit(self):  # noqa: D401
+        """The return of this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`).
+
+        Warnings
+        --------
+        The name of this attribute may be misleading, because ``profit`` may
+        indicate, that there is actually a (positive) profit. A more correct
+        naming would be ``return`` or ``yield``, but both of these terms are
+        keywords in Python.
+
+        Please note, that the attribute is not providing a reliable timestamp.
+
+        Notes
+        -----
+        `profit` is implemented as :obj:`property`, so that the value is
+        dynamically calculated. But all required operands are actually
+        attributes of `PortfolioItem` objects, that are fetched from the
+        database (e.g.
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.costs`) and that
+        are implemented as  :class:`django.utils.functional.cached_property`.
+        """
+        return StockingsMoney(
+            (self.stock_value.amount + self.cash_out.amount)
+            - (self.cash_in.amount + self.costs.amount),
+            self.currency,
+        )
+
+    @property
+    def profit_rate(self):  # noqa: D401
+        """The return of this `PortfolioItem` as rate of return (:obj:`float`).
+
+        Warnings
+        --------
+        The name of this attribute may be misleading, because ``profit`` may
+        indicate, that there is actually a (positive) profit. A more correct
+        naming would be ``return`` or ``yield``, but both of these terms are
+        keywords in Python.
+        """
+        return self.profit.amount / (self.cash_in.amount + self.costs.amount)
+
+    @property
     def stock_count(self):  # noqa: D401
         """The count of stocks in this `PortfolioItem` (:obj:`int`, read-only).
 
