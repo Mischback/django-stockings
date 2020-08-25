@@ -229,7 +229,7 @@ class Portfolio(models.Model):
     @currency.setter
     def currency(self, new_currency):
         # Update all relevant `PortfolioItem` objects.
-        for item in self.portfolioitem_set.iterator():
+        for item in self.portfolioitems.iterator():
             item._apply_new_currency(new_currency)
             item.save()
 

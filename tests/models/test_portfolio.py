@@ -26,7 +26,7 @@ class PortfolioTest(StockingsTestCase):
         self.assertEqual(a._currency, a.currency)
 
     @mock.patch("stockings.models.portfolio.Portfolio.save")
-    @mock.patch("stockings.models.portfolio.Portfolio.portfolioitem_set")
+    @mock.patch("stockings.models.portfolio.Portfolio.portfolioitems")
     def test_currency_set(self, mock_portfolioitem_set, mock_save):
         """Property's setter updates associated `PortfolioItem` objects."""
         # set up the mock
