@@ -482,6 +482,28 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
             return self.portfolio.currency
 
     @property
+    def last_update(self):  # noqa: D401
+        """The timestamp of the last update of this `PortfolioItem` (:obj:`datetime.datetime`).
+
+        This actually evaluates timestamps of
+        :class:`stockings.models.trade.Trade` and
+        :class:`stockings.models.stockitemprice.StockItemPrice` objects.
+
+        Notes
+        -----
+        `last_update` is implemented as :obj:`property`, so that the value is
+        dynamically calculated. However, all required operands are actually
+        attributes of `PortfolioItem` objects, that are fetched from the
+        database (e.g.
+        :attr:`~stockings.models.portfolioitem.PortfolioItem.costs`) and that
+        are implemented as  :class:`django.utils.functional.cached_property`.
+        """
+        if self.stock_count > 0:
+            return max(self.costs.timestamp, self.stock_value.timestamp)
+
+        return self.costs.timestamp
+
+    @property
     def profit(self):  # noqa: D401
         """The return of this `PortfolioItem` (:class:`~stockings.data.StockingsMoney`).
 
@@ -507,6 +529,7 @@ class PortfolioItem(models.Model):  # noqa: D205, D400
             (self.stock_value.amount + self.cash_out.amount)
             - (self.cash_in.amount + self.costs.amount),
             self.currency,
+            self.last_update,
         )
 
     @property

@@ -125,15 +125,23 @@ class StockingsMoneyTest(StockingsTestCase):
         self.assertEqual(b.amount, 1337 + 6)
 
     @mock.patch("stockings.data.now")
-    def test_add_updates_timestamp(self, mock_now):
-        """`add()` updates the timestamp."""
+    def test_add_uses_more_recent_timestamp(self, mock_now):
+        """`add()` uses the correct the timestamp.
+
+        This test method does not use real timestamps, but simple integers.
+        """
         # create a (valid) `StockingsMoney` object
-        a = StockingsMoney(1337, "EUR", timestamp="foo")
+        a = StockingsMoney(1337, "EUR", timestamp=5)
 
-        b = a.add(StockingsMoney(5, "EUR", timestamp="bar"))
+        b = a.add(StockingsMoney(5, "EUR", timestamp=10))
 
-        self.assertEqual(mock_now.called, True)
-        self.assertEqual(b.timestamp, mock_now.return_value)
+        self.assertFalse(mock_now.called)
+        self.assertEqual(b.timestamp, 10)
+
+        b = a.add(StockingsMoney(5, "EUR", timestamp=1))
+
+        self.assertFalse(mock_now.called)
+        self.assertEqual(b.timestamp, 5)
 
     def test_currency_conversion(self):
         """Currency conversion is currently not implemented, an error should be raised."""
@@ -148,7 +156,7 @@ class StockingsMoneyTest(StockingsTestCase):
     def test_multiply(self, mock_now):
         """Validates input to `multiply()` and correctly perform operation."""
         # create a (valid) `StockingsMoney` object
-        a = StockingsMoney(1337, "EUR")
+        a = StockingsMoney(1337, "EUR", timestamp="foo")
 
         with self.assertRaises(StockingsInterfaceError):
             b = a.multiply("foo")
@@ -157,13 +165,14 @@ class StockingsMoneyTest(StockingsTestCase):
             b = a.multiply((5, 1))
 
         with self.assertRaises(StockingsInterfaceError):
-            b = a.multiply(StockingsMoney(5, "EUR"))
+            b = a.multiply(StockingsMoney(5, "EUR", timestamp="bar"))
 
         b = a.multiply(5)
 
         self.assertEqual(b.amount, 1337 * 5)
-        self.assertEqual(mock_now.called, True)
-        self.assertEqual(b.timestamp, mock_now.return_value)
+        self.assertFalse(mock_now.called)
+        # keep the provided timestamp
+        self.assertEqual(b.timestamp, "foo")
 
     @mock.patch("stockings.data.now")
     def test_eq(self, mock_now):

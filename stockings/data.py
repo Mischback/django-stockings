@@ -109,7 +109,11 @@ class StockingsMoney:
         # 'addable' `amount` values (this is catched by the `TypeError`).
         try:
             # actually return the new object with summed up `amounts`
-            return StockingsMoney(self.amount + summand.amount, self.currency)
+            return StockingsMoney(
+                self.amount + summand.amount,
+                self.currency,
+                max(self.timestamp, summand.timestamp),
+            )
         except (AttributeError, TypeError):
             raise StockingsInterfaceError(
                 "StockingsMoney.add() was called with an incompatible summand."
@@ -185,7 +189,7 @@ class StockingsMoney:
         """
         try:
             return StockingsMoney(
-                self.amount * decimal.Decimal(multiplier), self.currency
+                self.amount * decimal.Decimal(multiplier), self.currency, self.timestamp
             )
         except (ValueError, TypeError, decimal.InvalidOperation):
             raise StockingsInterfaceError(
