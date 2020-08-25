@@ -202,6 +202,143 @@ class PortfolioItemTest(StockingsTestCase):
         with self.assertRaises(AttributeError):
             a.currency = "foobar"
 
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.stock_value",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.costs",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.stock_count",
+        new_callable=mock.PropertyMock,
+    )
+    def test_last_update_active(self, mock_stock_count, mock_costs, mock_stock_value):
+        """Property determines the correct most-recent timestamp."""
+        # set up the mock objects
+        mock_stock_count.return_value = 1
+        mock_costs.return_value.timestamp = 5
+        mock_stock_value.return_value.timestamp = 10
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        self.assertEqual(a.last_update, mock_stock_value.return_value.timestamp)
+
+        # another run, should result in mock_costs.timestamp
+        mock_stock_value.return_value.timestamp = 1
+        self.assertEqual(a.last_update, mock_costs.return_value.timestamp)
+
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.stock_value",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.costs",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.stock_count",
+        new_callable=mock.PropertyMock,
+    )
+    def test_last_update_inactive(self, mock_stock_count, mock_costs, mock_stock_value):
+        """Property returns the timestamp of last trade operation."""
+        # set up the mock objects
+        mock_stock_count.return_value = 0
+        mock_costs.return_value.timestamp = 5
+        mock_stock_value.return_value.timestamp = 10
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        self.assertEqual(a.last_update, mock_costs.return_value.timestamp)
+
+        # another run, should result in mock_costs.timestamp again
+        mock_stock_value.return_value.timestamp = 1
+        self.assertEqual(a.last_update, mock_costs.return_value.timestamp)
+
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.last_update",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.currency",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.costs",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.cash_in",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.cash_out",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.stock_value",
+        new_callable=mock.PropertyMock,
+    )
+    def test_profit(
+        self,
+        mock_stock_value,
+        mock_cash_out,
+        mock_cash_in,
+        mock_costs,
+        mock_currency,
+        mock_last_update,
+    ):
+        """The property accesses all relevant attributes."""
+        # set up the mocks
+        mock_stock_value.return_value.amount = 7
+        mock_cash_out.return_value.amount = 5
+        mock_cash_in.return_value.amount = 3
+        mock_costs.return_value.amount = 2
+        mock_currency.return_value = "FOO"
+        mock_last_update.return_value = 10
+
+        # calculate the profit manually
+        manual_profit = (
+            mock_stock_value.return_value.amount
+            + mock_cash_out.return_value.amount
+            - mock_cash_in.return_value.amount
+            - mock_costs.return_value.amount
+        )
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        self.assertEqual(a.profit.amount, manual_profit)
+        self.assertEqual(a.profit.currency, mock_currency.return_value)
+        self.assertEqual(a.profit.timestamp, mock_last_update.return_value)
+
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.costs",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.cash_in",
+        new_callable=mock.PropertyMock,
+    )
+    @mock.patch(
+        "stockings.models.portfolioitem.PortfolioItem.profit",
+        new_callable=mock.PropertyMock,
+    )
+    def test_profit_rate(self, mock_profit, mock_cash_in, mock_costs):
+        """Correctly calculate the profit rate."""
+        # set up the mocks
+        mock_profit.return_value.amount = 10
+        mock_cash_in.return_value.amount = 3
+        mock_costs.return_value.amount = 2
+
+        # get a PortfolioItem
+        a = PortfolioItem()
+
+        self.assertEqual(a.profit_rate, 2)
+
     @mock.patch("stockings.models.portfolioitem.PortfolioItem.trades")
     def test_stock_count_get_with_annotations(self, mock_trades):
         """Property's getter uses annotated attributes."""
