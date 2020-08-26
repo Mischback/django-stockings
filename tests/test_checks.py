@@ -1,4 +1,4 @@
-"""Tests for module `stockings.data`."""
+"""Tests for module `stockings.checks`."""
 
 # Python imports
 from unittest import mock, skip  # noqa
