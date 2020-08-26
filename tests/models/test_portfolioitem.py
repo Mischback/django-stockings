@@ -447,10 +447,45 @@ class PortfolioItemTest(StockingsTestCase):
 class PortfolioItemORMTest(StockingsORMTestCase):
     """Provide tests with fixture data."""
 
-    @skip("the required annotation is not yet implemented")
     def test_cash_in_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
-        raise NotImplementedError
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=a, trade_type=Trade.TRADE_TYPE_BUY
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            a_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+            )
+            self.assertAlmostEqual(trade_amount, a_annotated.cash_in.amount)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=b, trade_type=Trade.TRADE_TYPE_BUY
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            b_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+            )
+            self.assertAlmostEqual(trade_amount, b_annotated.cash_in.amount)
 
     def test_cash_in_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
@@ -490,10 +525,45 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(2):
             self.assertAlmostEqual(trade_amount, b.cash_in.amount)
 
-    @skip("the required annotation is not yet implemented")
     def test_cash_out_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
-        raise NotImplementedError
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=a, trade_type=Trade.TRADE_TYPE_SELL
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            a_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+            )
+            self.assertAlmostEqual(trade_amount, a_annotated.cash_out.amount)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_amount = 0
+        for item in Trade.objects.filter(
+            portfolioitem=b, trade_type=Trade.TRADE_TYPE_SELL
+        ).iterator():
+            trade_amount += item._price_amount * item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            b_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+            )
+            self.assertAlmostEqual(trade_amount, b_annotated.cash_out.amount)
 
     def test_cash_out_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
@@ -533,10 +603,41 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(2):
             self.assertAlmostEqual(trade_amount, b.cash_out.amount)
 
-    @skip("the required annotation is not yet implemented")
     def test_costs_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
-        raise NotImplementedError
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_costs = 0
+        for item in Trade.objects.filter(portfolioitem=a).iterator():
+            trade_costs += item._costs_amount
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            a_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+            )
+            self.assertAlmostEqual(trade_costs, a_annotated.costs.amount)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the trade_amount
+        trade_costs = 0
+        for item in Trade.objects.filter(portfolioitem=b).iterator():
+            trade_costs += item._costs_amount
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            b_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+            )
+            self.assertAlmostEqual(trade_costs, b_annotated.costs.amount)
 
     def test_costs_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
@@ -600,10 +701,47 @@ class PortfolioItemORMTest(StockingsORMTestCase):
 
         self.assertEqual(portfolio.currency, portfolioitem_currency)
 
-    @skip("the required annotation is not yet implemented")
     def test_stock_count_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
-        raise NotImplementedError
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the stock_count
+        stock_count = 0
+        for item in Trade.objects.filter(portfolioitem=a).iterator():
+            if item.trade_type == Trade.TRADE_TYPE_BUY:
+                stock_count += item.item_count
+            if item.trade_type == Trade.TRADE_TYPE_SELL:
+                stock_count -= item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            a_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+            )
+            self.assertEqual(stock_count, a_annotated.stock_count)
+
+        # get the PortfolioItem (two "BUY" trades)
+        b = PortfolioItem.objects.get(
+            portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+        )
+
+        # get the relevant Trade items and calculate the stock_count
+        stock_count = 0
+        for item in Trade.objects.filter(portfolioitem=b).iterator():
+            if item.trade_type == Trade.TRADE_TYPE_BUY:
+                stock_count += item.item_count
+            if item.trade_type == Trade.TRADE_TYPE_SELL:
+                stock_count -= item.item_count
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            b_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioB1", stockitem__isin="XX0000000004"
+            )
+            self.assertEqual(stock_count, b_annotated.stock_count)
 
     def test_stock_count_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
@@ -643,10 +781,32 @@ class PortfolioItemORMTest(StockingsORMTestCase):
         with self.assertNumQueries(1):
             self.assertEqual(stock_count, b.stock_count)
 
-    @skip("the required annotation is not yet implemented")
     def test_stock_value_get_with_annotations(self):
         """Property's getter uses annotated attributes."""
-        raise NotImplementedError
+        # get the PortfolioItem (just one "BUY" trade)
+        a = PortfolioItem.objects.get(
+            portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+        )
+
+        # get the relevant Trade items and calculate the stock_count
+        stock_count = 0
+        for item in Trade.objects.filter(portfolioitem=a).iterator():
+            if item.trade_type == Trade.TRADE_TYPE_BUY:
+                stock_count += item.item_count
+            if item.trade_type == Trade.TRADE_TYPE_SELL:
+                stock_count -= item.item_count
+
+        stockitem_latest_price = StockItem.objects.get(isin="XX0000000001").latest_price
+
+        # with the annotation, only one database query is required
+        with self.assertNumQueries(1):
+            a_annotated = PortfolioItem.stockings_manager.get(
+                portfolio__name="PortfolioA", stockitem__isin="XX0000000001"
+            )
+            self.assertAlmostEqual(
+                a_annotated.stock_value.amount,
+                stockitem_latest_price.amount * stock_count,
+            )
 
     def test_stock_value_get_without_annotations(self):
         """Property's getter retrieves missing attributes."""
