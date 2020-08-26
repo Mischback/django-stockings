@@ -1,5 +1,7 @@
 {% extends "stockings/base.html" %}
 
+{% load stockings_extra %}
+
 {% block html_title %}Portfolio Detail{% endblock %}
 
 {% block main_content %}
@@ -18,9 +20,9 @@
         {% if item.stock_count > 0 %}
         <tr>
             <td>{{ item.stockitem.name }}</td>
-            <td>{{ item.stock_value }}</td>
+            <td>{% money item.stock_value %}</td>
             <td>{{ item.stock_count }}</td>
-            <td>{{ item.profit }}</td>
+            <td>{% money item.profit %}</td>
             <td>{{ item.profit_rate }}</td>
             <td>{{ item.last_update }}</td>
         </tr>
@@ -36,9 +38,9 @@
         {% if item.stock_count < 1 %}
         <tr>
             <td>{{ item.stockitem.name }}</td>
-            <td>{{ item.stock_value }}</td>
+            <td>{% money item.stock_value %}</td>
             <td>{{ item.stock_count }}</td>
-            <td>{{ item.profit }}</td>
+            <td>{% money item.profit %}</td>
             <td>{{ item.profit_rate }}</td>
             <td>{{ item.last_update }}</td>
         </tr>
