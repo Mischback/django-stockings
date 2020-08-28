@@ -27,8 +27,19 @@ def _internal_fallback_format_currency(amount, currency):
     Returns
     -------
     formatted money value : str
+
+    Notes
+    -----
+    The function uses a simple string format. The used format string is
+    ``"{currency} {amount:.2f}"``, meaning that the ``amount`` is rounded to
+    two decimal places.
+
+    Instances of :class:`~stockings.data.StockingsMoney` provide its `currency`
+    in :wiki:`ISO 4217 format<ISO_4217>`, so the currency is not displayed as
+    symbol (`stockings` does not include its own logic to resolv currency codes
+    to their according symbols).
     """
-    return "{} {}".format(currency, amount)
+    return "{currency} {amount:.2f}".format(amount=amount, currency=currency)
 
 
 @register.simple_tag
