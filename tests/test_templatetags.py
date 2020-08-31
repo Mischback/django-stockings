@@ -8,10 +8,6 @@ from unittest import (  # noqa
 )
 
 # Django imports
-from django.template import (
-    Context,
-    Template,
-)
 from django.test import (  # noqa
     override_settings,
     tag,
@@ -54,15 +50,10 @@ class StockingsExtraTest(StockingsTestCase):
         """
         self.assertEqual(money("foo"), {"money": "foo"})
 
+    @skip("not yet implemented")
     def test_money_full(self):
         """The tag includes the template and renders it using the provided context."""
-        dummy_template = Template("{% load stockings_extra %}" "{% money foo %}")
-        context = Context({"foo": "foo"})
-
-        with self.assertRaises(AttributeError):
-            self.assertTemplateUsed(
-                dummy_template.render(context), "stockings/money_instance.html"
-            )
+        pass
 
     @mock.patch("stockings.i18n.get_current_locale")
     @mock.patch("babel.numbers.format_currency")
