@@ -1,6 +1,7 @@
 """Tests for package `stockings.templatetags`."""
 
 # Python imports
+import sys
 from unittest import (  # noqa
     mock,
     skip,
@@ -20,6 +21,7 @@ from django.test import (  # noqa
 from stockings.templatetags.stockings_extra import (
     _internal_fallback_format_currency,
     money,
+    money_locale,
 )
 
 # app imports
@@ -61,3 +63,33 @@ class StockingsExtraTest(StockingsTestCase):
             self.assertTemplateUsed(
                 dummy_template.render(context), "stockings/money_instance.html"
             )
+
+    @mock.patch("stockings.i18n.get_current_locale")
+    @mock.patch("babel.numbers.format_currency")
+    def test_money_locale_with_babel(
+        self, mock_format_currency, mock_get_current_locale
+    ):
+        """Formatting relies on Babel's `format_currency()`."""
+        mock_money = mock.MagicMock()
+
+        # is Babel's `format_currency()` actually used?
+        self.assertEqual(mock_format_currency.return_value, money_locale(mock_money))
+
+        # is the function called correctly?
+        mock_format_currency.assert_called_with(
+            mock_money.amount,
+            mock_money.currency,
+            locale=mock_get_current_locale.return_value,
+        )
+
+    @mock.patch.dict(sys.modules, {"babel.numbers": None})
+    @mock.patch(
+        "stockings.templatetags.stockings_extra._internal_fallback_format_currency"
+    )
+    def test_money_locale_without_babel(self, mock_format_currency):
+        """Formatting is done with the internal fallback function."""
+        mock_money = mock.MagicMock()
+
+        # the internal fallback is used
+        self.assertEqual(mock_format_currency.return_value, money_locale(mock_money))
+        mock_format_currency.assert_called_with(mock_money.amount, mock_money.currency)
