@@ -16,7 +16,7 @@
         <td>{% money_locale item.stock_value %}</td>
         <td>{{ item.stock_count }}</td>
         <td>{% money_locale item.profit %}</td>
-        <td>{{ item.profit_rate }}</td>
+        <td>{{ item.profit_rate|to_percent }}</td>
         <td>{{ item.last_update }}</td>
     </tr>
     {% endif %}

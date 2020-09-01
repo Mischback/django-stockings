@@ -48,6 +48,31 @@ def _internal_fallback_format_currency(amount, currency):
     return "{currency} {amount:.2f}".format(amount=amount, currency=currency)
 
 
+def _internal_fallback_format_percent(value):
+    """Format a percent value.
+
+    This is an internal fallback function, that is utilised if the
+    :func:`~stockings.templatetags.stockings_extra.to_percent` templatetag /
+    filter is used without having `Babel` installed.
+
+    Parameters
+    ----------
+    value : decimal.Decimal
+
+    Returns
+    -------
+    formatted percent value : str
+
+    Notes
+    -----
+    The function uses a simple string format. The used format string is
+    ``"{value:.{precision}f}"``, meaning, the percent value is rounded to the
+    given precision.
+    """
+    # TODO: Make the precision configurable
+    return "{value:.2f}".format(value=value * 100, precision=2)
+
+
 @register.simple_tag(takes_context=True)
 def list_portfolioitems_as_table(
     context, portfolioitems, status_filter="active", use_cache=True
@@ -197,3 +222,40 @@ def money(money_instance):  # noqa: D205, D400
     tag, for even more flexibility).
     """
     return {"money": money_instance}
+
+
+@register.filter
+def to_percent(value):
+    """Format a value as percents based on the user's locale.
+
+    Parameters
+    ----------
+    value : decimal.Decimal
+
+    Returns
+    -------
+    formatted percent value : str
+
+    Notes
+    -----
+    The function will try to use `Babel` to provide a locale-aware formatting
+    of the provided value, limited to two decimal places
+
+    However, if `Babel` is not available, it will fall back to an internal
+    formatting function
+    :func:`stockings.templatetags.stockings_extra._internal_fallback_format_percent`.
+    """
+    try:
+        from babel.numbers import format_percent
+        from stockings.i18n import get_current_locale
+    except ImportError:
+        logger.info(
+            "`Babel` could not be loaded. Falling back to an internal formatting function."
+        )
+        return _internal_fallback_format_percent(value)
+
+    # TODO: Make the precision configurable
+    # TODO: Second param of `round` is then `config_value + 2`
+    return format_percent(
+        round(value, 4), locale=get_current_locale(), decimal_quantization=False
+    )

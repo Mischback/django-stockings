@@ -20,8 +20,10 @@ from django.test import (  # noqa
 # app imports
 from stockings.templatetags.stockings_extra import (
     _internal_fallback_format_currency,
+    _internal_fallback_format_percent,
     money,
     money_locale,
+    to_percent,
 )
 
 # app imports
@@ -43,6 +45,10 @@ class StockingsExtraTest(StockingsTestCase):
 
         # some more rounding
         self.assertEqual("EUR 13.37", _internal_fallback_format_currency(13.368, "EUR"))
+
+    def test_internal_fallback_format_percent(self):
+        """The format string is correctly applied."""
+        self.assertEqual("13.37", _internal_fallback_format_percent(0.13373))
 
     def test_money_simple(self):
         """The parameter is provided as context.
@@ -90,3 +96,28 @@ class StockingsExtraTest(StockingsTestCase):
         # the internal fallback is used
         self.assertEqual(mock_format_currency.return_value, money_locale(mock_money))
         mock_format_currency.assert_called_with(mock_money.amount, mock_money.currency)
+
+    @mock.patch("stockings.i18n.get_current_locale")
+    @mock.patch("babel.numbers.format_percent")
+    def test_to_percent_with_babel(self, mock_format_percent, mock_get_current_locale):
+        """Formatting relies on Babel's `format_percent()`."""
+        mock_value = 0.13373
+
+        self.assertEqual(mock_format_percent.return_value, to_percent(mock_value))
+
+        mock_format_percent.assert_called_with(
+            round(mock_value, 4),
+            locale=mock_get_current_locale.return_value,
+            decimal_quantization=False,
+        )
+
+    @mock.patch.dict(sys.modules, {"babel.numbers": None})
+    @mock.patch(
+        "stockings.templatetags.stockings_extra._internal_fallback_format_percent"
+    )
+    def test_to_percent_without_babel(self, mock_format_percent):
+        """Formatting is done with the internal fallback function."""
+        mock_value = 0.13373
+
+        self.assertEqual(mock_format_percent.return_value, to_percent(mock_value))
+        mock_format_percent.assert_called_with(mock_value)
