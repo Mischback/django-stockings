@@ -12,6 +12,7 @@ from django.db.models.signals import post_save  # noqa: F401
 # app imports
 from stockings import settings as app_default_settings
 from stockings.checks import (
+    check_to_percent_precision_is_int,
     check_use_django_auth_permissions,
     check_use_django_auth_permissions_requires_django_contrib_auth,
 )
@@ -56,3 +57,4 @@ class StockingsConfig(AppConfig):
         # register check functions
         register_check(check_use_django_auth_permissions)
         register_check(check_use_django_auth_permissions_requires_django_contrib_auth)
+        register_check(check_to_percent_precision_is_int)

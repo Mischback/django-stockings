@@ -32,6 +32,14 @@ The currency is stored as its
 :wiki:`currency code as described by ISO 4217 <ISO_4217>`.
 """
 
+STOCKINGS_TO_PERCENT_PRECISION = 2
+"""The number of decimal places used by the templatetag
+:func:`~stockings.templatetags.stockings_extra.to_percent` (:obj:`int`).
+
+**Default value:** ``2``
+"""
+
+
 STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS = True
 """Make the app rely on Django's `django.contrib.auth` permission system (:obj:`bool`).
 

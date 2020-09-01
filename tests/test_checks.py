@@ -1,15 +1,22 @@
 """Tests for module `stockings.checks`."""
 
 # Python imports
-from unittest import mock, skip  # noqa
+from unittest import (  # noqa
+    mock,
+    skip,
+)
 
 # Django imports
 from django.conf import settings
 from django.core.checks import Error
-from django.test import override_settings, tag  # noqa
+from django.test import (  # noqa
+    override_settings,
+    tag,
+)
 
 # app imports
 from stockings.checks import (  # noqa: F401
+    check_to_percent_precision_is_int,
     check_use_django_auth_permissions,
     check_use_django_auth_permissions_requires_django_contrib_auth,
 )
@@ -103,28 +110,14 @@ class StockingsChecksTest(StockingsTestCase):
         INSTALLED_APPS=["django.contrib.auth"],
     )
     def test_e002_requirement_satisfied(self):
-        """This is the valid combination.
-
-        Note: Overriding setting STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS is
-        **not** working as expected. This has no effect in this test setup,
-        because ``True`` is the default value.
-        However, overriding INSTALLED_APPS **is** working, so this is a valid
-        test case.
-        """
+        """This is the valid combination."""
         self.assertEqual(
             check_use_django_auth_permissions_requires_django_contrib_auth(None), []
         )
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=True, INSTALLED_APPS=[])
     def test_e002_requirement_not_satisfied(self):
-        """Correctly raise the corresponding error.
-
-        Note: Overriding setting STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS is
-        **not** working as expected. This has no effect in this test setup,
-        because ``True`` is the default value.
-        However, overriding INSTALLED_APPS **is** working, so this is a valid
-        test case.
-        """
+        """Correctly raise the corresponding error."""
         self.assertEqual(
             check_use_django_auth_permissions_requires_django_contrib_auth(None),
             [
@@ -143,24 +136,84 @@ class StockingsChecksTest(StockingsTestCase):
         INSTALLED_APPS=["django.contrib.auth"],
     )
     def test_e002_deactivated_but_satisfied(self):
-        """Deactivated permissions check does not require 'django.contrib.auth'.
-
-        Note: Overriding setting STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS is
-        **not** working as expected. This makes this test impossible, thus it is
-        skipped.
-        """
+        """Deactivated permissions check does not require 'django.contrib.auth'."""
         self.assertEqual(
             check_use_django_auth_permissions_requires_django_contrib_auth(None), []
         )
 
     @override_settings(STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS=False, INSTALLED_APPS=[])
     def test_e002_deactivated_not_satisfied(self):
-        """Deactivated permissions check does not require 'django.contrib.auth'.
-
-        Note: Overriding setting STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS is
-        **not** working as expected. This makes this test impossible, thus it is
-        skipped.
-        """
+        """Deactivated permissions check does not require 'django.contrib.auth'."""
         self.assertEqual(
             check_use_django_auth_permissions_requires_django_contrib_auth(None), []
+        )
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=5)
+    def test_e003_valid_int(self):
+        """A valid integer >= 0."""
+        self.assertEqual(check_to_percent_precision_is_int(None), [])
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=0)
+    def test_e003_valid_int_zero(self):
+        """A valid integer == 0."""
+        self.assertEqual(check_to_percent_precision_is_int(None), [])
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=1.337)
+    def test_e003_invalid_float(self):
+        """A float is not allowed."""
+        self.assertEqual(
+            check_to_percent_precision_is_int(None),
+            [
+                Error(
+                    "STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer value!",
+                    hint="STOCKINGS_TO_PERCENT_PRECISION has to be a positive "
+                    "integer value (actually, zero is ok aswell).",
+                    id="stockings.e003",
+                )
+            ],
+        )
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=False)
+    def test_e003_invalid_bool(self):
+        """A bool is not allowed."""
+        self.assertEqual(
+            check_to_percent_precision_is_int(None),
+            [
+                Error(
+                    "STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer value!",
+                    hint="STOCKINGS_TO_PERCENT_PRECISION has to be a positive "
+                    "integer value (actually, zero is ok aswell).",
+                    id="stockings.e003",
+                )
+            ],
+        )
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=-1)
+    def test_e003_invalid_int_negative(self):
+        """A negative integer is not allowed."""
+        self.assertEqual(
+            check_to_percent_precision_is_int(None),
+            [
+                Error(
+                    "STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer value!",
+                    hint="STOCKINGS_TO_PERCENT_PRECISION has to be a positive "
+                    "integer value (actually, zero is ok aswell).",
+                    id="stockings.e003",
+                )
+            ],
+        )
+
+    @override_settings(STOCKINGS_TO_PERCENT_PRECISION=None)
+    def test_e003_invalid_none(self):
+        """None is not allowed."""
+        self.assertEqual(
+            check_to_percent_precision_is_int(None),
+            [
+                Error(
+                    "STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer value!",
+                    hint="STOCKINGS_TO_PERCENT_PRECISION has to be a positive "
+                    "integer value (actually, zero is ok aswell).",
+                    id="stockings.e003",
+                )
+            ],
         )

@@ -107,3 +107,39 @@ def check_use_django_auth_permissions_requires_django_contrib_auth(
             )
 
     return errors
+
+
+def check_to_percent_precision_is_int(app_configs, **kwargs):
+    """Verify that STOCKINGS_USE_DJANGO_AUTH_PERMISSIONS is of type int.
+
+    Parameters
+    ----------
+    app_configs : list
+        A list of applications that should be in inspected (see
+        :djangodoc:`topics/checks/#writing-your-own-checks`).
+
+    Returns
+    -------
+    list
+        A list of :djangodoc:`Messages <topics/checks/#messages>`.
+    """
+    errors = []
+
+    logger.debug("Is STOCKINGS_TO_PERCENT_PRECISION of type int and >= 0?")
+    if (
+        (not isinstance(settings.STOCKINGS_TO_PERCENT_PRECISION, int))
+        or (settings.STOCKINGS_TO_PERCENT_PRECISION < 0)
+        or (isinstance(settings.STOCKINGS_TO_PERCENT_PRECISION, bool))
+    ):
+        errors.append(
+            Error(
+                _("STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer value!"),
+                hint=_(
+                    "STOCKINGS_TO_PERCENT_PRECISION has to be a positive integer "
+                    "value (actually, zero is ok aswell)."
+                ),
+                id="stockings.e003",
+            )
+        )
+
+    return errors
