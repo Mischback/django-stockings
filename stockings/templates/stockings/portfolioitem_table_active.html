@@ -1,0 +1,23 @@
+{% load stockings_extra %}
+{% if portfolioitems %}
+    <tr>
+        <td>Name</td>
+        <td>Current Value</td>
+        <td>Count</td>
+        <td>Total Profit</td>
+        <td>Profit (%)</td>
+        <td>Last Update</td>
+    </tr>
+{% endif %}
+{% for item in portfolioitems %}
+    {% if item.stock_count > 0 %}
+    <tr>
+        <td>{{ item.stockitem.name }}</td>
+        <td>{% money_locale item.stock_value %}</td>
+        <td>{{ item.stock_count }}</td>
+        <td>{% money_locale item.profit %}</td>
+        <td>{{ item.profit_rate }}</td>
+        <td>{{ item.last_update }}</td>
+    </tr>
+    {% endif %}
+{% endfor %}

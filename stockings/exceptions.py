@@ -7,15 +7,23 @@ class StockingsException(Exception):
     pass
 
 
-class StockingsCurrencyConversionError(StockingsException):
+class StockingsCurrencyConversionError(StockingsException):  # noqa: D205, D400
     """This exception is raised whenever the conversion of currencies is
-    required."""
+    required.
+    """
 
     pass
 
 
-class StockingsInterfaceError(StockingsException):
+class StockingsInterfaceError(StockingsException):  # noqa: D205, D400
     """This exception is raised, if an operation is performed, that is not
-    intended."""
+    intended.
+    """
+
+    pass
+
+
+class StockingsTemplateError(StockingsException):
+    """This exception is raised, if there is an error in the app's templatetags."""
 
     pass

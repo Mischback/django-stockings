@@ -5,6 +5,12 @@ import logging
 
 # Django imports
 from django import template
+from django.core.cache import cache
+from django.core.cache.utils import make_template_fragment_key
+from django.template.loader import render_to_string
+
+# app imports
+from stockings.exceptions import StockingsTemplateError
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +46,92 @@ def _internal_fallback_format_currency(amount, currency):
     to their according symbols).
     """
     return "{currency} {amount:.2f}".format(amount=amount, currency=currency)
+
+
+@register.simple_tag(takes_context=True)
+def list_portfolioitems_as_table(
+    context, portfolioitems, status_filter="active", use_cache=True
+):  # noqa: D205, D400
+    """Format a list of :class:`stockings.models.portfolioitem.PortfolioItem`
+    instances and provide them as HTML table rows.
+
+    The templatetag will try to get the rendered result from Django's cache or
+    will render on-the-fly.
+
+    Parameters
+    ----------
+    context : django.template.Context
+        The currently active context object. This parameter is automatically
+        provided by Django and *must not* be provided while using the
+        templatetag.
+    portfolioitems : list
+        The list of :class:`~stockings.models.portfolioitem.PortfolioItem`
+        instances to be rendered.
+    status_filter : str, optional
+        Determines, if ``"active"`` or ``"inactive"`` items should be rendered.
+        This also determines, which template will be used. Default value is
+        ``"active"``.
+    use_cache : bool, optional
+        Determines, if the cache lookup should be performed. Default value is
+        ``True``.
+
+    Returns
+    -------
+    The rendered template fragment : str
+
+    Raises
+    ------
+    stockings.exceptions.StockingsTemplateError
+        The error is raised, if ``status_filter`` is set to an illegal value.
+
+    Notes
+    -----
+    The templatetag will try to fetch the rendered fragment from Django's cache.
+    The corresponding ``cache_key`` is determined using Django's
+    :func:`~django.core.cache.utils.make_template_fragment_key` and will vary on
+    the :model:`corresponding Portfolio's id <stockings.models.portfolio.Portfolio>`,
+    thus, the `Portfolio` has to be provided to the function.
+    The function will fetch the `Portfolio` from the ``context``.
+
+    The function dynamically determines, which template needs to be rendered,
+    depending on ``status_filter``: if ``status_filter == "active"``, the
+    template ``stockings/portfolioitem_table_active.html`` will be used or
+    if ``status_filter == "inactive"``
+    ``stockings/portfolioitem_table_inactive.html`` is used. If ``status_filter``
+    has any other value, :class:`stockings.exceptions.StockingsTemplateError` is
+    raised.
+    """
+    # Get the portfolio from the context
+    portfolio = context["portfolio"]
+
+    # Get the cache_key, and vary on `portfolio.id`
+    cache_key = make_template_fragment_key(
+        "portfolio.portfolioitem_list.{}".format(status_filter), [portfolio.id]
+    )
+
+    # Try to fetch the fragment from cache
+    if use_cache is True:
+        rendered = cache.get(cache_key)
+        if rendered:
+            return rendered
+
+    # Determine which template needs rendering
+    if status_filter == "active":
+        template = "stockings/portfolioitem_table_active.html"
+    elif status_filter == "inactive":
+        template = "stockings/portfolioitem_table_inactive.html"
+    else:
+        raise StockingsTemplateError(
+            "`status_filter` has to be either `active` or `inactive`."
+        )
+
+    # Actually render the fragment
+    rendered = render_to_string(template, {"portfolioitems": portfolioitems})
+
+    # Update the cache
+    cache.set(cache_key, rendered, timeout=None)
+
+    return rendered
 
 
 @register.simple_tag

@@ -16,18 +16,7 @@
 <section>
     <h3>Active Items</h3>
     <table>
-    {% for item in portfolio.portfolioitems_list %}
-        {% if item.stock_count > 0 %}
-        <tr>
-            <td>{{ item.stockitem.name }}</td>
-            <td>{% money item.stock_value %}</td>
-            <td>{{ item.stock_count }}</td>
-            <td>{% money item.profit %}</td>
-            <td>{{ item.profit_rate }}</td>
-            <td>{{ item.last_update }}</td>
-        </tr>
-        {% endif %}
-    {% endfor %}
+{% list_portfolioitems_as_table portfolio.portfolioitems_list %}
     </table>
 </section>
 
