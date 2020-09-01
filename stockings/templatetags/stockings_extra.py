@@ -5,6 +5,7 @@ import logging
 
 # Django imports
 from django import template
+from django.conf import settings
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
@@ -69,8 +70,9 @@ def _internal_fallback_format_percent(value):
     ``"{value:.{precision}f}"``, meaning, the percent value is rounded to the
     given precision.
     """
-    # TODO: Make the precision configurable
-    return "{value:.2f}".format(value=value * 100, precision=2)
+    return "{value:.{precision}f}".format(
+        value=value * 100, precision=settings.STOCKINGS_TO_PERCENT_PRECISION
+    )
 
 
 @register.simple_tag(takes_context=True)
@@ -254,8 +256,8 @@ def to_percent(value):
         )
         return _internal_fallback_format_percent(value)
 
-    # TODO: Make the precision configurable
-    # TODO: Second param of `round` is then `config_value + 2`
     return format_percent(
-        round(value, 4), locale=get_current_locale(), decimal_quantization=False
+        round(value, settings.STOCKINGS_TO_PERCENT_PRECISION + 2),
+        locale=get_current_locale(),
+        decimal_quantization=False,
     )
