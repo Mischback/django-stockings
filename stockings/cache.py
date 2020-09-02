@@ -4,6 +4,7 @@
 import logging
 
 # Django imports
+from django.conf import settings
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,6 @@ def get_template_fragment(cache_key, use_cache, render_func, *args, **kwargs):
     logger.debug("Updating cache for {}".format(cache_key))
     rendered = render_func(*args, **kwargs)
 
-    cache.set(cache_key, rendered, timeout=None)
+    cache.set(cache_key, rendered, timeout=settings.STOCKINGS_CACHE_TIMEOUT)
 
     return rendered

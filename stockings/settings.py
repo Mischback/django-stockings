@@ -9,6 +9,24 @@ The settings may be provided in the project's settings module.
 # Django imports
 from django.conf import settings
 
+STOCKINGS_CACHE_TIMEOUT = None
+"""Determines the timeout for app-specific cache operations (:obj:`int`).
+
+**Default value:** ``None``
+
+Notes
+-----
+The app will set any timeouts explicitly when accessing the cache, so the
+specified timeout in :setting:`CACHE` will not be used. Instead, this setting
+controls the timeout.
+
+The app will handle cache invalidation, whenever necessary, so this setting
+may be left as ``None``. If your project makes heavy use of Django's cache
+system and you are forced to keep the cache small, you may place any positive
+integer value here.
+"""
+
+
 STOCKINGS_DEFAULT_CURRENCY = "EUR"
 """Determines the default value for all currency fields (:obj:`str`).
 
