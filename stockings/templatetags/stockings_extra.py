@@ -6,10 +6,12 @@ import logging
 # Django imports
 from django import template
 from django.conf import settings
-from django.core.cache.utils import make_template_fragment_key
 
 # app imports
-from stockings.cache import get_template_fragment
+from stockings.cache import (
+    get_template_fragment,
+    make_key_for_portfolioitem_list,
+)
 from stockings.exceptions import StockingsTemplateError
 from stockings.views.portfolioitem import render_portfolioitems_as_table
 
@@ -116,8 +118,8 @@ def list_portfolioitems_as_table(
     Notes
     -----
     The templatetag will try to fetch the rendered fragment from Django's cache.
-    The corresponding ``cache_key`` is determined using Django's
-    :func:`~django.core.cache.utils.make_template_fragment_key` and will vary on
+    The corresponding ``cache_key`` is determined using
+    :func:`~stockings.cache.make_key_for_portfolioitem_list` and will vary on
     the :model:`corresponding Portfolio's id <stockings.models.portfolio.Portfolio>`,
     thus, the `Portfolio` has to be provided to the function.
     The function will fetch the `Portfolio` from the ``context``.
@@ -131,13 +133,8 @@ def list_portfolioitems_as_table(
     except KeyError:
         raise StockingsTemplateError("There is no `portfolio` in the given context.")
 
-    # Get the cache_key, and vary on `portfolio.id`
-    cache_key = make_template_fragment_key(
-        "portfolio.portfolioitem_list.{}".format(status_filter), [portfolio.id]
-    )
-
     return get_template_fragment(
-        cache_key,
+        make_key_for_portfolioitem_list(status_filter, portfolio.id),
         use_cache,
         render_portfolioitems_as_table,
         *(portfolioitems, status_filter),
