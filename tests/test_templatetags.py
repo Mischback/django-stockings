@@ -18,9 +18,11 @@ from django.test import (  # noqa
 )
 
 # app imports
+from stockings.exceptions import StockingsTemplateError
 from stockings.templatetags.stockings_extra import (
     _internal_fallback_format_currency,
     _internal_fallback_format_percent,
+    list_portfolioitems_as_table,
     money,
     money_locale,
     to_percent,
@@ -49,6 +51,44 @@ class StockingsExtraTest(StockingsTestCase):
     def test_internal_fallback_format_percent(self):
         """The format string is correctly applied."""
         self.assertEqual("13.37", _internal_fallback_format_percent(0.13373))
+
+    @mock.patch("stockings.templatetags.stockings_extra.render_portfolioitems_as_table")
+    @mock.patch("stockings.templatetags.stockings_extra.make_template_fragment_key")
+    @mock.patch("stockings.templatetags.stockings_extra.get_template_fragment")
+    def test_list_portfolioitems_as_table(
+        self,
+        mock_get_template_fragment,
+        mock_make_template_fragment_key,
+        mock_render_func,
+    ):
+        """Verify normal operation."""
+        mock_portfolio = mock.MagicMock()
+
+        self.assertEqual(
+            mock_get_template_fragment.return_value,
+            list_portfolioitems_as_table(
+                {"portfolio": mock_portfolio}, "portfolioitems"
+            ),
+        )
+
+        mock_get_template_fragment.assert_called_with(
+            mock_make_template_fragment_key.return_value,
+            True,
+            mock_render_func,
+            *("portfolioitems", "active")
+        )
+
+    @mock.patch("stockings.templatetags.stockings_extra.make_template_fragment_key")
+    @mock.patch("stockings.templatetags.stockings_extra.get_template_fragment")
+    def test_list_portfolioitems_as_table_missing_context(
+        self, mock_get_template_fragment, mock_make_template_fragment_key
+    ):
+        """Missing `portfolio` will raise `StockingsTemplateError`."""
+        with self.assertRaises(StockingsTemplateError):
+            self.assertEqual(
+                mock_get_template_fragment.return_value,
+                list_portfolioitems_as_table({}, "portfolioitems"),
+            )
 
     def test_money_simple(self):
         """The parameter is provided as context.

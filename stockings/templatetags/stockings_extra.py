@@ -10,6 +10,7 @@ from django.core.cache.utils import make_template_fragment_key
 
 # app imports
 from stockings.cache import get_template_fragment
+from stockings.exceptions import StockingsTemplateError
 from stockings.views.portfolioitem import render_portfolioitems_as_table
 
 logger = logging.getLogger(__name__)
@@ -125,7 +126,10 @@ def list_portfolioitems_as_table(
     :func:`stockings.views.portfolioitem.render_portfolioitems_as_table`.
     """
     # Get the portfolio from the context
-    portfolio = context["portfolio"]
+    try:
+        portfolio = context["portfolio"]
+    except KeyError:
+        raise StockingsTemplateError("There is no `portfolio` in the given context.")
 
     # Get the cache_key, and vary on `portfolio.id`
     cache_key = make_template_fragment_key(
