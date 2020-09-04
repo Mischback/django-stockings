@@ -1,0 +1,4 @@
+# This constraint file is used by tox to restrict the Django version to the
+# latest 3.1 release.
+# See tox.ini's [testenv] section.
+Django>=3.1, <3.2

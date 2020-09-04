@@ -120,7 +120,7 @@ def list_portfolioitems_as_table(
     The templatetag will try to fetch the rendered fragment from Django's cache.
     The corresponding ``cache_key`` is determined using
     :func:`~stockings.cache.make_key_for_portfolioitem_list` and will vary on
-    the :model:`corresponding Portfolio's id <stockings.models.portfolio.Portfolio>`,
+    the :class:`corresponding Portfolio's id <stockings.models.portfolio.Portfolio>`,
     thus, the `Portfolio` has to be provided to the function.
     The function will fetch the `Portfolio` from the ``context``.
 
