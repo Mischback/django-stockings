@@ -79,7 +79,7 @@ class PortfolioDetailView(
     """The name of the keyword argument as provided in the app's url configuration.
 
     By default, this is simply ``"pk"``, but for clarity, the app's url
-    configuration (:module:`stockings.urls`) uses the more explicit
+    configuration (:mod:`stockings.urls`) uses the more explicit
     ``"portfolio_id"``.
     """
 
