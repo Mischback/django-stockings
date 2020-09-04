@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Includes an app-specific test runner.
+
 This test runner heavily relies on Django's DiscoverRunner. In fact, it is very
 close to Django's own test runner.
 It accepts less options and looks for the tests to be run in the current
@@ -12,7 +13,8 @@ directory instead of app's test-directories.
         * --tag, -t                 specify one (or multiple) tags to be tested
         * --time                    enables time measurement during tests
         * --verbosity, -v           verbosity level (0, 1, 2, 3)
-It can't be run on certain modules only, but on given tags."""
+It can't be run on certain modules only, but on given tags.
+"""
 
 # Python imports
 import argparse
@@ -26,15 +28,19 @@ from django.test.utils import get_runner
 
 
 def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
-    """Prepares the test environment.
+    """Prepare the test environment.
+
     Basically, this function is used to inject test-specific settings. It should
     be ensured, that these settings are only relevant to testing. A minimal
     configuration to actually run the app has to be specified using Django's
-    setting-mechanism."""
+    setting-mechanism.
+    """
 
     class DisableMigrations:
         """A generic class to disable all migrations during tests.
-        See setup()-function on how this is applied."""
+
+        See setup()-function on how this is applied.
+        """
 
         def __contains__(self, item):
             return True
@@ -93,8 +99,7 @@ def setup(disable_optimisation, enable_migrations, enable_timing, verbosity):
 
 
 def app_tests(disable_optimisation, enable_migrations, enable_timing, tags, verbosity):
-    """Gets the TestRunner and runs the tests"""
-
+    """Get the TestRunner and runs the tests."""
     # prepare the actual test environment
     setup(disable_optimisation, enable_migrations, enable_timing, verbosity)
 
@@ -161,7 +166,7 @@ if __name__ == "__main__":
     if options.settings:
         os.environ["DJANGO_SETTINGS_MODULE"] = options.settings
     else:
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "util.settings_dev")
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "util.settings_test")
         options.settings = os.environ["DJANGO_SETTINGS_MODULE"]
 
     failures = app_tests(
