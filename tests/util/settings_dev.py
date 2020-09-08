@@ -5,7 +5,6 @@ environment."""
 import os
 import sys
 
-
 # Path to the test directory
 TEST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -16,13 +15,13 @@ PROJECT_ROOT = os.path.dirname(TEST_ROOT)
 sys.path.append(os.path.normpath(PROJECT_ROOT))
 
 # Allow all hosts during development
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 # Database configuration
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(TEST_ROOT, 'test.sqlite'),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(TEST_ROOT, "test.sqlite"),
     }
 }
 
@@ -31,38 +30,53 @@ DEBUG = True
 
 # Provide a minimal Django project as environment
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.messages',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.messages",
+    "django.contrib.sessions",
+    "django.contrib.staticfiles",
+    "stockings.apps.StockingsConfig",
 ]
 
 MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
-ROOT_URLCONF = 'tests.util.urls_dev'
+ROOT_URLCONF = "tests.util.urls_dev"
 
-SECRET_KEY = 'only-for-development'
+SECRET_KEY = "only-for-development"  # nosec: this is on purpose, just for development
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(TEST_ROOT, 'utils', 'templates'), ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.contrib.auth.context_processors.auth',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(TEST_ROOT, "utils", "templates"),],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
                 # 'django.template.context_processors.i18n',
-                'django.template.context_processors.static',
-                'django.contrib.messages.context_processors.messages',
+                "django.template.context_processors.static",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "dev_f": {
+            "format": "[%(levelname)s] %(name)s:%(lineno)d:%(funcName)s \n\t %(message)s",
+        },
+    },
+    "handlers": {"def_h": {"class": "logging.StreamHandler", "formatter": "dev_f",},},
+    "loggers": {
+        "stockings": {"handlers": ["def_h"], "level": "DEBUG", "propagate": False,}
+    },
+}

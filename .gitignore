@@ -3,6 +3,8 @@
 # The test database file
 tests/test.sqlite
 
+.vscode/
+
 
 # ### Github's default Python .gitignore
 
