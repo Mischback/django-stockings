@@ -75,7 +75,7 @@ def invalidate_cache(key):
         logger.info("Could not delete cache, received incompatible key")
 
 
-def make_key_for_portfolioitem_list(status_filter, portfolio_id):  # noqa: D205, D400
+def keygen_portfolioitem_list(status_filter, portfolio_id):  # noqa: D205, D400
     """Generate a cache key for :class:`~stockings.models.portfolioitem.PortfolioItem`
     list fragments.
 

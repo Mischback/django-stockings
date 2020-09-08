@@ -53,9 +53,7 @@ class StockingsExtraTest(StockingsTestCase):
         self.assertEqual("13.37", _internal_fallback_format_percent(0.13373))
 
     @mock.patch("stockings.templatetags.stockings_extra.render_portfolioitems_as_table")
-    @mock.patch(
-        "stockings.templatetags.stockings_extra.make_key_for_portfolioitem_list"
-    )
+    @mock.patch("stockings.templatetags.stockings_extra.keygen_portfolioitem_list")
     @mock.patch("stockings.templatetags.stockings_extra.get_template_fragment")
     def test_list_portfolioitems_as_table(
         self,
@@ -80,9 +78,7 @@ class StockingsExtraTest(StockingsTestCase):
             *("portfolioitems", "active")
         )
 
-    @mock.patch(
-        "stockings.templatetags.stockings_extra.make_key_for_portfolioitem_list"
-    )
+    @mock.patch("stockings.templatetags.stockings_extra.keygen_portfolioitem_list")
     @mock.patch("stockings.templatetags.stockings_extra.get_template_fragment")
     def test_list_portfolioitems_as_table_missing_context(
         self, mock_get_template_fragment, mock_make_template_fragment_key
