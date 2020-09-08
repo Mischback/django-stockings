@@ -7,6 +7,10 @@ from django.test import (
     TestCase,
 )
 
+# app imports
+from stockings.models.stockitemprice import StockItemPrice
+from stockings.signals.handlers import price_information_changed
+
 
 class StockingsTestCaseBase(SimpleTestCase):
     """Base class for all app-specific tests."""
@@ -14,12 +18,20 @@ class StockingsTestCaseBase(SimpleTestCase):
     @classmethod
     def _disconnect_signal_callbacks(cls):
         """Disconnect all signal callbacks for testing."""
-        pass
+        post_save.disconnect(
+            receiver=price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.post_save",
+        )
 
     @classmethod
     def _reconnect_signal_callbacks(cls):
         """Reconnect all signal callbacks for testing."""
-        pass
+        post_save.connect(
+            price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.post_save",
+        )
 
 
 class StockingsTestCase(StockingsTestCaseBase):

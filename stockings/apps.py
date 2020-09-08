@@ -9,14 +9,6 @@ from django.conf import settings
 from django.core.checks import register as register_check
 from django.db.models.signals import post_save  # noqa: F401
 
-# app imports
-from stockings import settings as app_default_settings
-from stockings.checks import (
-    check_to_percent_precision_is_int,
-    check_use_django_auth_permissions,
-    check_use_django_auth_permissions_requires_django_contrib_auth,
-)
-
 # get a module-level logger
 logger = logging.getLogger(__name__)
 
@@ -46,6 +38,16 @@ class StockingsConfig(AppConfig):
         - registers the app-specific contribution to Django's check framework
           (see :djangoapi:`checks/` and :mod:`stockings.checks`).
         """
+        # delay app imports until now, to make sure everything else is ready
+        from stockings import settings as app_default_settings
+        from stockings.checks import (
+            check_to_percent_precision_is_int,
+            check_use_django_auth_permissions,
+            check_use_django_auth_permissions_requires_django_contrib_auth,
+        )
+        from stockings.models.stockitemprice import StockItemPrice
+        from stockings.signals.handlers import price_information_changed
+
         # inject app-specific settings
         # see https://stackoverflow.com/a/47154840
         for name in dir(app_default_settings):
@@ -58,3 +60,10 @@ class StockingsConfig(AppConfig):
         register_check(check_use_django_auth_permissions)
         register_check(check_use_django_auth_permissions_requires_django_contrib_auth)
         register_check(check_to_percent_precision_is_int)
+
+        # connect signal handlers
+        post_save.connect(
+            price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.post_save",
+        )
