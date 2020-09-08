@@ -7,7 +7,10 @@ import logging
 from django.apps import AppConfig
 from django.conf import settings
 from django.core.checks import register as register_check
-from django.db.models.signals import post_save  # noqa: F401
+from django.db.models.signals import (  # noqa: F401
+    post_save,
+    pre_delete,
+)
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -66,4 +69,9 @@ class StockingsConfig(AppConfig):
             price_information_changed,
             sender=StockItemPrice,
             dispatch_uid="stockitemprice.post_save",
+        )
+        pre_delete.connect(
+            price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.pre_delete",
         )

@@ -1,7 +1,10 @@
 """Provides app-specific classes for test cases."""
 
 # Django imports
-from django.db.models.signals import post_save  # noqa: F401
+from django.db.models.signals import (  # noqa: F401
+    post_save,
+    pre_delete,
+)
 from django.test import (
     SimpleTestCase,
     TestCase,
@@ -23,6 +26,11 @@ class StockingsTestCaseBase(SimpleTestCase):
             sender=StockItemPrice,
             dispatch_uid="stockitemprice.post_save",
         )
+        pre_delete.disconnect(
+            receiver=price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.pre_delete",
+        )
 
     @classmethod
     def _reconnect_signal_callbacks(cls):
@@ -31,6 +39,11 @@ class StockingsTestCaseBase(SimpleTestCase):
             price_information_changed,
             sender=StockItemPrice,
             dispatch_uid="stockitemprice.post_save",
+        )
+        pre_delete.connect(
+            price_information_changed,
+            sender=StockItemPrice,
+            dispatch_uid="stockitemprice.pre_delete",
         )
 
 
