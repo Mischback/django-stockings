@@ -13,7 +13,10 @@ from django.test import (  # noqa
 )
 
 # app imports
-from stockings.cache import get_template_fragment
+from stockings.cache import (
+    get_template_fragment,
+    invalidate_cache,
+)
 
 # app imports
 from .util.testcases import StockingsTestCase
@@ -86,3 +89,28 @@ class StockingsCacheTest(StockingsTestCase):
         mock_cache.set.assert_called_with(
             "foobar", mock_func.return_value, timeout=1337
         )
+
+    @mock.patch("stockings.cache.cache")
+    def test_invalidate_cache_string(self, mock_cache):
+        """Invalidate a single cache entry."""
+        test_key = "foobar"
+
+        invalidate_cache(test_key)
+
+        mock_cache.delete.assert_called_with(test_key)
+
+    @mock.patch("stockings.cache.cache")
+    def test_invalidate_cache_list(self, mock_cache):
+        """Invalidate a list of cache entries."""
+        test_key_list = ["foo", "bar"]
+
+        invalidate_cache(test_key_list)
+
+        mock_cache.delete_many.assert_called_with(test_key_list)
+
+    @mock.patch("stockings.cache.logger")
+    def test_invalidate_cache_incompatible(self, mock_logger):
+        """Log a message, if called with incompatible key."""
+        invalidate_cache(5)
+
+        self.assertTrue(mock_logger.info.called)
