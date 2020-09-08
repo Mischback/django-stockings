@@ -2,10 +2,13 @@
 
 # Django imports
 from django.db.models.signals import post_save  # noqa: F401
-from django.test import TestCase
+from django.test import (
+    SimpleTestCase,
+    TestCase,
+)
 
 
-class StockingsTestCaseBase(TestCase):
+class StockingsTestCaseBase(SimpleTestCase):
     """Base class for all app-specific tests."""
 
     @classmethod
@@ -37,7 +40,7 @@ class StockingsTestCase(StockingsTestCaseBase):
         super().tearDownClass()
 
 
-class StockingsORMTestCase(StockingsTestCase):
+class StockingsORMTestCase(StockingsTestCase, TestCase):
     """This class supports testing with fixture data.
 
     What is inside this test fixture?

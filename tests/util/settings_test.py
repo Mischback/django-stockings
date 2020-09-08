@@ -47,6 +47,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "tests.util.urls_dev"
 
+SILENCED_SYSTEM_CHECKS = [
+    # As of Django 3.1 this warning informs about an optional configuration
+    # requirement for `django.contrib.admin`. This is currently not relevant
+    # for development of `django-stockings`.
+    "admin.W411"
+]
+
 SECRET_KEY = "only-for-development"  # nosec: this is on purpose, just for development
 
 STATIC_URL = "/static/"
