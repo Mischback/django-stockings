@@ -8,10 +8,8 @@ from django import template
 from django.conf import settings
 
 # app imports
-from stockings.cache import (
-    get_template_fragment,
-    keygen_portfolioitem_list,
-)
+from stockings.cache.cache import get_template_fragment
+from stockings.cache.keygen import portfolioitem_list as keygen_portfolioitem_list
 from stockings.exceptions import StockingsTemplateError
 from stockings.views.portfolioitem import render_portfolioitems_as_table
 
