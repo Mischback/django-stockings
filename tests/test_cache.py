@@ -16,6 +16,7 @@ from django.test import (  # noqa
 from stockings.cache import (
     get_template_fragment,
     invalidate_cache,
+    keygen_portfolioitem_list,
 )
 
 # app imports
@@ -114,3 +115,23 @@ class StockingsCacheTest(StockingsTestCase):
         invalidate_cache(5)
 
         self.assertTrue(mock_logger.info.called)
+
+    @mock.patch("stockings.cache.make_template_fragment_key")
+    def test_keygen_portfolioitem_list(self, mock_make_fragment_key):
+        """Key generation relies on Django's built-in function."""
+        self.assertEqual(
+            mock_make_fragment_key.return_value, keygen_portfolioitem_list("active", 1)
+        )
+        mock_make_fragment_key.assert_called_with(
+            "portfolio.portfolioitem_list.active", [1]
+        )
+
+        mock_make_fragment_key.mock_reset()
+
+        self.assertEqual(
+            mock_make_fragment_key.return_value,
+            keygen_portfolioitem_list("inactive", 1),
+        )
+        mock_make_fragment_key.assert_called_with(
+            "portfolio.portfolioitem_list.inactive", [1]
+        )
