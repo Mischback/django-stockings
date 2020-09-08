@@ -43,14 +43,12 @@ def find_portfolioitem_list_caches(instance):
     if isinstance(instance, StockItemPrice):
         logger.debug("[dev] Found instance of StockItemPrice!")
 
-        # Find a list of Portfolio Ids, that contain the `StockItem`
-        portfolio_list = (
+        for portfolio_id in (
             Portfolio.objects.filter(portfolioitems__stockitem=instance.stockitem)
             .values_list("id", flat=True)
             .distinct()
-        )
-
-        for portfolio_id in portfolio_list:
+            .iterator()
+        ):
             key_list.append(keygen_portfolioitem_list("active", portfolio_id))
 
     return key_list

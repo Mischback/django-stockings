@@ -1,4 +1,4 @@
-"""Tests for module `stockings.cache`."""
+"""Tests for module `stockings.cache.keygen`."""
 
 # Python imports
 from unittest import (  # noqa
