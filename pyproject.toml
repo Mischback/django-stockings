@@ -89,6 +89,23 @@ commands = [
   ]
 ]
 
+[tool.tox.env.django]
+env_name = "django"
+basepython = [ "3.13" ]
+deps = [
+  "-r {toxinidir}/requirements/development.txt",
+]
+set_env = { "PYTHONDONTWRITEBYTECODE" = "1" }
+skip_install = true
+commands = [
+  [
+  "django-admin",
+  { replace="posargs", default="version", extend=true },
+  "--settings=tests.util.settings_dev",
+  "--pythonpath=./",
+  ]
+]
+
 legacy_tox_ini = """
 [tox]
 minversion = 3.26.0

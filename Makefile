@@ -96,7 +96,9 @@ django/compilemessages :
 ## create a superuser account with username: "admin" and password: "foobar"
 ## @category Django
 django/createsuperuser : $(TOX_VENV_INSTALLED)
-	$(TOX_CMD) -q -e djangosuperuser
+	# $(TOX_CMD) -q -e djangosuperuser
+	# $(TOX_CMD) exec -e django -- "PYTHONDONTWRITEBYTECODE=1 DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@root.local DJANGO_SUPERUSER_PASSWORD=foobar django-admin createsuperuser --noinput --settings=tests.util.settings_dev --pythonpath=./"
+	$(MAKE) django django_command="createsuperuser"
 .PHONY : django/createsuperuser
 
 ## "$ django-admin makemessages"; collect the app's localizable strings into *.po
