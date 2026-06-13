@@ -1,32 +1,6 @@
-# ### COVERAGE ###
-[tool.coverage.run]
-branch = true
-source = [
-  "stockings",
-  "tests"
-]
-omit = [
-  "*/__init__.py",
-  "*/migrations/*",
-  "*/tests/util/*",
-  "*/tests/runtests.py"
-]
-
-[tool.coverage.report]
-precision = 1
-show_missing = true
-fail_under = 95
-
-
 # ### DJLINT ###
 [tool.djlint]
 ignore = "T028,H030,H031"
-
-
-# ### DOC8 ###
-[tool.doc8]
-# Just use doc8's default configuration
-
 
 # ### ISORT ###
 [tool.isort]
@@ -37,30 +11,26 @@ profile = "black"
 # use_parantheses = true # included in profile "black"
 # ensure_newline_before_comments = true # included in profile "black"
 # line_length = 88 # included in profile "black", 79 in "django"
-combine_as_imports = true # included in profile "django"
+combine_as_imports = true  # included in profile "django"
+sections = [ "FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER" ]
 default_section = "THIRDPARTY"
-
 known_first_party = "stockings"
-known_django = "django"
-sections = [
-  "FUTURE",
-  "STDLIB",
-  "DJANGO",
-  "THIRDPARTY",
-  "FIRSTPARTY",
-  "LOCALFOLDER"
-]
+skip_glob = [ "*/migrations/*", ".env", ".tox", "settings_dev.py", "settings_test.py" ]
 import_heading_stdlib = "Python imports"
-import_heading_django = "Django imports"
+import_heading_thirdparty = "external imports"
 import_heading_firstparty = "app imports"
 import_heading_localfolder = "local imports"
-import_heading_thirdparty = "external imports"
-skip_glob = [
-  ".env",
-  ".tox",
-  "*/migrations/*",
-  "settings_dev.py"
-]
+import_heading_django = "Django imports"
+known_django = "django"
+
+# ### COVERAGE ###
+[tool.coverage]
+run.branch = true
+run.omit = [ "*/__init__.py", "*/migrations/*", "*/tests/runtests.py", "*/tests/util/*" ]
+run.source = [ "stockings", "tests" ]
+report.fail_under = 95
+report.precision = 1
+report.show_missing = true
 
 # ### TOX configuration
 #
@@ -71,100 +41,27 @@ skip_glob = [
 requires = [
   "tox>4.41",
 ]
-
-[tool.tox.env.util]
-env_name = "util"
-basepython = [ "3.13" ]
-deps = [
-  "-r {toxinidir}/requirements/util.txt",
-]
-set_env = { "PYTHONDONTWRITEBYTECODE" = "1" }
-passenv = [
-  "SSH_AUTH_SOCK"
-]
-skip_install = true
-commands = [
+env.django.basepython = [ "3.13" ]
+env.django.commands = [
   [
-    { replace="posargs", default=["pre-commit run"], extend=true }
+    "django-admin",
+    { replace = "posargs", default = "version", extend = true },
+    "--settings=tests.util.settings_dev",
+    "--pythonpath=./",
   ]
 ]
-
-[tool.tox.env.django]
-env_name = "django"
-basepython = [ "3.13" ]
-deps = [
+env.django.deps = [
   "-r {toxinidir}/requirements/development.txt",
 ]
-set_env = { "PYTHONDONTWRITEBYTECODE" = "1" }
-skip_install = true
-commands = [
-  [
-  "django-admin",
-  { replace="posargs", default="version", extend=true },
-  "--settings=tests.util.settings_dev",
-  "--pythonpath=./",
-  ]
+env.django.env_name = "django"
+env.django.set_env = { PYTHONDONTWRITEBYTECODE = "1" }
+env.django.skip_install = true
+env.util.basepython = [ "3.13" ]
+env.util.commands = [ [ { replace = "posargs", default = [ "pre-commit run" ], extend = true } ] ]
+env.util.deps = [
+  "-r {toxinidir}/requirements/util.txt",
 ]
-
-legacy_tox_ini = """
-[tox]
-minversion = 3.26.0
-
-[testenv:pre-commit]
-basepython = python3
-deps =
-  -r {toxinidir}/requirements/util.txt
-envdir = {toxworkdir}/pre-commit
-setenv =
-  PYTHONDONTWRITEBYTECODE=1
-passenv = SSH_AUTH_SOCK
-skip_install = true
-commands =
-  {posargs:pre-commit run}
-
-[testenv:pip-tools]
-basepython = python3
-deps =
-  -r {toxinidir}/requirements/pip-tools.txt
-envdir = {toxworkdir}/pip-tools
-setenv =
-  PYTHONDONTWRITEBYTECODE=1
-skip_install = true
-commands =
-  pip-compile --resolver=backtracking {posargs}
-
-[testenv:django]
-basepython = python3
-deps =
-  -r {toxinidir}/requirements/development.txt
-envdir = {toxworkdir}/django
-setenv =
-  PYTHONDONTWRITEBYTECODE=1
-skip_install = true
-commands =
-  django-admin {posargs:version} --settings=tests.util.settings_dev --pythonpath=./
-
-[testenv:djangosuperuser]
-basepython = {[testenv:django]basepython}
-deps = {[testenv:django]deps}
-envdir = {[testenv:django]envdir}
-setenv =
-  PYTHONDONTWRITEBYTECODE=1
-  DJANGO_SUPERUSER_USERNAME=admin
-  DJANGO_SUPERUSER_EMAIL=admin@root.local
-  DJANGO_SUPERUSER_PASSWORD=foobar
-skip_install = {[testenv:django]skip_install}
-commands =
-  django-admin createsuperuser --noinput --settings=tests.util.settings_dev --pythonpath=./
-
-[testenv:util]
-basepython = python3
-deps =
-  -r {toxinidir}/requirements/util.txt
-envdir = {toxworkdir}/util
-setenv =
-  PYTHONDONTWRITEBYTECODE=1
-skip_install = true
-commands =
-  {posargs:pre-commit run}
-"""
+env.util.env_name = "util"
+env.util.passenv = [ "SSH_AUTH_SOCK" ]
+env.util.set_env = { PYTHONDONTWRITEBYTECODE = "1" }
+env.util.skip_install = true

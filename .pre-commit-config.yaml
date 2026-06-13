@@ -47,6 +47,12 @@ repos:
     rev: v2.0.0
     hooks:
       - id: doc8
+  # opinionated formatter for the tox section in pyproject.toml
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: "v2.24.1"
+    hooks:
+      - id: pyproject-fmt
+  # various small checks and fixes
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:

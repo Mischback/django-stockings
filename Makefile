@@ -93,11 +93,9 @@ django/compilemessages :
 	$(MAKE) django django_command="compilemessages --ignore=.tox --ignore=tests --ignore=docs"
 .PHONY : django/compilemessages
 
-## create a superuser account with username: "admin" and password: "foobar"
+## create a superuser
 ## @category Django
 django/createsuperuser : $(TOX_VENV_INSTALLED)
-	# $(TOX_CMD) -q -e djangosuperuser
-	# $(TOX_CMD) exec -e django -- "PYTHONDONTWRITEBYTECODE=1 DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@root.local DJANGO_SUPERUSER_PASSWORD=foobar django-admin createsuperuser --noinput --settings=tests.util.settings_dev --pythonpath=./"
 	$(MAKE) django django_command="createsuperuser"
 .PHONY : django/createsuperuser
 
