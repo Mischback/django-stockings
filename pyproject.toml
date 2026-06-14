@@ -1,0 +1,67 @@
+# ### DJLINT ###
+[tool.djlint]
+ignore = "T028,H030,H031"
+
+# ### ISORT ###
+[tool.isort]
+profile = "black"
+# include_trailing_comma = true # included in profile "black" & "django"
+# force_grid_wrap = true # included in profile "black"
+# multi_line_output = 3 # included in profile "black"; 5 in "django"
+# use_parantheses = true # included in profile "black"
+# ensure_newline_before_comments = true # included in profile "black"
+# line_length = 88 # included in profile "black", 79 in "django"
+combine_as_imports = true  # included in profile "django"
+sections = [ "FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER" ]
+default_section = "THIRDPARTY"
+known_first_party = "stockings"
+skip_glob = [ "*/migrations/*", ".env", ".tox", "settings_dev.py", "settings_test.py" ]
+import_heading_stdlib = "Python imports"
+import_heading_thirdparty = "external imports"
+import_heading_firstparty = "app imports"
+import_heading_localfolder = "local imports"
+import_heading_django = "Django imports"
+known_django = "django"
+
+# ### COVERAGE ###
+[tool.coverage]
+run.branch = true
+run.omit = [ "*/__init__.py", "*/migrations/*", "*/tests/runtests.py", "*/tests/util/*" ]
+run.source = [ "stockings", "tests" ]
+report.fail_under = 95
+report.precision = 1
+report.show_missing = true
+
+# ### TOX configuration
+#
+# ``tox`` is run to manage different virtual environments for different tasks.
+# It is **not** used for its main purpose of running tests with different
+# environments.
+[tool.tox]
+requires = [
+  "tox>4.41",
+]
+env.django.basepython = [ "3.13" ]
+env.django.commands = [
+  [
+    "django-admin",
+    { replace = "posargs", default = "version", extend = true },
+    "--settings=tests.util.settings_dev",
+    "--pythonpath=./",
+  ]
+]
+env.django.deps = [
+  "-r {toxinidir}/requirements/development.txt",
+]
+env.django.env_name = "django"
+env.django.set_env = { PYTHONDONTWRITEBYTECODE = "1" }
+env.django.skip_install = true
+env.util.basepython = [ "3.13" ]
+env.util.commands = [ [ { replace = "posargs", default = [ "pre-commit run" ], extend = true } ] ]
+env.util.deps = [
+  "-r {toxinidir}/requirements/util.txt",
+]
+env.util.env_name = "util"
+env.util.passenv = [ "SSH_AUTH_SOCK" ]
+env.util.set_env = { PYTHONDONTWRITEBYTECODE = "1" }
+env.util.skip_install = true
