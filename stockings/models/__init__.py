@@ -7,3 +7,4 @@
 # app imports
 from stockings.models.depot import Depot  # noqa: F401
 from stockings.models.portfolio import Portfolio  # noqa: F401
+from stockings.models.stock import StockItem  # noqa: F401

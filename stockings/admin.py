@@ -10,6 +10,7 @@ from django.contrib import admin
 # app imports
 from stockings.models.depot import Depot
 from stockings.models.portfolio import Portfolio
+from stockings.models.stock import StockItem
 
 
 @admin.register(Portfolio)
@@ -19,4 +20,9 @@ class PortfolioAdmin(admin.ModelAdmin):  # noqa: D101
 
 @admin.register(Depot)
 class DepotAdmin(admin.ModelAdmin):  # noqa: D101
+    pass
+
+
+@admin.register(StockItem)
+class StockItemAdmin(admin.ModelAdmin):  # noqa: D101
     pass
