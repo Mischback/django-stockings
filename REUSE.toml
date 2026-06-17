@@ -23,6 +23,7 @@ path = [
   "stockings/migrations/0001_initial.py",
   "stockings/migrations/0002_depot.py",
   "stockings/migrations/0003_stockitem.py",
+  "stockings/migrations/0004_stockitemprice.py",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"

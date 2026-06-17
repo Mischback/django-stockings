@@ -4,7 +4,11 @@
 
 """These classes represent financial assets."""
 
+# Python imports
+from datetime import date
+
 # Django imports
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -14,6 +18,10 @@ from stockings.exceptions import StockingsModelException
 
 class StockItemException(StockingsModelException):
     """Base class for all exceptions related to :class:`~stockings.models.stock.StockItem`."""
+
+
+class StockItemPriceException(StockingsModelException):
+    """Base class for all exceptions realted to :class:`~stockings.models.stock.StockItemPrice`."""
 
 
 class StockItem(models.Model):
@@ -92,3 +100,62 @@ class StockItem(models.Model):
             return "[StockItem] {} ({})".format(self.name, self.isin)
         else:
             return "[StockItem] {}".format(self.isin)
+
+
+class StockItemPrice(models.Model):
+    """Tracks the price / value of a given :class:`~stockings.models.stock.StockItem`."""
+
+    stock_item = models.ForeignKey(
+        StockItem,
+        on_delete=models.CASCADE,
+        related_name="prices",
+        unique_for_date="_price_timestamp",
+    )
+    """Reference to a :class:`~stockings.models.stock.StockItem`.
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.ForeignKey` to
+    :class:`~stockings.models.stock.StockItem` with ``on_delete=CASCADE``,
+    meaning that, if the ``StockItem`` object is deleted, all referencing
+    ``StockItemPrice`` objects will be discardeda aswell.
+
+    As an additional constraint, there might be only one ``StockItemPrice``
+    instance for any given date per ``StockItem``.
+
+    The name of the backward relation (``related_name``) is set to ``"prices"``.
+    """
+
+    _value = models.DecimalField(
+        decimal_places=6, max_digits=15, validators=[MinValueValidator(0.000001)]
+    )
+    """The actual value of the :attr:`price` attribute.
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DecimalField`
+    with a precision of 6 decimal places. This should cover enough precision
+    for tracking of asset values aswell as future currency-related conversions.
+    """
+
+    _timestamp = models.DateField(default=date.today)
+    """The ``date`` part of the :attr:`price` attribute.
+
+    Notes
+    -----
+    This is implemented as a :class:`~django.db.models.DateField`, so it only
+    tracks days and no full timestamps. As the app is targeted for long-term
+    tracking of investments, that should be sufficient.
+    """
+
+    class Meta:  # noqa: D106
+        app_label = "stockings"
+        get_latest_by = "_timestamp"
+        ordering = ["-_timestamp", "stock_item"]
+        verbose_name = _("StockItemPrice")
+        verbose_name_plural = _("StockItemPrices")
+
+    def __str__(self):  # noqa: D105
+        return "{} - {} {} ({})".format(
+            self.stock_item, "foo", self._value, self._timestamp
+        )
