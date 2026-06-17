@@ -5,6 +5,6 @@
 """App-specific models."""
 
 # app imports
-from stockings.models.depot import Depot  # noqa: F401
+from stockings.models.depot import Depot, DepotItem  # noqa: F401
 from stockings.models.portfolio import Portfolio  # noqa: F401
 from stockings.models.stock import StockItem, StockItemPrice  # noqa: F401
