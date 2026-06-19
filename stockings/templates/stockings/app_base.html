@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>
+      {% block page_title %}stockings development template{% endblock page_title %}
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="{% static "stockings/style.css" %}" rel="stylesheet" type="text/css">
+    <script src="{% static "stockings/stockings.js" %}" defer></script>
+  </head>
+  <body>
+{% block html_body %}
+    <nav id="penthouse-nav">
+      <ul>
+        <li><a href="#">Portfolio</a></li>
+      </ul>
+    </nav>
+    <div id="stockings-main">
+  {% block main %}
+      foobar
+  {% endblock main %}
+    </div>
+{% endblock html_body %}
+  </body>
+</html>

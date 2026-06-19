@@ -1,0 +1,96 @@
+{% extends "stockings/app_base.html" %}
+
+{% load i18n %}
+
+{% block page_title %}FIXME{% endblock page_title %}
+
+{% block main %}
+<main id="stockings-depotitem" class="stockings-depotitem">
+  <header>
+    <h6>{{ depotitem.depot }}</h6>
+    <h2>{{ depotitem.stock_item.name }}</h2>
+    <p class="isin">{{ depotitem.stock_item.isin }}</p>
+  </header>
+
+<section id="depotitem-detail-summary" class="collapsible-container">
+  <header class="collapsible-header">
+    <h3>Summary</h3>
+  </header>
+  <section class="collapsible-content">
+    <table>
+      <thead>
+        <tr>
+          <th>Kennzahl</th>
+          <th>Wert</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{% translate "Market Value" context "Kurswert" %}</td>
+          <td>Stückzahl * aktueller Kurs</td>
+        </tr>
+        <tr>
+          <td>{% translate "Total Position" context "Anzahl der Anteile" %}</td>
+          <td>Stückzahl</td>
+        </tr>
+        <tr>
+          <td>{% translate "Purchase Price" context "Einstandskurs" %}</td>
+          <td>Summe aller Kaufpreise sowie Kaufgebühren / Anteile</td>
+        </tr>
+        <tr>
+          <td>{% translate "Dividends" context "Dividenden" %}</td>
+          <td>Summe aller Dividenden</td>
+        </tr>
+        <tr>
+          <td>{% translate "Realized Profit" context "Realisierte Gewinne" %}</td>
+          <td>Summe aller realisierten Gewinne (Teilverkäufe)</td>
+        </tr>
+        <tr>
+          <td>{% translate "Fees" context "Summe aller Gebühren" %}</td>
+          <td>Summe aller Gebühren</td>
+        </tr>
+        <tr>
+          <td>??? kummulierter Cashflow?</td>
+          <td>Summe(Dividenden, Verkaufserlöse) - Summe(Kaufpreise, Gebühren)</td>
+        </tr>
+        <tr>
+          <td>??? Gesamtwert?</td>
+          <td>kummulierter Cashflow + Kurswert</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+
+<section id="depotitem-detail-cashflows" class="collapsible-container">
+  <header class="collapsible-header">
+    <h3>Cashflow</h3>
+  </header>
+  <section class="collapsible-content">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Timestamp</th>
+          <th>Quantity</th>
+          <th>Price/unit</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for flow in depotitem.cashflows.all %}
+        <tr>
+          <td>{{ flow.flow_type }}</td>
+          <td>{{ flow.timestamp }}</td>
+          <td>{{ flow.quantity }}</td>
+          <td>{{ flow.price_per_unit }}</td>
+          <td>{{ flow.price_total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</section>
+
+</main>
+{% endblock main %}
