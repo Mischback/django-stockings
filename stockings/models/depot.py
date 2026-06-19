@@ -111,6 +111,35 @@ class DepotItem(models.Model):
 
         return buys - sells
 
+    @property
+    def market_value(self):
+        """Provide the current value ``(number of stocks * price per stock)``."""
+        return "NOT YET IMPLEMENTED!"
+
+    @property
+    def avg_buy_price(self):
+        """Provide the average price of purchases.
+
+        This is the sum of all ``BUY`` transactions and their respective ``FEE``
+        transactions.
+        """
+        return "NOT YET IMPLEMENTED!"
+
+    @property
+    def total_fees(self):
+        """Provide the sum of all fees."""
+        return "NOT YET IMPLEMENTED!"
+
+    @property
+    def buy_fees(self):
+        """Provide the sum of all fees from ``BUY`` transactions."""
+        return "NOT YET IMPLEMENTED!"
+
+    @property
+    def sell_fees(self):
+        """Provide the sum of all fees from ``SELL`` transactions."""
+        return "NOT YET IMPLEMENTED!"
+
 
 class DepotItemCashflow(models.Model):
     """Used to track cashflow into or out of a :class:`~stockings.models.depot.DepotItem`."""

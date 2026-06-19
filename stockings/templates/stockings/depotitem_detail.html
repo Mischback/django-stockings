@@ -27,15 +27,15 @@
       <tbody>
         <tr>
           <td>{% translate "Market Value" context "Kurswert" %}</td>
-          <td>Stückzahl * aktueller Kurs</td>
+          <td>{{ depotitem.market_value }}</td>
         </tr>
         <tr>
           <td>{% translate "Total Position" context "Anzahl der Anteile" %}</td>
-          <td>Stückzahl</td>
+          <td>{{ depotitem.quantity }}</td>
         </tr>
         <tr>
           <td>{% translate "Purchase Price" context "Einstandskurs" %}</td>
-          <td>Summe aller Kaufpreise sowie Kaufgebühren / Anteile</td>
+          <td>{{ depotitem.avg_buy_price }}</td>
         </tr>
         <tr>
           <td>{% translate "Dividends" context "Dividenden" %}</td>
@@ -47,7 +47,7 @@
         </tr>
         <tr>
           <td>{% translate "Fees" context "Summe aller Gebühren" %}</td>
-          <td>Summe aller Gebühren</td>
+          <td>{{ depotitem.total_fees }}</td>
         </tr>
         <tr>
           <td>??? kummulierter Cashflow?</td>
