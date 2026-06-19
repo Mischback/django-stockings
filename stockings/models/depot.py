@@ -168,9 +168,7 @@ class DepotItemCashflow(models.Model):
     """Provides a semantic meaning to the cashflow.
 
     There are different types of cashflows, and they have to be tracked in
-    dedicated ways to allow for better analysis. However, while the types
-    provide semantic meaning, they don't directly influence the *direction of
-    the cashflow*.
+    dedicated ways to allow for better analysis.
     """
 
     timestamp = models.DateTimeField(default=timezone.now)
@@ -182,7 +180,7 @@ class DepotItemCashflow(models.Model):
     """
 
     quantity = models.DecimalField(
-        decimal_places=8, max_digits=18, validators=[MinValueValidator(0.00000001)]
+        decimal_places=8, max_digits=18, validators=[MinValueValidator(0.00000000)]
     )
     """Specify the quantity of the operation.
 
@@ -190,11 +188,7 @@ class DepotItemCashflow(models.Model):
     number of stocks that are the base for the cashflow, e.g. *buying 10 shares
     of foo* or *receiving dividends for 235 shares of bar*.
 
-    ``TAX`` and ``FEE`` should be specified with a ``quantity`` of ``1`` and
-    a matching :attr:``price_per_unit``
-
-    The ``quantity`` is always positive and is not used to provide the direction
-    of the cashflow (see :attr:`price_per_unit`).
+    ``TAX`` and ``FEE`` should be specified with a ``quantity`` of ``0``.
 
     Notes
     -----
@@ -203,12 +197,60 @@ class DepotItemCashflow(models.Model):
     *state-of-the-art* with most brokers and crypto exchanges.
     """
 
-    price_per_unit = models.DecimalField(decimal_places=6, max_digits=15)
+    price_per_unit = models.DecimalField(
+        decimal_places=6,
+        max_digits=15,
+        default=0.0,
+        validators=[MinValueValidator(0.000000)],
+    )
     """The price per unit of this cashflow.
 
-    This attribute also controls the direction of the cashflow: for ``BUY``,
-    ``TAX`` and ``FEE`` types, ``price_per_unit`` is negative, while ``SELL``
-    and ``DIVIDEND`` are positive.
+    For the ``BUY`` and ``SELL`` types, this is the price at the time of the
+    actual transaction. For the ``DIVIDEND`` type, it's the dividend per share.
+
+    ``TAX`` and ``FEE`` should be specified with a ``price_per_unit`` of ``0``.
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DecimalField`
+    with a precision of 6 decimal places. This should cover enough precision
+    for tracking of asset values aswell as future currency-related conversions.
+    """
+
+    fees = models.DecimalField(
+        decimal_places=6,
+        max_digits=15,
+        default=0.0,
+        validators=[MinValueValidator(0.000000)],
+    )
+    """Fees related to this cashflow.
+
+    Typically, buying and selling of shares comes with a broker-specific fee.
+    This is included directly in the actual transaction.
+
+    Please note: There is also a type ``FEE``, which is meant to track
+    additional fees, that are not directly related to another transaction.
+
+    Notes
+    -----
+    This attribute is implemented as :class:`~django.db.models.DecimalField`
+    with a precision of 6 decimal places. This should cover enough precision
+    for tracking of asset values aswell as future currency-related conversions.
+    """
+
+    taxes = models.DecimalField(
+        decimal_places=6,
+        max_digits=15,
+        default=0.0,
+        validators=[MinValueValidator(0.000000)],
+    )
+    """Taxes related to this cashflow.
+
+    Selling of shares or dividends typically have taxes applied to them. Those
+    are included directly in the actual transaction.
+
+    Please note: There is also a type ``TAX``, which is meant to track
+    additional taxes, that are not directly related to another transaction.
 
     Notes
     -----
@@ -219,15 +261,25 @@ class DepotItemCashflow(models.Model):
 
     class Meta:  # noqa: D106
         app_label = "stockings"
-        ordering = ["-timestamp", "item", "flow_type"]
+        ordering = ["-timestamp"]
         verbose_name = _("DepotItemCashflow")
         verbose_name_plural = _("DepotItemCashflows")
 
     def __str__(self):  # noqa: D105
         return "[{}] {} - {} ({})".format(
-            self.timestamp, self.flow_type, self.item, self.price_total
+            self.timestamp, self.flow_type, self.item, self.net_cashflow
         )
 
     @property
-    def price_total(self):  # noqa: D102
-        return self.price_per_unit * self.quantity
+    def net_cashflow(self):  # noqa: D102
+        base_value = self.quantity * self.price_per_unit
+        costs = self.fees + self.taxes
+
+        if self.flow_type == "BUY":
+            return -base_value - costs
+        elif self.flow_type == "SELL":
+            return base_value - costs
+        elif self.flow_type == "DIVIDEND":
+            return base_value - costs
+        else:
+            return -costs

@@ -74,7 +74,9 @@
           <th>Timestamp</th>
           <th>Quantity</th>
           <th>Price/unit</th>
-          <th>Price</th>
+          <th>Fees</th>
+          <th>Taxes</th>
+          <th>Net Cashflow</th>
         </tr>
       </thead>
       <tbody>
@@ -84,7 +86,9 @@
           <td>{{ flow.timestamp }}</td>
           <td>{{ flow.quantity }}</td>
           <td>{{ flow.price_per_unit }}</td>
-          <td>{{ flow.price_total }}</td>
+          <td>{{ flow.fees }}</td>
+          <td>{{ flow.taxes }}</td>
+          <td>{{ flow.net_cashflow }}</td>
         </tr>
         {% endfor %}
       </tbody>

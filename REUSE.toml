@@ -26,6 +26,7 @@ path = [
   "stockings/migrations/0004_stockitemprice.py",
   "stockings/migrations/0005_depotitem.py",
   "stockings/migrations/0006_remove_depotitem_quantity_depotitemcashflow.py",
+  "stockings/migrations/0007_alter_depotitemcashflow_options_and_more.py",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
