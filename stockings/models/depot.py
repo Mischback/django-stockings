@@ -4,6 +4,9 @@
 
 """The ``Depot`` class represents one account to manage financial assets."""
 
+# Python imports
+from decimal import Decimal
+
 # Django imports
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -96,18 +99,12 @@ class DepotItem(models.Model):
         are no sanity checks in place, so the returned value might be below
         zero, which does not make sense semantically.
         """
-        buys = (
-            self.cashflows.filter(flow_type="BUY").aggregate(models.Sum("quantity"))[
-                "quantity__sum"
-            ]
-            or 0
-        )
-        sells = (
-            self.cashflows.filter(flow_type="SELL").aggregate(models.Sum("quantity"))[
-                "quantity__sum"
-            ]
-            or 0
-        )
+        buys = self.cashflows.filter(flow_type="BUY").aggregate(models.Sum("quantity"))[
+            "quantity__sum"
+        ] or Decimal("0")
+        sells = self.cashflows.filter(flow_type="SELL").aggregate(
+            models.Sum("quantity")
+        )["quantity__sum"] or Decimal("0")
 
         return buys - sells
 
@@ -117,28 +114,54 @@ class DepotItem(models.Model):
         return "NOT YET IMPLEMENTED!"
 
     @property
-    def avg_buy_price(self):
+    def buy_price(self):
         """Provide the average price of purchases.
 
         This is the sum of all ``BUY`` transactions and their respective ``FEE``
         transactions.
         """
-        return "NOT YET IMPLEMENTED!"
+        buy_cashflows = self.cashflows.filter(flow_type="BUY")
+
+        total_cost = Decimal("0")
+        total_quantity = Decimal("0")
+
+        for cf in buy_cashflows:
+            total_cost += (cf.quantity * cf.price_per_unit) + cf.fees + cf.taxes
+            total_quantity += cf.quantity
+
+        if total_quantity > 0:
+            return (total_cost, total_cost / total_quantity)
+
+        return (total_cost, Decimal("0"))
+
+    @property
+    def total_dividends(self):
+        """Provide the sum of all dividends."""
+        dividend_cashflows = self.cashflows.filter(flow_type="DIVIDEND")
+
+        result = dividend_cashflows.aggregate(
+            total=models.Sum(
+                (models.F("quantity") * models.F("price_per_unit"))
+                - models.F("taxes")
+                - models.F("fees")
+            )
+        )
+
+        return result["total"] or Decimal("0")
 
     @property
     def total_fees(self):
         """Provide the sum of all fees."""
-        return "NOT YET IMPLEMENTED!"
+        return self.cashflows.aggregate(total=models.Sum("fees"))["total"] or Decimal(
+            "0"
+        )
 
     @property
-    def buy_fees(self):
-        """Provide the sum of all fees from ``BUY`` transactions."""
-        return "NOT YET IMPLEMENTED!"
-
-    @property
-    def sell_fees(self):
-        """Provide the sum of all fees from ``SELL`` transactions."""
-        return "NOT YET IMPLEMENTED!"
+    def total_taxes(self):
+        """Provide the sum of all taxes."""
+        return self.cashflows.aggregate(total=models.Sum("taxes"))["total"] or Decimal(
+            "0"
+        )
 
 
 class DepotItemCashflow(models.Model):
