@@ -109,7 +109,7 @@ class StockItemPrice(models.Model):
         StockItem,
         on_delete=models.CASCADE,
         related_name="prices",
-        unique_for_date="_price_timestamp",
+        unique_for_date="_timestamp",
     )
     """Reference to a :class:`~stockings.models.stock.StockItem`.
 
