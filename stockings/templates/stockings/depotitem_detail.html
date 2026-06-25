@@ -34,12 +34,16 @@
           <td>{{ depotitem.quantity }}</td>
         </tr>
         <tr>
+          <td>{% translate "Active Investment" context "Aktueller Bestand * durchschnittlicher Kaufpreis" %}</td>
+          <td>{{ depotitem.active_investment }}</td>
+        </tr>
+        <tr>
           <td>{% translate "Total Investment" context "Summe aller Käufe (inkl. Gebühren)" %}</td>
-          <td>{{ depotitem.buy_price.0 }}</td>
+          <td>{{ depotitem.total_investment }}</td>
         </tr>
         <tr>
           <td>{% translate "Purchase Price" context "Einstandskurs" %}</td>
-          <td>{{ depotitem.buy_price.1 }}</td>
+          <td>{{ depotitem.avg_buy_price }}</td>
         </tr>
         <tr>
           <td>{% translate "Dividends" context "Dividenden" %}</td>
@@ -47,7 +51,7 @@
         </tr>
         <tr>
           <td>{% translate "Realized Profit" context "Realisierte Gewinne" %}</td>
-          <td>Summe aller realisierten Gewinne (Teilverkäufe)</td>
+          <td>{{ depotitem.realized_gains }}</td>
         </tr>
         <tr>
           <td>{% translate "Fees" context "Summe aller Gebühren" %}</td>
@@ -58,12 +62,12 @@
           <td>{{ depotitem.total_taxes }}</td>
         </tr>
         <tr>
-          <td>??? kummulierter Cashflow?</td>
-          <td>Summe(Dividenden, Verkaufserlöse) - Summe(Kaufpreise, Gebühren)</td>
+          <td>{% translate "Cumulative Cashflow" context "Kumulativer Cashflow" %}</td>
+          <td>{{ depotitem.total_cashflow }}</td>
         </tr>
         <tr>
-          <td>??? Gesamtwert?</td>
-          <td>kummulierter Cashflow + Kurswert</td>
+          <td>{% translate "Total Value" context "Gesamtwert (kumulativer Cashflow + Kurswert)" %}</td>
+          <td>{{ depotitem.total_value }}</td>
         </tr>
       </tbody>
     </table>

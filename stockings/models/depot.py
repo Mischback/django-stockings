@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # app imports
@@ -99,14 +100,166 @@ class DepotItem(models.Model):
         are no sanity checks in place, so the returned value might be below
         zero, which does not make sense semantically.
         """
-        buys = self.cashflows.filter(flow_type="BUY").aggregate(models.Sum("quantity"))[
-            "quantity__sum"
-        ] or Decimal("0")
-        sells = self.cashflows.filter(flow_type="SELL").aggregate(
-            models.Sum("quantity")
-        )["quantity__sum"] or Decimal("0")
+        return self.__quantity
 
-        return buys - sells
+    @cached_property
+    def __quantity(self):
+        try:
+            return self._quantity
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._quantity
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
+
+    @property
+    def avg_buy_price(self):
+        """Provide the average buy price per share.
+
+        Every cashflow with ``flowtype="BUY"`` changes this value.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated instances of
+        :class:`~stockings.models.depot.DepotItemCashflow`. The actual
+        calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__avg_buy_price
+
+    @cached_property
+    def __avg_buy_price(self):
+        try:
+            return self._avg_buy_price
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._avg_buy_price
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
+
+    @property
+    def active_investment(self):
+        """Provide the active investment of this position.
+
+        *Active Investment* is meant to be the money bound by the current
+        position and is calculated by the current
+        :attr:`~stockings.models.depot.DepotItem.quantity` multiplied by the
+        :attr:`~stockings.models.depot.DepotItem.avg_buy_price`.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined and requires evalation of the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects, which is
+        handled internally.
+        """
+        return self.quantity * self.avg_buy_price
+
+    @property
+    def total_investment(self):
+        """Provide the total investment of this position.
+
+        This includes all buy transactions (including their fees and taxes) over
+        the whole lifespan of the position, while
+        :attr:`~stockings.models.depot.DepotItem.active_investment` only
+        provides the currently bound money. If there never was any sell
+        transaction, both values *should* be identical.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects and is the
+        sum of all ``flowtype="BUY"`` instances. It does include *fees* and
+        *taxes* of those buy operations, however, it **does not include** other
+        fees and/or taxes.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__total_investment
+
+    @cached_property
+    def __total_investment(self):
+        try:
+            return self._total_investment
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._total_investment
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
+
+    @property
+    def total_cashflow(self):
+        """Provide the total cashflow.
+
+        The total cashflow is the sum over all transactions/cashflows.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__total_cashflow
+
+    @cached_property
+    def __total_cashflow(self):
+        try:
+            return self._total_cashflow
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._total_cashflow
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
+
+    @property
+    def realized_gains(self):
+        """Provide the sum of all realized gains.
+
+        Realized gains happen by (partially) selling stocks.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__realized_gains
+
+    @cached_property
+    def __realized_gains(self):
+        try:
+            return self._realized_gains
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._realized_gains
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
 
     @property
     def market_value(self):
@@ -114,54 +267,155 @@ class DepotItem(models.Model):
         return "NOT YET IMPLEMENTED!"
 
     @property
-    def buy_price(self):
-        """Provide the average price of purchases.
+    def total_value(self):
+        """Provide the total value of the position.
 
-        This is the sum of all ``BUY`` transactions and their respective ``FEE``
-        transactions.
+        This is the sum of
+        :attr:`~stockings.models.depot.DepotItem.total_cashflow` and
+        :attr:`~stockings.models.depot.DepotItem.market_value`.
         """
-        buy_cashflows = self.cashflows.filter(flow_type="BUY")
-
-        total_cost = Decimal("0")
-        total_quantity = Decimal("0")
-
-        for cf in buy_cashflows:
-            total_cost += (cf.quantity * cf.price_per_unit) + cf.fees + cf.taxes
-            total_quantity += cf.quantity
-
-        if total_quantity > 0:
-            return (total_cost, total_cost / total_quantity)
-
-        return (total_cost, Decimal("0"))
+        # TODO: needs implementation of ``market_value``!
+        # return self.total_cashflow + self.market_value
+        return "NOT YET IMPLEMENTED!"
 
     @property
     def total_dividends(self):
-        """Provide the sum of all dividends."""
-        dividend_cashflows = self.cashflows.filter(flow_type="DIVIDEND")
+        """Provide the sum of all dividends.
 
-        result = dividend_cashflows.aggregate(
-            total=models.Sum(
-                (models.F("quantity") * models.F("price_per_unit"))
-                - models.F("taxes")
-                - models.F("fees")
-            )
-        )
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__total_dividends
 
-        return result["total"] or Decimal("0")
+    @cached_property
+    def __total_dividends(self):
+        try:
+            return self._total_dividends
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._total_dividends
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
 
     @property
     def total_fees(self):
-        """Provide the sum of all fees."""
-        return self.cashflows.aggregate(total=models.Sum("fees"))["total"] or Decimal(
-            "0"
-        )
+        """Provide the sum of all fees.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__total_fees
+
+    @cached_property
+    def __total_fees(self):
+        try:
+            return self._total_fees
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._total_fees
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
 
     @property
     def total_taxes(self):
-        """Provide the sum of all taxes."""
-        return self.cashflows.aggregate(total=models.Sum("taxes"))["total"] or Decimal(
-            "0"
-        )
+        """Provide the sum of all taxes.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined by evaluating the associated
+        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        The actual calculation is done in
+        :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
+        """
+        return self.__total_taxes
+
+    @cached_property
+    def __total_taxes(self):
+        try:
+            return self._total_taxes
+        except AttributeError:
+            # logger.debug()
+            self._evaluate_cashflows()
+
+            try:
+                return self._total_taxes
+            except AttributeError:
+                # logger.error()
+                return Decimal("0")
+
+    def _evaluate_cashflows(self):
+
+        cashflows = self.cashflows.order_by("timestamp")
+
+        current_quantity = Decimal("0.00000000")
+        total_cost = Decimal("0.000000")
+        avg_cost = Decimal("0.000000")
+        realized_gains = Decimal("0.000000")
+        total_cashflow = Decimal("0.000000")
+        total_fees = Decimal("0.000000")
+        total_taxes = Decimal("0.000000")
+        total_dividends = Decimal("0.000000")
+
+        for flow in cashflows:
+
+            total_cashflow += flow.net_cashflow
+            total_fees += flow.fees
+            total_taxes += flow.taxes
+
+            if flow.flow_type == "BUY":
+                total_cost += (
+                    (flow.quantity * flow.price_per_unit) + flow.fees + flow.taxes
+                )
+                current_quantity += flow.quantity
+
+                if current_quantity > 0:
+                    avg_cost = total_cost / current_quantity
+                else:
+                    avg_cost = Decimal("0.000000")
+            elif flow.flow_type == "SELL":
+                this_sale = (
+                    (flow.quantity * flow.price_per_unit) - flow.fees - flow.taxes
+                )
+                current_buy_cost = flow.quantity * avg_cost
+
+                realized_gains += this_sale - current_buy_cost
+                current_quantity -= flow.quantity
+
+                if current_quantity <= 0:
+                    current_quantity = Decimal("0.00000000")
+                    avg_cost = Decimal("0.000000")
+            elif flow.flow_type == "DIVIDEND":
+                total_dividends += (
+                    (flow.quantity * flow.price_per_unit) - flow.fees - flow.taxes
+                )
+
+        self._quantity = current_quantity
+        self._total_investment = -total_cost
+        self._avg_buy_price = -avg_cost
+        self._realized_gains = realized_gains
+        self._total_cashflow = total_cashflow
+        self._total_fees = -total_fees
+        self._total_taxes = -total_taxes
+        self._total_dividends = total_dividends
 
 
 class DepotItemCashflow(models.Model):
