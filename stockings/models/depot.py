@@ -5,6 +5,7 @@
 """The ``Depot`` class represents one account to manage financial assets."""
 
 # Python imports
+import logging
 from decimal import Decimal
 
 # Django imports
@@ -18,6 +19,9 @@ from django.utils.translation import gettext_lazy as _
 from stockings.exceptions import StockingsModelException
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
+
+# get a module-level logger
+logger = logging.getLogger(__name__)
 
 
 class DepotException(StockingsModelException):
@@ -107,7 +111,10 @@ class DepotItem(models.Model):
         try:
             return self._quantity
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'quantity'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -137,7 +144,10 @@ class DepotItem(models.Model):
         try:
             return self._avg_buy_price
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'avg_buy_price'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -192,7 +202,10 @@ class DepotItem(models.Model):
         try:
             return self._total_investment
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'total_investment'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -222,7 +235,10 @@ class DepotItem(models.Model):
         try:
             return self._total_cashflow
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'total_cashflow'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -252,7 +268,10 @@ class DepotItem(models.Model):
         try:
             return self._realized_gains
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'realized_gains'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -264,7 +283,16 @@ class DepotItem(models.Model):
     @property
     def market_value(self):
         """Provide the current value ``(number of stocks * price per stock)``."""
-        return "NOT YET IMPLEMENTED!"
+        return self.__market_value
+
+    @cached_property
+    def __market_value(self):
+        latest_price_obj = self.stock_item.prices.first()
+
+        if not latest_price_obj or self.quantity <= 0:
+            return Decimal("0.000000")
+
+        return self.quantity * latest_price_obj._value
 
     @property
     def total_value(self):
@@ -274,9 +302,7 @@ class DepotItem(models.Model):
         :attr:`~stockings.models.depot.DepotItem.total_cashflow` and
         :attr:`~stockings.models.depot.DepotItem.market_value`.
         """
-        # TODO: needs implementation of ``market_value``!
-        # return self.total_cashflow + self.market_value
-        return "NOT YET IMPLEMENTED!"
+        return self.total_cashflow + self.market_value
 
     @property
     def total_dividends(self):
@@ -297,7 +323,10 @@ class DepotItem(models.Model):
         try:
             return self._total_dividends
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'total_dividends'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -325,7 +354,10 @@ class DepotItem(models.Model):
         try:
             return self._total_fees
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'total_fees'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -353,7 +385,10 @@ class DepotItem(models.Model):
         try:
             return self._total_taxes
         except AttributeError:
-            # logger.debug()
+            logger.debug(
+                "Missing value while accessing attribute 'total_taxes'"
+                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+            )
             self._evaluate_cashflows()
 
             try:
@@ -363,10 +398,10 @@ class DepotItem(models.Model):
                 return Decimal("0")
 
     def _evaluate_cashflows(self):
-
         cashflows = self.cashflows.order_by("timestamp")
 
-        current_quantity = Decimal("0.00000000")
+        buy_quantity = Decimal("0.00000000")
+        sell_quantity = Decimal("0.00000000")
         total_cost = Decimal("0.000000")
         avg_cost = Decimal("0.000000")
         realized_gains = Decimal("0.000000")
@@ -385,12 +420,13 @@ class DepotItem(models.Model):
                 total_cost += (
                     (flow.quantity * flow.price_per_unit) + flow.fees + flow.taxes
                 )
-                current_quantity += flow.quantity
+                buy_quantity += flow.quantity
 
-                if current_quantity > 0:
-                    avg_cost = total_cost / current_quantity
+                if buy_quantity > 0:
+                    avg_cost = total_cost / buy_quantity
                 else:
                     avg_cost = Decimal("0.000000")
+
             elif flow.flow_type == "SELL":
                 this_sale = (
                     (flow.quantity * flow.price_per_unit) - flow.fees - flow.taxes
@@ -398,17 +434,14 @@ class DepotItem(models.Model):
                 current_buy_cost = flow.quantity * avg_cost
 
                 realized_gains += this_sale - current_buy_cost
-                current_quantity -= flow.quantity
+                sell_quantity += flow.quantity
 
-                if current_quantity <= 0:
-                    current_quantity = Decimal("0.00000000")
-                    avg_cost = Decimal("0.000000")
             elif flow.flow_type == "DIVIDEND":
                 total_dividends += (
                     (flow.quantity * flow.price_per_unit) - flow.fees - flow.taxes
                 )
 
-        self._quantity = current_quantity
+        self._quantity = buy_quantity - sell_quantity
         self._total_investment = -total_cost
         self._avg_buy_price = -avg_cost
         self._realized_gains = realized_gains
