@@ -9,6 +9,7 @@ version = 1
 path = [
   "README.md",
   "stockings/templates/stockings/**/*.html",
+  "tests/util/templates/registration/login.html",
 ]
 SPDX-FileCopyrightText = "2026 Mischback"
 SPDX-License-Identifier = "MIT"
