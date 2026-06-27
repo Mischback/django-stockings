@@ -7,6 +7,7 @@
 # Django imports
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -107,7 +108,6 @@ class StockItemPrice(models.Model):
         StockItem,
         on_delete=models.CASCADE,
         related_name="prices",
-        unique_for_date="_timestamp",
     )
     """Reference to a :class:`~stockings.models.stock.StockItem`.
 
@@ -145,6 +145,13 @@ class StockItemPrice(models.Model):
         ordering = ["-_timestamp", "stock_item"]
         verbose_name = _("StockItemPrice")
         verbose_name_plural = _("StockItemPrices")
+        constraints = [
+            models.UniqueConstraint(
+                "stock_item",
+                TruncDate("_timestamp"),
+                name="unique_stock_item_price_per_day",
+            ),
+        ]
 
     def __str__(self):  # noqa: D105
         return "{} - {} {} ({})".format(
