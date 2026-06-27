@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "stockings",
+    "stockings.contrib.provider.yfinance_simple",
 ]
 
 MIDDLEWARE = [

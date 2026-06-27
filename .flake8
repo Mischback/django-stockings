@@ -27,6 +27,8 @@ exclude =
     migrations,
     settings_dev.py,
     settings_test.py,
+    stockings/contrib/__init__.py,
+    stockings/contrib/provider/__init__.py,
 
 # Actually, try to stay below 80 characters for docstrings.
 # But enforcing this does not work, when linking to other classes / attributes
