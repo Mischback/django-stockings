@@ -12,6 +12,7 @@ path = [
   "tests/util/templates/registration/login.html",
   "stockings/contrib/__init__.py",
   "stockings/contrib/provider/__init__.py",
+  "stockings/contrib/**/*.html"
 ]
 SPDX-FileCopyrightText = "2026 Mischback"
 SPDX-License-Identifier = "MIT"

@@ -1,6 +1,8 @@
 # ### DJLINT ###
 [tool.djlint]
 ignore = "T028,H030,H031"
+per-file-ignores."yfinance_simple/overview.html" = "H021"
+per-file-ignores."yfinance_simple/select_ticker.html" = "H021"
 
 # ### ISORT ###
 [tool.isort]

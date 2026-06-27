@@ -8,14 +8,118 @@ asgiref==3.11.1
     # via
     #   -r requirements/common.txt
     #   django
+beautifulsoup4==4.15.0
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+certifi==2026.6.17
+    # via
+    #   -r requirements/common.txt
+    #   curl-cffi
+    #   requests
+cffi==2.0.0
+    # via
+    #   -r requirements/common.txt
+    #   curl-cffi
+charset-normalizer==3.4.7
+    # via
+    #   -r requirements/common.txt
+    #   requests
+curl-cffi==0.15.0
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
 django==6.0.6
     # via
     #   -r requirements/common.txt
     #   django-debug-toolbar
 django-debug-toolbar==6.3.0
     # via -r requirements/development.in
+idna==3.18
+    # via
+    #   -r requirements/common.txt
+    #   requests
+markdown-it-py==4.2.0
+    # via
+    #   -r requirements/common.txt
+    #   rich
+mdurl==0.1.2
+    # via
+    #   -r requirements/common.txt
+    #   markdown-it-py
+multitasking==0.0.13
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+numpy==2.5.0
+    # via
+    #   -r requirements/common.txt
+    #   pandas
+    #   yfinance
+pandas==3.0.3
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+peewee==4.1.0
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+platformdirs==4.10.0
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+protobuf==7.35.1
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+pycparser==3.0
+    # via
+    #   -r requirements/common.txt
+    #   cffi
+pygments==2.20.0
+    # via
+    #   -r requirements/common.txt
+    #   rich
+python-dateutil==2.9.0.post0
+    # via
+    #   -r requirements/common.txt
+    #   pandas
+pytz==2026.2
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+requests==2.34.2
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+rich==15.0.0
+    # via
+    #   -r requirements/common.txt
+    #   curl-cffi
+six==1.17.0
+    # via
+    #   -r requirements/common.txt
+    #   python-dateutil
+soupsieve==2.8.4
+    # via
+    #   -r requirements/common.txt
+    #   beautifulsoup4
 sqlparse==0.5.5
     # via
     #   -r requirements/common.txt
     #   django
     #   django-debug-toolbar
+typing-extensions==4.15.0
+    # via
+    #   -r requirements/common.txt
+    #   beautifulsoup4
+urllib3==2.7.0
+    # via
+    #   -r requirements/common.txt
+    #   requests
+websockets==16.0
+    # via
+    #   -r requirements/common.txt
+    #   yfinance
+yfinance==1.4.1
+    # via -r requirements/common.txt
