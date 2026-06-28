@@ -110,7 +110,7 @@ django/makemessages :
 ## "$ django-admin makemigrations"; create migrations
 ## @category Django
 django/makemigrations :
-	$(MAKE) django django_command="makemigrations stockings"
+	$(MAKE) django django_command="makemigrations stockings yfinance_simple"
 .PHONY : django/makemigrations
 
 ## "$ django-admin migrate"; apply the project's migrations

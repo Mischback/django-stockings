@@ -108,5 +108,37 @@
   </section>
 </section>
 
+<section id="depotitem-detail-timeline" class="collapsible-container">
+  <header class="collapsible-header">
+    <h3>Timeline</h3>
+  </header>
+  <section class="collapsible-content">
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Quantity</th>
+          <th>Avg. Buy Price</th>
+          <th>Current Investment</th>
+          <th>Price/unit</th>
+          <th>Market Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for point in historical_values %}
+        <tr>
+          <td>{{ point.timestamp }}</td>
+          <td>{{ point.quantity }}</td>
+          <td>{{ point.avg_buy_price }}</td>
+          <td>{{ point.current_investment }}</td>
+          <td>{{ point.price_per_unit }}</td>
+          <td>{{ point.market_value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</section>
+
 </main>
 {% endblock main %}

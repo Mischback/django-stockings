@@ -4,12 +4,11 @@
 
 """These classes represent financial assets."""
 
-# Python imports
-from datetime import date
-
 # Django imports
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.functions import TruncDate
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # app imports
@@ -109,7 +108,6 @@ class StockItemPrice(models.Model):
         StockItem,
         on_delete=models.CASCADE,
         related_name="prices",
-        unique_for_date="_timestamp",
     )
     """Reference to a :class:`~stockings.models.stock.StockItem`.
 
@@ -138,15 +136,8 @@ class StockItemPrice(models.Model):
     for tracking of asset values aswell as future currency-related conversions.
     """
 
-    _timestamp = models.DateField(default=date.today)
-    """The ``date`` part of the :attr:`price` attribute.
-
-    Notes
-    -----
-    This is implemented as a :class:`~django.db.models.DateField`, so it only
-    tracks days and no full timestamps. As the app is targeted for long-term
-    tracking of investments, that should be sufficient.
-    """
+    _timestamp = models.DateTimeField(default=timezone.now)
+    """The ``date`` part of the :attr:`price` attribute."""
 
     class Meta:  # noqa: D106
         app_label = "stockings"
@@ -154,6 +145,13 @@ class StockItemPrice(models.Model):
         ordering = ["-_timestamp", "stock_item"]
         verbose_name = _("StockItemPrice")
         verbose_name_plural = _("StockItemPrices")
+        constraints = [
+            models.UniqueConstraint(
+                "stock_item",
+                TruncDate("_timestamp"),
+                name="unique_stock_item_price_per_day",
+            ),
+        ]
 
     def __str__(self):  # noqa: D105
         return "{} - {} {} ({})".format(

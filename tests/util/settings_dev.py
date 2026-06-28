@@ -57,7 +57,7 @@ LOGGING = {
         },
     },
     "loggers": {
-        "penthouse": {
+        "stockings": {
             "handlers": ["def_h"],
             "level": "DEBUG",
             "propagate": False,
