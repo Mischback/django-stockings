@@ -12,13 +12,49 @@ from decimal import Decimal
 
 # Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 from django.views import generic
 
 # app imports
-from stockings.models.depot import DepotItem, DepotItemCashflowResult
+from stockings.models.depot import (
+    DepotItem,
+    DepotItemCashflow,
+    DepotItemCashflowForm,
+    DepotItemCashflowResult,
+)
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class HistoricalValuePoint:
+    """A single datapoint for the timeline of market values."""
+
+    timestamp: datetime
+    quantity: Decimal
+    avg_buy_price: Decimal
+    price_per_unit: Decimal
+
+    @property
+    def market_value(self):
+        """The current market value.
+
+        Market value is the product of the
+        :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
+        :attr:`~stockings.views.depot.HistoricalValuePoint.price_per_unit`.
+        """
+        return self.quantity * self.price_per_unit
+
+    @property
+    def current_investment(self):
+        """The currently invested money.
+
+        Investment is the product of the
+        :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
+        :attr:`~stockings.views.depot.HistoricalValuePoint.avg_buy_price`.
+        """
+        return self.quantity * self.avg_buy_price
 
 
 class DepotItemDetailView(LoginRequiredMixin, generic.detail.DetailView):
@@ -95,31 +131,10 @@ class DepotItemDetailView(LoginRequiredMixin, generic.detail.DetailView):
         return context
 
 
-@dataclass
-class HistoricalValuePoint:
-    """A single datapoint for the timeline of market values."""
+class DepotItemCashflowCreateView(LoginRequiredMixin, generic.CreateView):
+    """CBV to create new instances of :class:`~stockings.models.depot.DepotItemCashflow`."""
 
-    timestamp: datetime
-    quantity: Decimal
-    avg_buy_price: Decimal
-    price_per_unit: Decimal
-
-    @property
-    def market_value(self):
-        """The current market value.
-
-        Market value is the product of the
-        :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
-        :attr:`~stockings.views.depot.HistoricalValuePoint.price_per_unit`.
-        """
-        return self.quantity * self.price_per_unit
-
-    @property
-    def current_investment(self):
-        """The currently invested money.
-
-        Investment is the product of the
-        :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
-        :attr:`~stockings.views.depot.HistoricalValuePoint.avg_buy_price`.
-        """
-        return self.quantity * self.avg_buy_price
+    model = DepotItemCashflow
+    form_class = DepotItemCashflowForm
+    template_name_suffix = "_create"
+    success_url = reverse_lazy("stockings:depotitem-detail")

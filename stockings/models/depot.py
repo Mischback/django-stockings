@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 # Django imports
+from django import forms
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -639,3 +640,23 @@ class DepotItemCashflow(models.Model):
             return base_value - costs
         else:
             return -costs
+
+
+class DepotItemCashflowForm(forms.ModelForm):
+    """The most-complete form for :class:`~stockings.models.depot.DepotItemCashflow`.
+
+    This form includes all available fields.
+    """
+
+    class Meta:  # noqa: D106
+        model = DepotItemCashflow
+
+        fields = [
+            "item",
+            "flow_type",
+            "timestamp",
+            "quantity",
+            "price_per_unit",
+            "fees",
+            "taxes",
+        ]

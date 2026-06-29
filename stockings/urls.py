@@ -18,4 +18,9 @@ urlpatterns = [
         depot.DepotItemDetailView.as_view(),
         name="depotitem-detail",
     ),
+    path(
+        "cashflow/create/",
+        depot.DepotItemCashflowCreateView.as_view(),
+        name="depotitemcashflow-create",
+    ),
 ]
