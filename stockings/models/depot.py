@@ -30,6 +30,10 @@ class DepotException(StockingsModelException):
     """Base class for all exceptions related to :class:`~stockings.models.depot.Depot`."""
 
 
+class DepotItemException(StockingsModelException):
+    """Base class for all exceptions related to :class:`~stockings.models.depot.DepotItem`."""
+
+
 @dataclass
 class DepotItemCashflowResult:
     """Datastructure to provide the results of a cashflow evaluation.
@@ -93,6 +97,17 @@ class Depot(models.Model):
             return "[Depot] Generic {}".format(self.id)
 
 
+class DepotItemManager(models.Manager):
+    """Custom manager for :class:`~stockings.models.depot.DepotItem`."""
+
+    def filter_by_user(self, user=None):
+        """Filter instances of ``DepotItem`` by the specified user."""
+        if user is None:
+            raise DepotItemException("No user specified!")
+
+        return self.get_queryset().filter(depot__portfolio__owner=user)
+
+
 class DepotItem(models.Model):
     """One single position inside of a :class:`~stockings.models.depot.Depot`."""
 
@@ -116,6 +131,14 @@ class DepotItem(models.Model):
     This is implemented as a :class:`~django.db.models.ForeignKey` with
     ``on_delete=PROTECT``, meaning: as long as the ``StockItem`` is still
     referenced from any object of this class, it may not be deleted.
+    """
+
+    objects = DepotItemManager()
+    """Apply a custom manager.
+
+    This should not interfere with Django's default inner mechanics. The custom
+    manager does not replace any default functions, it just provides additional
+    methods.
     """
 
     class Meta:  # noqa: D106

@@ -13,6 +13,7 @@ from decimal import Decimal
 # Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 from django.views import generic
 
 # app imports
@@ -22,6 +23,7 @@ from stockings.models.depot import (
     DepotItemCashflowForm,
     DepotItemCashflowResult,
 )
+from stockings.views.mixins import RestrictToUserMixin
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -57,7 +59,9 @@ class HistoricalValuePoint:
         return self.quantity * self.avg_buy_price
 
 
-class DepotItemDetailView(LoginRequiredMixin, generic.detail.DetailView):
+class DepotItemDetailView(
+    LoginRequiredMixin, RestrictToUserMixin, generic.detail.DetailView
+):
     """Provide the details of one single position in the depot."""
 
     model = DepotItem
@@ -131,10 +135,43 @@ class DepotItemDetailView(LoginRequiredMixin, generic.detail.DetailView):
         return context
 
 
-class DepotItemCashflowCreateView(LoginRequiredMixin, generic.CreateView):
+class DepotItemCashflowCreateView(
+    LoginRequiredMixin, RestrictToUserMixin, generic.CreateView
+):
     """CBV to create new instances of :class:`~stockings.models.depot.DepotItemCashflow`."""
 
     model = DepotItemCashflow
     form_class = DepotItemCashflowForm
     template_name_suffix = "_create"
     success_url = reverse_lazy("stockings:depotitem-detail")
+
+    def get_form(self, form_class=None):
+        """Limit the choices of the ``item`` field.
+
+        Obviously, a user should only be able to add cashflows for
+        :class:`~stockings.models.depot.DepotItem` instances of his own
+        depot. This uses the
+        :meth:`~stockings.model.depot.DepotItemManager.filter_by_user` of the
+        custom ``ModelManager``.
+
+        This only affects the rendering of the form. Hacker Bob can still
+        inject another ``item`` into the request. This is handled in
+        :meth:`~stockings.views.depot.DepotITemCashflowCreateView.form_valid`.
+        """
+        form = super().get_form(form_class)
+
+        form.fields["item"].queryset = DepotItem.objects.filter_by_user(
+            self.request.user
+        )
+
+        return form
+
+    def form_valid(self, form):
+        """Ensure that the ``item`` actuall belongs to the user."""
+        item = form.cleaned_data.get("item")
+
+        if item and item.depot.portfolio.owner != self.request.user:
+            form.add_error("item", _("This is not part of your portfolio!"))
+            return self.form_invalid(form)
+
+        return self.form_valid(form)
