@@ -17,6 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import generic
 
 # app imports
+from stockings.forms.fields import DepotItemChoiceField
 from stockings.models.depot import (
     DepotItem,
     DepotItemCashflow,
@@ -160,8 +161,9 @@ class DepotItemCashflowCreateView(
         """
         form = super().get_form(form_class)
 
-        form.fields["item"].queryset = DepotItem.objects.filter_by_user(
-            self.request.user
+        form.fields["item"] = DepotItemChoiceField(
+            queryset=DepotItem.objects.filter_by_user(self.request.user),
+            # label=_("Please select a Depot Item...")
         )
 
         return form
