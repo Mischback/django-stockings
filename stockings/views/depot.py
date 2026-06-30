@@ -12,6 +12,8 @@ from decimal import Decimal
 
 # Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views import generic
@@ -19,11 +21,14 @@ from django.views import generic
 # app imports
 from stockings.forms.fields import DepotItemChoiceField
 from stockings.models.depot import (
+    CashflowForm,
+    CashflowFromDepotForm,
+    Depot,
     DepotItem,
     DepotItemCashflow,
-    DepotItemCashflowForm,
     DepotItemCashflowResult,
 )
+from stockings.models.stock import StockItem
 from stockings.views.mixins import RestrictToUserMixin
 
 # get a module-level logger
@@ -136,13 +141,11 @@ class DepotItemDetailView(
         return context
 
 
-class DepotItemCashflowCreateView(
-    LoginRequiredMixin, RestrictToUserMixin, generic.CreateView
-):
+class CashflowCreateView(LoginRequiredMixin, RestrictToUserMixin, generic.CreateView):
     """CBV to create new instances of :class:`~stockings.models.depot.DepotItemCashflow`."""
 
     model = DepotItemCashflow
-    form_class = DepotItemCashflowForm
+    form_class = CashflowForm
     template_name_suffix = "_create"
     success_url = reverse_lazy("stockings:depotitem-detail")
 
@@ -169,11 +172,114 @@ class DepotItemCashflowCreateView(
         return form
 
     def form_valid(self, form):
-        """Ensure that the ``item`` actuall belongs to the user."""
+        """Ensure that the ``item`` actually belongs to the user."""
         item = form.cleaned_data.get("item")
 
         if item and item.depot.portfolio.owner != self.request.user:
             form.add_error("item", _("This is not part of your portfolio!"))
             return self.form_invalid(form)
 
-        return self.form_valid(form)
+        return super().form_valid(form)
+
+
+class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
+    """CBV to create a ``DepotItemCashflow`` instance from a ``Depot`` context."""
+
+    form_class = CashflowFromDepotForm
+    template_name = "stockings/depotitemcashflow_create.html"
+
+    def get_depot(self):
+        """Provide the currently active :class:`~stockings.models.depot.Depot`."""
+        if not hasattr(self, "_cached_depot"):
+            self._cached_depot = get_object_or_404(
+                Depot,
+                id=self.kwargs["depot_id"],
+                portfolio__owner=self.request.user,
+            )
+
+        return self._cached_depot
+
+    def get_context_data(self, **kwargs):
+        """Add the currently active ``Depot`` to the rendering context."""
+        context = super().get_context_data(**kwargs)
+
+        context["depot"] = self.get_depot()
+
+        return context
+
+    def get_form(self, form_class=None):
+        """Modify the initialisation of the ``form`` instance.
+
+        The :class:`~stockings.models.depot.CashflowFromDepotForm` provides the
+        feature the add cashflows for *existing* ``DepotItem`` instances and
+        create completely new ``DepotItem`` instances (and possible the required
+        ``StockItem`` instance, too). In order to make this possible, the
+        form's ``item`` field has to be made optional (``required=False``).
+        """
+        form = super().get_form(form_class)
+
+        # TODO: Can this be put into CashflowForm? It should basically be
+        #       applied to any form dealing with cashflows. In this function,
+        #       the really relevant thing is to make it **not required**.
+        form.fields["item"] = DepotItemChoiceField(
+            queryset=DepotItem.objects.filter(depot=self.get_depot()),
+            required=False,
+        )
+
+        return form
+
+    def form_valid(self, form):
+        """Create the new :class:`~stockings.models.depot.DepotItemCashflow` instance.
+
+        This is the actual magic. This method will handle all relevant object
+        creations, which can be either a new
+        :class:`~stockings.models.depot.DepotItemCashflow` instance or a new
+        :class:`~stockings.models.depot.DepotItem` including its first
+        ``Cashflow`` or even a completely new
+        :class:`~stockings.models.stock.StockItem`, ``DepotItem and the initial
+        ``Cashflow``.
+        """
+        depot = self.get_depot()
+        item = form.cleaned_data.get("item")
+        new_isin = form.cleaned_data.get("new_isin")
+
+        with transaction.atomic():
+            if new_isin:
+                isin = new_isin.strip().upper()
+
+                stock_item, _ = StockItem.objects.get_or_create(
+                    isin=isin,
+                    defaults={"name": isin},
+                )
+
+                item, _ = DepotItem.objects.get_or_create(
+                    depot=depot,
+                    stock_item=stock_item,
+                )
+
+                form.cleaned_data["item"] = item
+
+            else:
+                if item.depot != depot:
+                    form.add_error("item", _("This is not part of your portfolio!"))
+                    return self.form_invalid(form)
+
+            self.object = DepotItemCashflow.objects.create(
+                item=item,
+                flow_type=form.cleaned_data.get("flow_type"),
+                timestamp=form.cleaned_data.get("timestamp"),
+                quantity=form.cleaned_data.get("quantity"),
+                price_per_unit=form.cleaned_data.get("price_per_unit"),
+                fees=form.cleaned_data.get("fees"),
+                taxes=form.cleaned_data.get("taxes"),
+            )
+
+            return super().form_valid(form)
+
+    def get_success_url(self):
+        """Return to the ``DepotItem`` overview page after success."""
+        depotitem_id = self.object.item.id
+
+        return reverse_lazy(
+            "stockings:depotitem-detail", kwargs={"depotitem_id": depotitem_id}
+        )

@@ -14,13 +14,25 @@ app_name = "stockings"
 
 urlpatterns = [
     path(
+        "depot/<int:depot_id>/cashflow/create/",
+        depot.CashflowCreateFromDepotView.as_view(),
+        name="cashflow-create-from-depot",
+    ),
+    path(
         "position/<int:depotitem_id>/",
         depot.DepotItemDetailView.as_view(),
         name="depotitem-detail",
     ),
     path(
+        "position/<int:depotitem_id>/cashflow/create/",
+        depot.CashflowCreateView.as_view(),
+        name="cashflow-create-from-depotitem",
+    ),
+    # This is the most generic version of CashflowCreateView. It might not even
+    # be included/reachable in a final configuration.
+    path(
         "cashflow/create/",
-        depot.DepotItemCashflowCreateView.as_view(),
-        name="depotitemcashflow-create",
+        depot.CashflowCreateView.as_view(),
+        name="cashflow-create",
     ),
 ]

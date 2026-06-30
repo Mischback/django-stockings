@@ -665,7 +665,7 @@ class DepotItemCashflow(models.Model):
             return -costs
 
 
-class DepotItemCashflowForm(forms.ModelForm):
+class CashflowForm(forms.ModelForm):
     """The most-complete form for :class:`~stockings.models.depot.DepotItemCashflow`.
 
     This form includes all available fields.
@@ -683,3 +683,44 @@ class DepotItemCashflowForm(forms.ModelForm):
             "fees",
             "taxes",
         ]
+
+
+class CashflowFromDepotForm(CashflowForm):
+    """Custom form to create :class:`~stockings.models.depot.DepotItemCashflow` from a depot.
+
+    This form adds the feature to create a completely new
+    :class:`~stockings.models.depot.DepotItem` instance in a given
+    :class:`~stockings.models.depot.Depot`. Even cooler, if the
+    :class:`~stockings.models.stock.StockItem` does not yet exist, it will be
+    created automatically, too.
+
+    Notes
+    -----
+    This class is derived from :class:`~stockings.models.depot.CashflowForm`,
+    which is a default :class:`~django.forms.ModelForm`. The
+    :meth:`~stockings.models.depot.CashflowFromDepotForm.clean` method is
+    modified to handle either a selected item (default mode, adding a cashflow
+    to an existing ``DepotItem``) or a (new) ISIN (extended mode, adding
+    the required instances of ``DepotItem`` and possibly ``StockItem``).
+    However, to make this work, the form's ``item`` field has to be modified in
+    order to make it optional. This code is included in
+    :meth:`~stockings.views.depot.CashflowCreateFromDepotView.get_form`.
+    """
+
+    new_isin = forms.CharField(
+        max_length=12,
+        required=False,
+        label=_("new ISIN"),
+    )
+
+    def clean(self):  # noqa: D102
+        cleaned_data = super().clean()
+        item = cleaned_data.get("item")
+        new_isin = cleaned_data.get("new_isin")
+
+        if not item and not new_isin:
+            raise forms.ValidationError(
+                _("You have to choose either an existing item or provide a new ISIN")
+            )
+
+        return cleaned_data
