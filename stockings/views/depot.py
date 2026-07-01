@@ -247,6 +247,11 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
             if new_isin:
                 isin = new_isin.strip().upper()
 
+                # TODO: There is no validation/verification of the provided
+                #       ISIN. This is just skipped for now. In a later step,
+                #       this should be included. See
+                #       https://github.com/Mischback/django-stockings/issues/7
+                #       for the corresponding issue.
                 stock_item, _ = StockItem.objects.get_or_create(
                     isin=isin,
                     defaults={"name": isin},
