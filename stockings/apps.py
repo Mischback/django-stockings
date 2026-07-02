@@ -6,6 +6,7 @@
 
 # Django imports
 from django.apps import AppConfig
+from django.core.checks import Tags, register
 
 
 class StockingsConfig(AppConfig):
@@ -20,4 +21,7 @@ class StockingsConfig(AppConfig):
 
     def ready(self):
         """Apply app-specific stuff."""
-        pass
+        # app imports
+        from stockings.checks import check_timezone_awareness
+
+        register(Tags.compatibility)(check_timezone_awareness)
