@@ -11,3 +11,7 @@ class StockingsException(Exception):
 
 class StockingsModelException(StockingsException):
     """Base class for all app-specific and model-related exceptions."""
+
+
+class StockingsInterfaceError(StockingsException):
+    """Base class for all app-specific exceptions related to data interfaces."""
