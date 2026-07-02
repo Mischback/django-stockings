@@ -7,8 +7,6 @@
 # Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.models.depot import Depot, DepotItem
-from django.models.stock import StockItem
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -22,6 +20,8 @@ from stockings.models.cashflow import (
     CashflowFromDepotForm,
     CashflowFromDepotItemForm,
 )
+from stockings.models.depot import Depot, DepotItem
+from stockings.models.stock import StockItem
 from stockings.views.mixins import RestrictToUserMixin
 
 
