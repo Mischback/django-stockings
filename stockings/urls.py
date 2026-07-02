@@ -25,7 +25,7 @@ urlpatterns = [
     ),
     path(
         "position/<int:depotitem_id>/cashflow/create/",
-        depot.CashflowCreateView.as_view(),
+        depot.CashflowCreateFromDepotItemView.as_view(),
         name="cashflow-create-from-depotitem",
     ),
     # This is the most generic version of CashflowCreateView. It might not even

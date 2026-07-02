@@ -685,6 +685,31 @@ class CashflowForm(forms.ModelForm):
         ]
 
 
+class CashflowFromDepotItemForm(CashflowForm):
+    """Custom form to creeate :class:`~stockings.models.depot.DepotItemCashflow` from a depot item.
+
+    Notes
+    -----
+    This class is derived from :class:`~stockings.models.depot.CashflowForm`,
+    which is a default :class:`~django.forms.ModelForm`. The
+    :attr:`~stockings.models.depot.DepotItemCashflow.item` is removed from the
+    form, as it will be derived from URL parameters by the corresponding
+    :class:`~stockings.views.depot.CashflowCreateFromDepotItemView`.
+    """
+
+    class Meta:  # noqa: D106
+        model = DepotItemCashflow
+
+        fields = [
+            "flow_type",
+            "timestamp",
+            "quantity",
+            "price_per_unit",
+            "fees",
+            "taxes",
+        ]
+
+
 class CashflowFromDepotForm(CashflowForm):
     """Custom form to create :class:`~stockings.models.depot.DepotItemCashflow` from a depot.
 

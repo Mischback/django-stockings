@@ -23,6 +23,7 @@ from stockings.forms.fields import DepotItemChoiceField
 from stockings.models.depot import (
     CashflowForm,
     CashflowFromDepotForm,
+    CashflowFromDepotItemForm,
     Depot,
     DepotItem,
     DepotItemCashflow,
@@ -186,6 +187,7 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
     """CBV to create a ``DepotItemCashflow`` instance from a ``Depot`` context."""
 
     form_class = CashflowFromDepotForm
+    # FIXME: Should have a dedicated template!
     template_name = "stockings/depotitemcashflow_create.html"
 
     def get_depot(self):
@@ -280,6 +282,58 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
             )
 
             return super().form_valid(form)
+
+    def get_success_url(self):
+        """Return to the ``DepotItem`` overview page after success."""
+        depotitem_id = self.object.item.id
+
+        return reverse_lazy(
+            "stockings:depotitem-detail", kwargs={"depotitem_id": depotitem_id}
+        )
+
+
+class CashflowCreateFromDepotItemView(LoginRequiredMixin, generic.FormView):
+    """CBV to create a ``DepotItemCashflow`` instance from a ``DepotItem`` context."""
+
+    form_class = CashflowFromDepotItemForm
+    # FIXME: Should have a dedicated template!
+    template_name = "stockings/depotitemcashflow_create.html"
+
+    def get_depot_item(self):
+        """Provide the currently active :class:`~stockings.models.depot.DepotItem`."""
+        if not hasattr(self, "_cached_depotitem"):
+            self._cached_depotitem = get_object_or_404(
+                DepotItem,
+                id=self.kwargs["depotitem_id"],
+                depot__portfolio__owner=self.request.user,
+            )
+
+        return self._cached_depotitem
+
+    def get_context_data(self, **kwargs):
+        """Add the currently active ``DepotItem`` to the rendering context."""
+        context = super().get_context_data(**kwargs)
+
+        context["depotitem"] = self.get_depot_item()
+        context["depot"] = self.get_depot_item().depot
+
+        return context
+
+    def form_valid(self, form):
+        """Create the new :class:`~stockings.models.depot.DepotItemCashflow` instance."""
+        depot_item = self.get_depot_item()
+
+        self.object = DepotItemCashflow.objects.create(
+            item=depot_item,
+            flow_type=form.cleaned_data.get("flow_type"),
+            timestamp=form.cleaned_data.get("timestamp"),
+            quantity=form.cleaned_data.get("quantity"),
+            price_per_unit=form.cleaned_data.get("price_per_unit"),
+            fees=form.cleaned_data.get("fees"),
+            taxes=form.cleaned_data.get("taxes"),
+        )
+
+        return super().form_valid(form)
 
     def get_success_url(self):
         """Return to the ``DepotItem`` overview page after success."""
