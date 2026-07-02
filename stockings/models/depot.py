@@ -10,10 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 # Django imports
-from django import forms
-from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
@@ -40,8 +37,8 @@ class DepotItemCashflowResult:
 
     The :meth:`~stockings.models.depot.DepotItem.evaluate_cashflow_sequence`
     iterates over a list of
-    :class:`~stockings.models.depot.DepotItemCashflow` and summarizes the
-    results of all transactions.
+    :class:`~stockings.models.cashflow.Cashflow` and summarizes the results of
+    all transactions.
     """
 
     quantity: Decimal
@@ -157,9 +154,9 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated instances of
-        :class:`~stockings.models.depot.DepotItemCashflow`. As of now, there
-        are no sanity checks in place, so the returned value might be below
-        zero, which does not make sense semantically.
+        :class:`~stockings.models.cashflow.Cashflow`. As of now, there are no
+        sanity checks in place, so the returned value might be below zero,
+        which does not make sense semantically.
         """
         return self.__quantity
 
@@ -170,7 +167,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'quantity'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -190,7 +187,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated instances of
-        :class:`~stockings.models.depot.DepotItemCashflow`. The actual
+        :class:`~stockings.models.cashflow.Cashflow`. The actual
         calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -203,7 +200,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'avg_buy_price'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -226,7 +223,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined and requires evalation of the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects, which is
+        :class:`~stockings.models.cashflow.Cashflow` objects, which is
         handled internally.
         """
         return self.quantity * self.avg_buy_price
@@ -245,7 +242,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects and is the
+        :class:`~stockings.models.cashflow.Cashflow` objects and is the
         sum of all ``flowtype="BUY"`` instances. It does include *fees* and
         *taxes* of those buy operations, however, it **does not include** other
         fees and/or taxes.
@@ -261,7 +258,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'total_investment'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -281,7 +278,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        :class:`~stockings.models.cashflow.Cashflow` objects.
         The actual calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -294,7 +291,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'total_cashflow'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -314,7 +311,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        :class:`~stockings.models.cashflow.Cashflow` objects.
         The actual calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -327,7 +324,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'realized_gains'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -369,7 +366,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        :class:`~stockings.models.cashflow.Cashflow` objects.
         The actual calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -382,7 +379,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'total_dividends'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -400,7 +397,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        :class:`~stockings.models.cashflow.Cashflow` objects.
         The actual calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -413,7 +410,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'total_fees'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -431,7 +428,7 @@ class DepotItem(models.Model):
         -----
         This attribute is not stored in the database. Instead, it's dynamically
         determined by evaluating the associated
-        :class:`~stockings.models.depot.DepotItemCashflow` objects.
+        :class:`~stockings.models.cashflow.Cashflow` objects.
         The actual calculation is done in
         :meth:`~stockings.models.DepotItem._evaluate_cashflows`.
         """
@@ -444,7 +441,7 @@ class DepotItem(models.Model):
         except AttributeError:
             logger.debug(
                 "Missing value while accessing attribute 'total_taxes'"
-                "Evaluating DepotItemCashflow ('_evaluate_cashflows()')"
+                "Evaluating Cashflow ('_evaluate_cashflows()')"
             )
             self._evaluate_cashflows()
 
@@ -473,7 +470,7 @@ class DepotItem(models.Model):
         cashflows,
         initial=_initial_cashflow,
     ):
-        """Evaluate :class:`~¨stockings.models.depot.DepotItemCashflow` instances."""
+        """Evaluate :class:`~¨stockings.models.cashflow.Cashflow` instances."""
         running_quantity = initial.quantity
         investment = initial.investment
         avg_buy_price = initial.avg_buy_price
@@ -519,233 +516,3 @@ class DepotItem(models.Model):
         )
 
         return result
-
-
-class DepotItemCashflow(models.Model):
-    """Used to track cashflow into or out of a :class:`~stockings.models.depot.DepotItem`."""
-
-    FLOW_TYPES = [
-        ("BUY", _("Buy")),
-        ("SELL", _("Sell")),
-        ("DIVIDEND", _("Dividend")),
-        ("TAX", _("Tax")),
-        ("FEE", _("Fee")),
-    ]
-
-    item = models.ForeignKey(
-        DepotItem, on_delete=models.CASCADE, related_name="cashflows"
-    )
-    """Reference to the parent :class:`~stockings.models.depot.DepotItem`.
-
-    Notes
-    -----
-    This is implemented as a :class:`~django.db.models.ForeignKey` with
-    ``on_delete=CASCADE``, meaning: if the referenced ``DepotItem`` object is
-    deleted, the referencing ``DepotItemCashflow`` object is discarded aswell.
-    """
-
-    flow_type = models.CharField(max_length=10, choices=FLOW_TYPES)
-    """Provides a semantic meaning to the cashflow.
-
-    There are different types of cashflows, and they have to be tracked in
-    dedicated ways to allow for better analysis.
-    """
-
-    timestamp = models.DateTimeField(default=timezone.now)
-    """When did this flow happen?
-
-    This is implemented as a full :class:`~django.db.models.DateTimeField`, so
-    it even allows to track the exact time of a cashflow, in case there are
-    multiple operations during one day.
-    """
-
-    quantity = models.DecimalField(
-        decimal_places=8, max_digits=18, validators=[MinValueValidator(0.00000000)]
-    )
-    """Specify the quantity of the operation.
-
-    For the ``BUY``, ``SELL`` and ``DIVIDEND`` types, this specifies the actual
-    number of stocks that are the base for the cashflow, e.g. *buying 10 shares
-    of foo* or *receiving dividends for 235 shares of bar*.
-
-    ``TAX`` and ``FEE`` should be specified with a ``quantity`` of ``0``.
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DecimalField`
-    with a precision of 8 decimal places. As of now, this is
-    *state-of-the-art* with most brokers and crypto exchanges.
-    """
-
-    price_per_unit = models.DecimalField(
-        decimal_places=6,
-        max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
-    )
-    """The price per unit of this cashflow.
-
-    For the ``BUY`` and ``SELL`` types, this is the price at the time of the
-    actual transaction. For the ``DIVIDEND`` type, it's the dividend per share.
-
-    ``TAX`` and ``FEE`` should be specified with a ``price_per_unit`` of ``0``.
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DecimalField`
-    with a precision of 6 decimal places. This should cover enough precision
-    for tracking of asset values aswell as future currency-related conversions.
-    """
-
-    fees = models.DecimalField(
-        decimal_places=6,
-        max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
-    )
-    """Fees related to this cashflow.
-
-    Typically, buying and selling of shares comes with a broker-specific fee.
-    This is included directly in the actual transaction.
-
-    Please note: There is also a type ``FEE``, which is meant to track
-    additional fees, that are not directly related to another transaction.
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DecimalField`
-    with a precision of 6 decimal places. This should cover enough precision
-    for tracking of asset values aswell as future currency-related conversions.
-    """
-
-    taxes = models.DecimalField(
-        decimal_places=6,
-        max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
-    )
-    """Taxes related to this cashflow.
-
-    Selling of shares or dividends typically have taxes applied to them. Those
-    are included directly in the actual transaction.
-
-    Please note: There is also a type ``TAX``, which is meant to track
-    additional taxes, that are not directly related to another transaction.
-
-    Notes
-    -----
-    This attribute is implemented as :class:`~django.db.models.DecimalField`
-    with a precision of 6 decimal places. This should cover enough precision
-    for tracking of asset values aswell as future currency-related conversions.
-    """
-
-    class Meta:  # noqa: D106
-        app_label = "stockings"
-        ordering = ["-timestamp"]
-        verbose_name = _("DepotItemCashflow")
-        verbose_name_plural = _("DepotItemCashflows")
-
-    def __str__(self):  # noqa: D105
-        return "[{}] {} - {} ({})".format(
-            self.timestamp, self.flow_type, self.item, self.net_cashflow
-        )
-
-    @property
-    def net_cashflow(self):  # noqa: D102
-        base_value = self.quantity * self.price_per_unit
-        costs = self.fees + self.taxes
-
-        if self.flow_type == "BUY":
-            return -base_value - costs
-        elif self.flow_type == "SELL":
-            return base_value - costs
-        elif self.flow_type == "DIVIDEND":
-            return base_value - costs
-        else:
-            return -costs
-
-
-class CashflowForm(forms.ModelForm):
-    """The most-complete form for :class:`~stockings.models.depot.DepotItemCashflow`.
-
-    This form includes all available fields.
-    """
-
-    class Meta:  # noqa: D106
-        model = DepotItemCashflow
-
-        fields = [
-            "item",
-            "flow_type",
-            "timestamp",
-            "quantity",
-            "price_per_unit",
-            "fees",
-            "taxes",
-        ]
-
-
-class CashflowFromDepotItemForm(CashflowForm):
-    """Custom form to creeate :class:`~stockings.models.depot.DepotItemCashflow` from a depot item.
-
-    Notes
-    -----
-    This class is derived from :class:`~stockings.models.depot.CashflowForm`,
-    which is a default :class:`~django.forms.ModelForm`. The
-    :attr:`~stockings.models.depot.DepotItemCashflow.item` is removed from the
-    form, as it will be derived from URL parameters by the corresponding
-    :class:`~stockings.views.depot.CashflowCreateFromDepotItemView`.
-    """
-
-    class Meta:  # noqa: D106
-        model = DepotItemCashflow
-
-        fields = [
-            "flow_type",
-            "timestamp",
-            "quantity",
-            "price_per_unit",
-            "fees",
-            "taxes",
-        ]
-
-
-class CashflowFromDepotForm(CashflowForm):
-    """Custom form to create :class:`~stockings.models.depot.DepotItemCashflow` from a depot.
-
-    This form adds the feature to create a completely new
-    :class:`~stockings.models.depot.DepotItem` instance in a given
-    :class:`~stockings.models.depot.Depot`. Even cooler, if the
-    :class:`~stockings.models.stock.StockItem` does not yet exist, it will be
-    created automatically, too.
-
-    Notes
-    -----
-    This class is derived from :class:`~stockings.models.depot.CashflowForm`,
-    which is a default :class:`~django.forms.ModelForm`. The
-    :meth:`~stockings.models.depot.CashflowFromDepotForm.clean` method is
-    modified to handle either a selected item (default mode, adding a cashflow
-    to an existing ``DepotItem``) or a (new) ISIN (extended mode, adding
-    the required instances of ``DepotItem`` and possibly ``StockItem``).
-    However, to make this work, the form's ``item`` field has to be modified in
-    order to make it optional. This code is included in
-    :meth:`~stockings.views.depot.CashflowCreateFromDepotView.get_form`.
-    """
-
-    new_isin = forms.CharField(
-        max_length=12,
-        required=False,
-        label=_("new ISIN"),
-    )
-
-    def clean(self):  # noqa: D102
-        cleaned_data = super().clean()
-        item = cleaned_data.get("item")
-        new_isin = cleaned_data.get("new_isin")
-
-        if not item and not new_isin:
-            raise forms.ValidationError(
-                _("You have to choose either an existing item or provide a new ISIN")
-            )
-
-        return cleaned_data

@@ -8,14 +8,14 @@
 from django.urls import path
 
 # app imports
-from stockings.views import depot
+from stockings.views import cashflow, depot
 
 app_name = "stockings"
 
 urlpatterns = [
     path(
         "depot/<int:depot_id>/cashflow/create/",
-        depot.CashflowCreateFromDepotView.as_view(),
+        cashflow.CashflowCreateFromDepotView.as_view(),
         name="cashflow-create-from-depot",
     ),
     path(
@@ -25,14 +25,14 @@ urlpatterns = [
     ),
     path(
         "position/<int:depotitem_id>/cashflow/create/",
-        depot.CashflowCreateFromDepotItemView.as_view(),
+        cashflow.CashflowCreateFromDepotItemView.as_view(),
         name="cashflow-create-from-depotitem",
     ),
     # This is the most generic version of CashflowCreateView. It might not even
     # be included/reachable in a final configuration.
     path(
         "cashflow/create/",
-        depot.CashflowCreateView.as_view(),
+        cashflow.CashflowCreateView.as_view(),
         name="cashflow-create",
     ),
 ]

@@ -8,7 +8,8 @@
 from django.contrib import admin
 
 # app imports
-from stockings.models.depot import Depot, DepotItem, DepotItemCashflow
+from stockings.models.cashflow import Cashflow
+from stockings.models.depot import Depot, DepotItem
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem, StockItemPrice
 
@@ -28,8 +29,8 @@ class DepotItemAdmin(admin.ModelAdmin):  # noqa: D101
     pass
 
 
-@admin.register(DepotItemCashflow)
-class DepotItemCashflowAdmin(admin.ModelAdmin):  # noqa: D101
+@admin.register(Cashflow)
+class CashflowAdmin(admin.ModelAdmin):  # noqa: D101
     pass
 
 
