@@ -6,6 +6,7 @@
 
 # Python imports
 import decimal
+import logging
 from datetime import datetime
 
 # Django imports
@@ -13,6 +14,8 @@ from django.utils.timezone import is_aware, make_aware
 
 # app imports
 from stockings.exceptions import StockingsInterfaceError
+
+logger = logging.getLogger(__name__)
 
 
 class StockingsMoney:
@@ -210,6 +213,20 @@ class StockingsMoney:
         set of target currencies should be available.
         """
         if self.currency == target_currency:
+            return self
+
+        # FIXME: This is a dirty little hack to cover an edge case while
+        #        creating a completely new DepotItem with a new StockItem
+        #        while using CashflowCreaeFromDepotView(). As the new StockItem
+        #        does not yet have any StockItemPrice instances, a currency
+        #        is not easily determinable.
+        #        In stockings.models.depot.DepotItem.__market_value() a
+        #        StockingsMoney instance with currency "XXX" is created. "XXX"
+        #        is a special value for currency codes and not attached to a
+        #        real currency.
+        if self.currency == "XXX":
+            self.amount = decimal.Decimal(0)
+            self.currency = target_currency
             return self
 
         raise NotImplementedError("Currency conversion is currently not implemented")

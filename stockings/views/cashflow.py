@@ -159,9 +159,9 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
                 flow_type=form.cleaned_data.get("flow_type"),
                 timestamp=form.cleaned_data.get("timestamp"),
                 quantity=form.cleaned_data.get("quantity"),
-                price_per_unit=form.cleaned_data.get("price_per_unit"),
-                fees=form.cleaned_data.get("fees"),
-                taxes=form.cleaned_data.get("taxes"),
+                _price_per_unit=form.cleaned_data.get("_price_per_unit"),
+                _fees=form.cleaned_data.get("_fees"),
+                _taxes=form.cleaned_data.get("_taxes"),
             )
 
             return super().form_valid(form)
@@ -211,9 +211,9 @@ class CashflowCreateFromDepotItemView(LoginRequiredMixin, generic.FormView):
             flow_type=form.cleaned_data.get("flow_type"),
             timestamp=form.cleaned_data.get("timestamp"),
             quantity=form.cleaned_data.get("quantity"),
-            price_per_unit=form.cleaned_data.get("price_per_unit"),
-            fees=form.cleaned_data.get("fees"),
-            taxes=form.cleaned_data.get("taxes"),
+            _price_per_unit=form.cleaned_data.get("_price_per_unit"),
+            _fees=form.cleaned_data.get("_fees"),
+            _taxes=form.cleaned_data.get("_taxes"),
         )
 
         return super().form_valid(form)

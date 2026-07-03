@@ -334,6 +334,16 @@ class DepotItem(models.Model):
 
         if not latest_price_obj or self.quantity <= 0:
             # FIXME: Huh, which currency should be applied here?!
+            # FIXME: This is actually a rather critical bug! If a user creates
+            #        a new StockItem by ISIN from the
+            #        CashflowCreateFromDepotView(), there are not yet any
+            #        StockItemPrice objects and at this point, we don't know
+            #        about the currency of the Cashflow, that created the
+            #        StockItem.
+            #        Actually, the operation in question creates 3 objects in
+            #        one transaction: a Cashflow, a StockItem and a DepotItem.
+            #        If we add the ``currency`` field to the CashflowForm, we
+            #        can push that value to all three objects.
             return StockingsMoney(0, "XXX")
 
         # return self.quantity * latest_price_obj._value
