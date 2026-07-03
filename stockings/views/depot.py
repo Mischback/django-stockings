@@ -32,8 +32,8 @@ class HistoricalValuePoint:
 
     timestamp: datetime
     quantity: Decimal
-    avg_buy_price: Decimal
-    price_per_unit: Decimal
+    avg_buy_price: StockingsMoney
+    price_per_unit: StockingsMoney
 
     @property
     def market_value(self):
@@ -43,7 +43,7 @@ class HistoricalValuePoint:
         :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
         :attr:`~stockings.views.depot.HistoricalValuePoint.price_per_unit`.
         """
-        return self.quantity * self.price_per_unit
+        return self.price_per_unit.multiply(self.quantity)
 
     @property
     def current_investment(self):
@@ -53,7 +53,7 @@ class HistoricalValuePoint:
         :attr:`~stockings.views.depot.HistoricalValuePoint.quantity` and
         :attr:`~stockings.views.depot.HistoricalValuePoint.avg_buy_price`.
         """
-        return self.quantity * self.avg_buy_price
+        return self.avg_buy_price.multiply(self.quantity)
 
 
 class DepotItemDetailView(
@@ -124,8 +124,8 @@ class DepotItemDetailView(
                     HistoricalValuePoint(
                         price._timestamp,
                         tracker.quantity,
-                        tracker.avg_buy_price.amount,
-                        price._value,
+                        tracker.avg_buy_price,
+                        price.price,
                     )
                 )
 

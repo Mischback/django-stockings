@@ -9,9 +9,11 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
 from stockings.settings import _read_default_currency
 
@@ -178,3 +180,15 @@ class StockItemPrice(models.Model):
         return "{} - {} {} ({})".format(
             self.stock_item, self.stock_item.currency, self._value, self._timestamp
         )
+
+    @property
+    def currency(self):  # noqa: D102
+        return self.__currency
+
+    @cached_property
+    def __currency(self):
+        return self.stock_item.currency
+
+    @property
+    def price(self):  # noqa: D102
+        return StockingsMoney(self._value, self.currency, self._timestamp)
