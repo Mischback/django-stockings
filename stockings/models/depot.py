@@ -15,6 +15,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
@@ -42,25 +43,13 @@ class DepotItemCashflowResult:
     """
 
     quantity: Decimal
-    investment: Decimal
-    avg_buy_price: Decimal
-    realized_gains: Decimal
-    cashflow: Decimal
-    fees: Decimal
-    taxes: Decimal
-    dividends: Decimal
-
-
-_initial_cashflow = DepotItemCashflowResult(
-    Decimal("0.00000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-    Decimal("0.000000"),
-)
+    investment: StockingsMoney
+    avg_buy_price: StockingsMoney
+    realized_gains: StockingsMoney
+    cashflow: StockingsMoney
+    fees: StockingsMoney
+    taxes: StockingsMoney
+    dividends: StockingsMoney
 
 
 class Depot(models.Model):
@@ -226,7 +215,7 @@ class DepotItem(models.Model):
         :class:`~stockings.models.cashflow.Cashflow` objects, which is
         handled internally.
         """
-        return self.quantity * self.avg_buy_price
+        return self.avg_buy_price.multiply(self.quantity)
 
     @property
     def total_investment(self):
@@ -344,9 +333,16 @@ class DepotItem(models.Model):
         latest_price_obj = self.stock_item.prices.first()
 
         if not latest_price_obj or self.quantity <= 0:
-            return Decimal("0.000000")
+            # FIXME: Huh, which currency should be applied here?!
+            return StockingsMoney(0, "XXX")
 
-        return self.quantity * latest_price_obj._value
+        # return self.quantity * latest_price_obj._value
+        # FIXME: This is just a temporary fix! When the actual StockItem and its
+        #        StockItemPrice are converted to using StockingsMoney, this can
+        #        safely and effortlessly (sic!) be modified!
+        return StockingsMoney(
+            latest_price_obj._value, "EUR", latest_price_obj._timestamp
+        ).multiply(self.quantity)
 
     @property
     def total_value(self):
@@ -356,7 +352,8 @@ class DepotItem(models.Model):
         :attr:`~stockings.models.depot.DepotItem.total_cashflow` and
         :attr:`~stockings.models.depot.DepotItem.market_value`.
         """
-        return self.total_cashflow + self.market_value
+        # return self.total_cashflow + self.market_value
+        return self.total_cashflow.add(self.market_value)
 
     @property
     def total_dividends(self):
@@ -468,9 +465,23 @@ class DepotItem(models.Model):
     @staticmethod
     def evaluate_cashflow_sequence(
         cashflows,
-        initial=_initial_cashflow,
+        initial=None,
     ):
         """Evaluate :class:`~¨stockings.models.cashflow.Cashflow` instances."""
+        if initial is None:
+            initial_money = StockingsMoney(Decimal("0.000000"), cashflows[0].currency)
+
+            initial = DepotItemCashflowResult(
+                Decimal("0.00000000"),
+                initial_money,
+                initial_money,
+                initial_money,
+                initial_money,
+                initial_money,
+                initial_money,
+                initial_money,
+            )
+
         running_quantity = initial.quantity
         investment = initial.investment
         avg_buy_price = initial.avg_buy_price
@@ -481,28 +492,39 @@ class DepotItem(models.Model):
         dividends = initial.dividends
 
         for flow in cashflows:
+            # convert values into StockingsMoney instances
+            flow_fees = StockingsMoney(flow.fees, flow.currency, flow.timestamp)
+            flow_taxes = StockingsMoney(flow.taxes, flow.currency, flow.timestamp)
 
-            cashflow += flow.net_cashflow
-            fees -= flow.fees
-            taxes -= flow.taxes
+            cashflow = cashflow.add(flow.net_cashflow)
+            fees = fees.subtract(flow_fees)
+            taxes = taxes.subtract(flow_taxes)
 
             if flow.flow_type == "BUY":
                 new_quantity = running_quantity + flow.quantity
-                investment += flow.net_cashflow
+                investment = investment.add(flow.net_cashflow)
                 if new_quantity > 0:
-                    buy_costs = (running_quantity * avg_buy_price) + flow.net_cashflow
-                    avg_buy_price = buy_costs / new_quantity
+                    # buy_costs = (running_quantity * avg_buy_price) + flow.net_cashflow
+                    buy_costs = avg_buy_price.multiply(running_quantity).add(
+                        flow.net_cashflow
+                    )
+                    # avg_buy_price = buy_costs / new_quantity
+                    avg_buy_price = buy_costs.divide(new_quantity)
 
                 running_quantity = new_quantity
 
             elif flow.flow_type == "SELL":
-                current_buy_cost = flow.quantity * avg_buy_price
-                realized_gains += flow.net_cashflow + current_buy_cost
+                # current_buy_cost = flow.quantity * avg_buy_price
+                current_buy_cost = avg_buy_price.multiply(flow.quantity)
+                # realized_gains += flow.net_cashflow + current_buy_cost
+                realized_gains = realized_gains.add(flow.net_cashflow).add(
+                    current_buy_cost
+                )
 
                 running_quantity -= flow.quantity
 
             elif flow.flow_type == "DIVIDEND":
-                dividends += flow.net_cashflow
+                dividends = dividends.add(flow.net_cashflow)
 
         result = DepotItemCashflowResult(
             running_quantity,

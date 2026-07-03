@@ -6,9 +6,10 @@
 
 # Python imports
 import decimal
+from datetime import datetime
 
 # Django imports
-from django.utils.timezone import is_aware, now
+from django.utils.timezone import is_aware, make_aware
 
 # app imports
 from stockings.exceptions import StockingsInterfaceError
@@ -57,13 +58,13 @@ class StockingsMoney:
     currency = None
     timestamp = None
 
-    def __init__(self, amount, currency, timestamp):
+    def __init__(self, amount, currency, timestamp=None):
         """Create a simple app-specific Money object."""
         self.amount = amount
         self.currency = currency
 
         if timestamp is None:
-            self.timestamp = now()
+            self.timestamp = make_aware(datetime.min)
         else:
             if not is_aware(timestamp):
                 raise ValueError("StockingsMoney requires timezone-aware datetime")
@@ -92,8 +93,8 @@ class StockingsMoney:
         -------
         StockingsMoney
             A new instance of `StockingsMoney`, where `amount` is the requested
-            sum, `currency` is unchanged and `timestamp` is set to the current
-            `datetime.datetime` .
+            sum, `currency` is unchanged and `timestamp` is set to the most
+            recent `datetime.datetime` .
 
         Raises
         ------
@@ -122,6 +123,55 @@ class StockingsMoney:
         except (AttributeError, TypeError):
             raise StockingsInterfaceError(
                 "StockingsMoney.add() was called with an incompatible summand "
+                "(missing or incompatible ``amount``)"
+            )
+
+    def subtract(self, subtrahend):
+        """Subtract `subtrahend` to the object and return a new `StockingsMoney` object.
+
+        The new object will have `currency` set to the original object's
+        currency and its `timestamp` will be updated.
+
+        Parameters
+        ----------
+        subtrahend : StockingsMoney
+            The value to be added to the object, should typically be an instance
+            of `StockingsMoney` aswell.
+
+        Returns
+        -------
+        StockingsMoney
+            A new instance of `StockingsMoney`, where `amount` is the requested
+            difference, `currency` is unchanged and `timestamp` is set to the
+            most recent of the `datetime.datetime` .
+
+        Raises
+        ------
+        StockingsInterfaceError
+            If `subtrahend` does not have a `convert()` method, a `currency`
+            attribute or the actual addition causes a `TypeError`.
+        """
+        try:
+            # perform currency conversion if required
+            if self.currency != subtrahend.currency:
+                subtrahend = subtrahend.convert(self.currency)
+
+        except AttributeError:
+            raise StockingsInterfaceError(
+                "StockingsMoney.subtract() was called with an incompatible subtrahend "
+                "(missing or incompatible ``currency``)"
+            )
+
+        try:
+            return StockingsMoney(
+                self.amount - subtrahend.amount,
+                self.currency,
+                max(self.timestamp, subtrahend.timestamp),
+            )
+
+        except (AttributeError, TypeError):
+            raise StockingsInterfaceError(
+                "StockingsMoney.subtract() was called with an incompatible subtrahend "
                 "(missing or incompatible ``amount``)"
             )
 
@@ -172,8 +222,7 @@ class StockingsMoney:
         instance will provide the original `currency`.
 
         The `StockingsMoney` instance's `timestamp` will be set to the time of
-        the multiplication. This means, that possibly *older* values are
-        artificially updated to a current timestamp.
+        the original instance.
 
         Parameters
         ----------
@@ -184,8 +233,8 @@ class StockingsMoney:
         -------
         StockingsMoney
             A new instance of `StockingsMoney`, where `amount` is the requested
-            product, `currency` is unchanged and `timestamp` is set to the current
-            `datetime.datetime` .
+            product, `currency` is unchanged and `timestamp` is set to the
+            original `datetime.datetime` .
 
         Raises
         ------
@@ -200,4 +249,41 @@ class StockingsMoney:
         except (ValueError, TypeError, decimal.InvalidOperation):
             raise StockingsInterfaceError(
                 "StockingsMoney.multiply() was called with an incompatible multiplier"
+            )
+
+    def divide(self, divisor):
+        """Divide the object's `amount` by `divisor`.
+
+        `divisor` is a given (decimal) number. Thus, no currency conversion is
+        required to calculate the new `amount` and the returned `StockingsMoney`
+        instance will provide the original `currency`.
+
+        The `StockingsMoney` instance's `timestamp` will be set to the time of
+        the original instance.
+
+        Parameters
+        ----------
+        divisor : number
+            The number to divide by. Must be castable to `decimal.Decimal`.
+
+        Returns
+        -------
+        StockingsMoney
+            A new instance of `StockingsMoney`, where `amount` is the requested
+            product, `currency` is unchanged and `timestamp` is set to the
+            original `datetime.datetime` .
+
+        Raises
+        ------
+        StockingsInterfaceError
+            If the `divisor` is not compatible for division with a
+            `decimal.Decimal` value.
+        """
+        try:
+            return StockingsMoney(
+                self.amount / decimal.Decimal(divisor), self.currency, self.timestamp
+            )
+        except (ValueError, TypeError, decimal.InvalidOperation):
+            raise StockingsInterfaceError(
+                "StockingsMoney.divide() was called with an incompatible divisor"
             )

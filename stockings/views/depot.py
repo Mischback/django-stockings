@@ -15,6 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.models.depot import (
     DepotItem,
     DepotItemCashflowResult,
@@ -85,15 +86,16 @@ class DepotItemDetailView(
         prices = depot_item.stock_item.prices.order_by("_timestamp")
         all_cashflows = list(depot_item.cashflows.order_by("timestamp"))
 
+        initial_money = StockingsMoney(Decimal("0.000000"), all_cashflows[0].currency)
         tracker = DepotItemCashflowResult(
             Decimal("0.00000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
-            Decimal("0.000000"),
+            initial_money,
+            initial_money,
+            initial_money,
+            initial_money,
+            initial_money,
+            initial_money,
+            initial_money,
         )
 
         timeline = []
@@ -122,7 +124,7 @@ class DepotItemDetailView(
                     HistoricalValuePoint(
                         price._timestamp,
                         tracker.quantity,
-                        tracker.avg_buy_price,
+                        tracker.avg_buy_price.amount,
                         price._value,
                     )
                 )
