@@ -6,6 +6,7 @@
 
 # Python imports
 import logging
+from decimal import Decimal
 
 # Django imports
 from django import forms
@@ -15,8 +16,10 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # app imports
+from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
 from stockings.models.depot import DepotItem
+from stockings.settings import _read_default_currency
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,20 @@ class Cashflow(models.Model):
     dedicated ways to allow for better analysis.
     """
 
+    currency = models.CharField(default=_read_default_currency, max_length=3)
+    """The actual database representation of :attr:`currency`.
+
+    Notes
+    -----
+    This is implemented as :class:`~django.db.models.CharField` with
+    ``max_length=3``. The currency is stored as its
+    :wiki:`currency code as described by ISO 4217 <ISO_4217>`.
+
+    The provided default value can be configured using
+    :attr:`~stockings.settings.STOCKINGS_DEFAULT_CURRENCY` in the project's
+    settings.
+    """
+
     timestamp = models.DateTimeField(default=timezone.now)
     """When did this flow happen?
 
@@ -66,8 +83,8 @@ class Cashflow(models.Model):
     quantity = models.DecimalField(
         decimal_places=8,
         max_digits=18,
-        default=0.0,
-        validators=[MinValueValidator(0.00000000)],
+        default=Decimal("0.00000000"),
+        validators=[MinValueValidator(Decimal("0.00000000"))],
     )
     """Specify the quantity of the operation.
 
@@ -87,8 +104,8 @@ class Cashflow(models.Model):
     price_per_unit = models.DecimalField(
         decimal_places=6,
         max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
+        default=Decimal("0.000000"),
+        validators=[MinValueValidator(Decimal("0.000000"))],
     )
     """The price per unit of this cashflow.
 
@@ -107,8 +124,8 @@ class Cashflow(models.Model):
     fees = models.DecimalField(
         decimal_places=6,
         max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
+        default=Decimal("0.000000"),
+        validators=[MinValueValidator(Decimal("0.000000"))],
     )
     """Fees related to this cashflow.
 
@@ -128,8 +145,8 @@ class Cashflow(models.Model):
     taxes = models.DecimalField(
         decimal_places=6,
         max_digits=15,
-        default=0.0,
-        validators=[MinValueValidator(0.000000)],
+        default=Decimal("0.000000"),
+        validators=[MinValueValidator(Decimal("0.000000"))],
     )
     """Taxes related to this cashflow.
 
@@ -163,13 +180,17 @@ class Cashflow(models.Model):
         costs = self.fees + self.taxes
 
         if self.flow_type == "BUY":
-            return -base_value - costs
+            return StockingsMoney(
+                -base_value - costs,
+                self.currency,
+                self.timestamp,
+            )
         elif self.flow_type == "SELL":
-            return base_value - costs
+            return StockingsMoney(base_value - costs, self.currency, self.timestamp)
         elif self.flow_type == "DIVIDEND":
-            return base_value - costs
+            return StockingsMoney(base_value - costs, self.currency, self.timestamp)
         else:
-            return -costs
+            return StockingsMoney(-costs, self.currency, self.timestamp)
 
 
 class CashflowForm(forms.ModelForm):
