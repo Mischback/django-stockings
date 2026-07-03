@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 # app imports
 from stockings.exceptions import StockingsModelException
+from stockings.settings import _read_default_currency
 
 
 class StockItemException(StockingsModelException):
@@ -53,7 +54,7 @@ class StockItem(models.Model):
     """
 
     # TODO: Add a custom validator!
-    isin = models.CharField(db_index=True, max_length=12, primary_key=True, unique=True)
+    isin = models.CharField(db_index=True, max_length=12)
     """The ISIN of the object.
 
     The International Securities Identification Number (ISIN) is used as the
@@ -89,10 +90,30 @@ class StockItem(models.Model):
     attribute in the object's representation.
     """
 
+    currency = models.CharField(default=_read_default_currency, max_length=3)
+    """The actual database representation of :attr:`currency`.
+
+    Notes
+    -----
+    This is implemented as :class:`~django.db.models.CharField` with
+    ``max_length=3``. The currency is stored as its
+    :wiki:`currency code as described by ISO 4217 <ISO_4217>`.
+
+    The provided default value can be configured using
+    :attr:`~stockings.settings.STOCKINGS_DEFAULT_CURRENCY` in the project's
+    settings.
+    """
+
     class Meta:  # noqa: D106
         app_label = "stockings"
         verbose_name = _("StockItem")
         verbose_name_plural = _("StockItems")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["isin", "currency"],
+                name="unique_isin_per_currency",
+            )
+        ]
 
     def __str__(self):  # noqa: D105
         if self.name != "":
@@ -155,5 +176,5 @@ class StockItemPrice(models.Model):
 
     def __str__(self):  # noqa: D105
         return "{} - {} {} ({})".format(
-            self.stock_item, "foo", self._value, self._timestamp
+            self.stock_item, self.stock_item.currency, self._value, self._timestamp
         )

@@ -21,7 +21,6 @@ class YFinanceMapping(models.Model):
         "stockings.StockItem",
         on_delete=models.CASCADE,
         related_name="yfinance_mapping",
-        primary_key=True,
     )
 
     ticker = models.CharField(
