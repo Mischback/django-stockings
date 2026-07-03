@@ -1,6 +1,7 @@
 {% extends "stockings/app_base.html" %}
 
 {% load i18n %}
+{% load stockings_tags %}
 
 {% block page_title %}FIXME{% endblock page_title %}
 
@@ -27,7 +28,7 @@
       <tbody>
         <tr>
           <td>{% translate "Market Value" context "Kurswert" %}</td>
-          <td>{{ depotitem.market_value }}</td>
+          <td>{{ depotitem.market_value|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Total Position" context "Anzahl der Anteile" %}</td>
@@ -35,39 +36,39 @@
         </tr>
         <tr>
           <td>{% translate "Active Investment" context "Aktueller Bestand * durchschnittlicher Kaufpreis" %}</td>
-          <td>{{ depotitem.active_investment }}</td>
+          <td>{{ depotitem.active_investment|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Total Investment" context "Summe aller Käufe (inkl. Gebühren)" %}</td>
-          <td>{{ depotitem.total_investment }}</td>
+          <td>{{ depotitem.total_investment|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Purchase Price" context "Einstandskurs" %}</td>
-          <td>{{ depotitem.avg_buy_price }}</td>
+          <td>{{ depotitem.avg_buy_price|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Dividends" context "Dividenden" %}</td>
-          <td>{{ depotitem.total_dividends }}</td>
+          <td>{{ depotitem.total_dividends|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Realized Profit" context "Realisierte Gewinne" %}</td>
-          <td>{{ depotitem.realized_gains }}</td>
+          <td>{{ depotitem.realized_gains|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Fees" context "Summe aller Gebühren" %}</td>
-          <td>{{ depotitem.total_fees }}</td>
+          <td>{{ depotitem.total_fees|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Taxes" context "Summe aller Steuern" %}</td>
-          <td>{{ depotitem.total_taxes }}</td>
+          <td>{{ depotitem.total_taxes|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Cumulative Cashflow" context "Kumulativer Cashflow" %}</td>
-          <td>{{ depotitem.total_cashflow }}</td>
+          <td>{{ depotitem.total_cashflow|format_money }}</td>
         </tr>
         <tr>
           <td>{% translate "Total Value" context "Gesamtwert (kumulativer Cashflow + Kurswert)" %}</td>
-          <td>{{ depotitem.total_value }}</td>
+          <td>{{ depotitem.total_value|format_money }}</td>
         </tr>
       </tbody>
     </table>
@@ -97,10 +98,10 @@
           <td>{{ flow.flow_type }}</td>
           <td>{{ flow.timestamp }}</td>
           <td>{{ flow.quantity }}</td>
-          <td>{{ flow.price_per_unit }}</td>
-          <td>{{ flow.fees }}</td>
-          <td>{{ flow.taxes }}</td>
-          <td>{{ flow.net_cashflow }}</td>
+          <td>{{ flow.price_per_unit|format_money }}</td>
+          <td>{{ flow.fees|format_money }}</td>
+          <td>{{ flow.taxes|format_money }}</td>
+          <td>{{ flow.net_cashflow|format_money }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -129,10 +130,10 @@
         <tr>
           <td>{{ point.timestamp }}</td>
           <td>{{ point.quantity }}</td>
-          <td>{{ point.avg_buy_price }}</td>
-          <td>{{ point.current_investment }}</td>
-          <td>{{ point.price_per_unit }}</td>
-          <td>{{ point.market_value }}</td>
+          <td>{{ point.avg_buy_price|format_money }}</td>
+          <td>{{ point.current_investment|format_money }}</td>
+          <td>{{ point.price_per_unit|format_money }}</td>
+          <td>{{ point.market_value|format_money }}</td>
         </tr>
         {% endfor %}
       </tbody>

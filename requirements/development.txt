@@ -8,6 +8,8 @@ asgiref==3.11.1
     # via
     #   -r requirements/common.txt
     #   django
+babel==2.18.0
+    # via -r requirements/common.txt
 beautifulsoup4==4.15.0
     # via
     #   -r requirements/common.txt
