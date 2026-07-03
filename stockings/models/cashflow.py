@@ -101,7 +101,7 @@ class Cashflow(models.Model):
     *state-of-the-art* with most brokers and crypto exchanges.
     """
 
-    price_per_unit = models.DecimalField(
+    _price_per_unit = models.DecimalField(
         decimal_places=6,
         max_digits=15,
         default=Decimal("0.000000"),
@@ -121,7 +121,7 @@ class Cashflow(models.Model):
     for tracking of asset values aswell as future currency-related conversions.
     """
 
-    fees = models.DecimalField(
+    _fees = models.DecimalField(
         decimal_places=6,
         max_digits=15,
         default=Decimal("0.000000"),
@@ -142,7 +142,7 @@ class Cashflow(models.Model):
     for tracking of asset values aswell as future currency-related conversions.
     """
 
-    taxes = models.DecimalField(
+    _taxes = models.DecimalField(
         decimal_places=6,
         max_digits=15,
         default=Decimal("0.000000"),
@@ -176,21 +176,29 @@ class Cashflow(models.Model):
 
     @property
     def net_cashflow(self):  # noqa: D102
-        base_value = self.quantity * self.price_per_unit
-        costs = self.fees + self.taxes
+        base_value = self.price_per_unit.multiply(self.quantity)
+        costs = self.fees.add(self.taxes)
 
         if self.flow_type == "BUY":
-            return StockingsMoney(
-                -base_value - costs,
-                self.currency,
-                self.timestamp,
-            )
+            return base_value.multiply(-1).subtract(costs)
         elif self.flow_type == "SELL":
-            return StockingsMoney(base_value - costs, self.currency, self.timestamp)
+            return base_value.subtract(costs)
         elif self.flow_type == "DIVIDEND":
-            return StockingsMoney(base_value - costs, self.currency, self.timestamp)
+            return base_value.subtract(costs)
         else:
-            return StockingsMoney(-costs, self.currency, self.timestamp)
+            return costs.multiply(-1)
+
+    @property
+    def price_per_unit(self):  # noqa: D102
+        return StockingsMoney(self._price_per_unit, self.currency, self.timestamp)
+
+    @property
+    def fees(self):  # noqa: D102
+        return StockingsMoney(self._fees, self.currency, self.timestamp)
+
+    @property
+    def taxes(self):  # noqa: D102
+        return StockingsMoney(self._taxes, self.currency, self.timestamp)
 
 
 class CashflowForm(forms.ModelForm):
@@ -207,9 +215,9 @@ class CashflowForm(forms.ModelForm):
             "flow_type",
             "timestamp",
             "quantity",
-            "price_per_unit",
-            "fees",
-            "taxes",
+            "_price_per_unit",
+            "_fees",
+            "_taxes",
         ]
 
 
@@ -232,9 +240,9 @@ class CashflowFromDepotItemForm(CashflowForm):
             "flow_type",
             "timestamp",
             "quantity",
-            "price_per_unit",
-            "fees",
-            "taxes",
+            "_price_per_unit",
+            "_fees",
+            "_taxes",
         ]
 
 

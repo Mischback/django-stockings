@@ -36,6 +36,7 @@ path = [
   "stockings/migrations/0010_alter_stockitemprice_stock_item_and_more.py",
   "stockings/migrations/0011_cashflow_delete_depotitemcashflow.py",
   "stockings/migrations/0012_cashflow_currency.py",
+  "stockings/migrations/0013_rename_fees_cashflow__fees_and_more.py",
   "stockings/contrib/provider/yfinance_simple/migrations/0001_initial.py",
 ]
 SPDX-FileCopyrightText = "NONE"

@@ -492,13 +492,9 @@ class DepotItem(models.Model):
         dividends = initial.dividends
 
         for flow in cashflows:
-            # convert values into StockingsMoney instances
-            flow_fees = StockingsMoney(flow.fees, flow.currency, flow.timestamp)
-            flow_taxes = StockingsMoney(flow.taxes, flow.currency, flow.timestamp)
-
             cashflow = cashflow.add(flow.net_cashflow)
-            fees = fees.subtract(flow_fees)
-            taxes = taxes.subtract(flow_taxes)
+            fees = fees.subtract(flow.fees)
+            taxes = taxes.subtract(flow.taxes)
 
             if flow.flow_type == "BUY":
                 new_quantity = running_quantity + flow.quantity
