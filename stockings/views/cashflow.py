@@ -4,6 +4,9 @@
 
 """Views related to the :class:`~stockings.models.cashflow.Cashflow`."""
 
+# Python imports
+import logging
+
 # Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -21,8 +24,10 @@ from stockings.models.cashflow import (
     CashflowFromDepotItemForm,
 )
 from stockings.models.depot import Depot, DepotItem
-from stockings.models.stock import StockItem
+from stockings.models.stock import StockItem, StockItemPrice
 from stockings.views.mixins import RestrictToUserMixin
+
+logger = logging.getLogger(__name__)
 
 
 class CashflowCreateView(LoginRequiredMixin, RestrictToUserMixin, generic.CreateView):
@@ -130,6 +135,12 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
 
         with transaction.atomic():
             if new_isin:
+                # FIXME: The very first cashflow HAS TO BE a BUY operation
+                # flow_type = form.cleaned_data.get("flow_type")
+                # if flow_type != Cashflow.FLOW_TYPES.BUY[0]:
+                # form.add_error(None, _("The first operation has to be BUY"))
+                # return self.form_invalid(form)
+
                 isin = new_isin.strip().upper()
 
                 # TODO: There is no validation/verification of the provided
@@ -137,10 +148,18 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
                 #       this should be included. See
                 #       https://github.com/Mischback/django-stockings/issues/7
                 #       for the corresponding issue.
-                stock_item, _ = StockItem.objects.get_or_create(
+                stock_item, stockitem_created = StockItem.objects.get_or_create(
                     isin=isin,
                     defaults={"name": isin},
                 )
+
+                if stockitem_created:
+                    stock_item_price = (  # noqa: F841
+                        StockItemPrice.objects.get_or_create(
+                            stock_item=stock_item,
+                            _value=form.cleaned_data.get("_price_per_unit"),
+                        )
+                    )
 
                 item, _ = DepotItem.objects.get_or_create(
                     depot=depot,
