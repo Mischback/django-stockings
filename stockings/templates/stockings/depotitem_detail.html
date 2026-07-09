@@ -75,6 +75,17 @@
   </section>
 </section>
 
+<section id="depotitem-detail-actions">
+  <header>
+    <h3>Actions</h3>
+  </header>
+  <section>
+    <ul>
+      <li><a href="{% url "stockings:cashflow-create-from-depotitem" depotitem.id %}">Add Cashflow</a></li>
+    </ul>
+  </section>
+</section>
+
 <section id="depotitem-detail-cashflows" class="collapsible-container">
   <header class="collapsible-header">
     <h3>Cashflow</h3>

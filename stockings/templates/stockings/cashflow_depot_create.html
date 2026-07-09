@@ -1,0 +1,33 @@
+{% extends "stockings/app_base.html" %}
+
+{% load i18n %}
+
+{% block page_title %}{% blocktrans %}Create Cashflow from Depot{% endblocktrans %}{% endblock page_title %}
+
+{% block main %}
+<main id="stockings-depotitem" class="stockings-depotitem">
+  <header>
+    <h2>{% blocktrans %}Create new Cashflow{% endblocktrans %}</h2>
+  </header>
+
+<section id="depotitemcashflow-create">
+  <header>
+    <h3>Summary</h3>
+  </header>
+  <section>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% include "stockings/includes/form.html" with form=form %}
+
+      <button type="submit">{% blocktrans %}Create new Cashflow{% endblocktrans %}</button>
+      <button type="reset">{% blocktrans %}Cancel{% endblocktrans %}</button>
+
+    </form>
+
+  </section>
+</section>
+
+</main>
+{% endblock main %}

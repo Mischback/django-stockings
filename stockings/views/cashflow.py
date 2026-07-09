@@ -75,8 +75,7 @@ class CashflowCreateFromDepotView(LoginRequiredMixin, generic.FormView):
     """CBV to create a ``Cashflow`` instance from a ``Depot`` context."""
 
     form_class = CashflowFromDepotForm
-    # FIXME: Should have a dedicated template!
-    template_name = "stockings/depotitemcashflow_create.html"
+    template_name = "stockings/cashflow_depot_create.html"
 
     def get_depot(self):
         """Provide the currently active :class:`~stockings.models.depot.Depot`."""
@@ -198,8 +197,7 @@ class CashflowCreateFromDepotItemView(LoginRequiredMixin, generic.FormView):
     """CBV to create a ``Cashflow`` instance from a ``DepotItem`` context."""
 
     form_class = CashflowFromDepotItemForm
-    # FIXME: Should have a dedicated template!
-    template_name = "stockings/depotitemcashflow_create.html"
+    template_name = "stockings/cashflow_depotitem_create.html"
 
     def get_depot_item(self):
         """Provide the currently active :class:`~stockings.models.depot.DepotItem`."""
