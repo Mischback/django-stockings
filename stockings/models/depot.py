@@ -19,6 +19,7 @@ from stockings.exceptions import StockingsModelException
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
 from stockings.services.data import StockingsMoney
+from stockings.services.roi import mwrr
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -457,6 +458,19 @@ class DepotItem(models.Model):
             except AttributeError:
                 # logger.error()
                 return Decimal("0")
+
+    @property
+    def mwrr(self):
+        """Provide money-weighted rate of return.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined using :func:`~stockings.services.roi.mwrr` based on all
+        :class:`~stockings.models.cashflow.Cashflow` objects and the current
+        :attr:`~stockings.models.depot.DepotItem.market_value`.
+        """
+        return mwrr(self.cashflows.order_by("timestamp"), self.market_value)
 
     def _evaluate_cashflows(self):
         cashflows = self.cashflows.order_by("timestamp")

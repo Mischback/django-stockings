@@ -50,6 +50,8 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2026.2
     # via yfinance
+pyxirr==0.10.8
+    # via -r requirements/common.in
 requests==2.34.2
     # via yfinance
 rich==15.0.0
