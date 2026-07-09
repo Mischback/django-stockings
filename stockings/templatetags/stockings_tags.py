@@ -15,7 +15,7 @@ from django.utils.translation import get_language
 from babel.numbers import format_currency
 
 # app imports
-from stockings.data import StockingsMoney
+from stockings.services.data import StockingsMoney
 
 logger = logging.getLogger(__name__)
 

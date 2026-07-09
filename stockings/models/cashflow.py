@@ -16,9 +16,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # app imports
-from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
 from stockings.models.depot import DepotItem
+from stockings.services.data import StockingsMoney
 from stockings.settings import _read_default_currency
 
 logger = logging.getLogger(__name__)

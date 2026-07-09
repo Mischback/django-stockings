@@ -15,11 +15,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
 
 # app imports
-from stockings.data import StockingsMoney
 from stockings.models.depot import (
     DepotItem,
     DepotItemCashflowResult,
 )
+from stockings.services.data import StockingsMoney
 from stockings.views.mixins import RestrictToUserMixin
 
 # get a module-level logger

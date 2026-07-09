@@ -13,8 +13,8 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # app imports
-from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
+from stockings.services.data import StockingsMoney
 from stockings.settings import _read_default_currency
 
 

@@ -15,10 +15,10 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 # app imports
-from stockings.data import StockingsMoney
 from stockings.exceptions import StockingsModelException
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
+from stockings.services.data import StockingsMoney
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
