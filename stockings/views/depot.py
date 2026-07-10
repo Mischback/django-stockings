@@ -20,6 +20,7 @@ from stockings.models.depot import (
     DepotItemCashflowResult,
 )
 from stockings.services.data import StockingsMoney
+from stockings.services.roi import mwrr
 from stockings.views.mixins import RestrictToUserMixin
 
 # get a module-level logger
@@ -34,6 +35,7 @@ class HistoricalValuePoint:
     quantity: Decimal
     avg_buy_price: StockingsMoney
     price_per_unit: StockingsMoney
+    mwrr: float
 
     @property
     def market_value(self):
@@ -120,12 +122,21 @@ class DepotItemDetailView(
                 )
 
             if tracker.quantity > 0:
+                # determine the MWRR until now
+                past_cashflows = all_cashflows[:cashflow_index]
+                tmp_current_value = price.price.multiply(tracker.quantity)
+                tmp_current_value.timestamp = price._timestamp
+
+                mwrr_value = mwrr(past_cashflows, current_value=tmp_current_value)
+
+                # provide the actual datapoint
                 timeline.append(
                     HistoricalValuePoint(
                         price._timestamp,
                         tracker.quantity,
                         tracker.avg_buy_price,
                         price.price,
+                        mwrr_value,
                     )
                 )
 

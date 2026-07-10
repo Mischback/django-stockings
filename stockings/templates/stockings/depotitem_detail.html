@@ -138,6 +138,7 @@
           <th>Current Investment</th>
           <th>Price/unit</th>
           <th>Market Value</th>
+          <th>MWRR</th>
         </tr>
       </thead>
       <tbody>
@@ -149,6 +150,7 @@
           <td>{{ point.current_investment|format_money }}</td>
           <td>{{ point.price_per_unit|format_money }}</td>
           <td>{{ point.market_value|format_money }}</td>
+          <td>{{ point.mwrr }}</td>
         </tr>
         {% endfor %}
       </tbody>
