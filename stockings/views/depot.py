@@ -20,7 +20,7 @@ from stockings.models.depot import (
     DepotItemCashflowResult,
 )
 from stockings.services.data import StockingsMoney
-from stockings.services.roi import mwrr
+from stockings.services.roi import mwrr, simple_roi
 from stockings.views.mixins import RestrictToUserMixin
 
 # get a module-level logger
@@ -56,6 +56,15 @@ class HistoricalValuePoint:
         :attr:`~stockings.views.depot.HistoricalValuePoint.avg_buy_price`.
         """
         return self.avg_buy_price.multiply(self.quantity)
+
+    @property
+    def simple_roi(self):
+        """Provide a simpe return on invest.
+
+        This is basically only the quotient of the active investment and the
+        current value.
+        """
+        return simple_roi(self.market_value, self.current_investment)
 
 
 class DepotItemDetailView(

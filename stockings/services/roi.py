@@ -13,6 +13,19 @@ from pyxirr import DayCount, InvalidPaymentsError, xirr
 logger = logging.getLogger(__name__)
 
 
+def simple_roi(market_value, investment):
+    """Calculate the simple or naive return on investment.
+
+    This is basically only the quotient of the active investment and the
+    current value.
+    """
+    if investment.amount == 0:
+        logger.warn("Current investment is zero. Failing gracefully.")
+        return 0.0
+
+    return (market_value.amount / -investment.amount) - 1
+
+
 def mwrr(cashflows, current_value=None):
     """Calculate the money-weighted rate of return (MWRR).
 
@@ -25,8 +38,7 @@ def mwrr(cashflows, current_value=None):
     current_value: StockingsMoney - The current value to be considered for the
                                     calculation. It is meant to be an instance
                                     of StockingsMoney, but the ``amount`` and
-                                    ``timestamp`` are accessed directly, so
-                                    a plain dict may work aswell.
+                                    ``timestamp`` are accessed directly.
 
     Returns
     -------
@@ -40,6 +52,7 @@ def mwrr(cashflows, current_value=None):
     ]
 
     if not data:
+        logger.warn("Did not receive data. Failing gracefully.")
         return 0.0
 
     # ...split into dedicated lists
@@ -49,10 +62,8 @@ def mwrr(cashflows, current_value=None):
         dates.append(current_value.timestamp.date())
         amounts.append(float(current_value.amount))
 
-    logger.debug(dates)
-    logger.debug(amounts)
-
     try:
         return xirr(dates, amounts, day_count=DayCount.ACT_ACT_ISDA)
     except InvalidPaymentsError:
+        logger.warn("'xirr()' raised an error. Failing gracefully.")
         return 0.0

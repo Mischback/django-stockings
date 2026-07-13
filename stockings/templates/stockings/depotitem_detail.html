@@ -32,7 +32,7 @@
         </tr>
         <tr>
           <td>{% translate "Total Position" context "Anzahl der Anteile" %}</td>
-          <td>{{ depotitem.quantity }}</td>
+          <td>{{ depotitem.quantity|floatformat:"-3" }}</td>
         </tr>
         <tr>
           <td>{% translate "Active Investment" context "Aktueller Bestand * durchschnittlicher Kaufpreis" %}</td>
@@ -71,8 +71,12 @@
           <td>{{ depotitem.total_value|format_money }}</td>
         </tr>
         <tr>
-          <td>{% translate "Money-weighted Rate of Return" context "Money-weighted Rate of Return" %}</td>
-          <td>{{ depotitem.mwrr }}</td>
+          <td>{% translate "Simple ROI" context "Einfacher ROI (Wert/Investment)" %}</td>
+          <td>{{ depotitem.simple_roi|floatformat:"-2" }}</td>
+        </tr>
+        <tr>
+          <td>{% translate "MWRR" context "Money-weighted Rate of Return" %}</td>
+          <td>{{ depotitem.mwrr|floatformat:"-2" }}</td>
         </tr>
       </tbody>
     </table>
@@ -112,7 +116,7 @@
         <tr>
           <td>{{ flow.flow_type }}</td>
           <td>{{ flow.timestamp }}</td>
-          <td>{{ flow.quantity }}</td>
+          <td>{{ flow.quantity|floatformat:"-3" }}</td>
           <td>{{ flow.price_per_unit|format_money }}</td>
           <td>{{ flow.fees|format_money }}</td>
           <td>{{ flow.taxes|format_money }}</td>
@@ -138,6 +142,7 @@
           <th>Current Investment</th>
           <th>Price/unit</th>
           <th>Market Value</th>
+          <th>Simple ROI</th>
           <th>MWRR</th>
         </tr>
       </thead>
@@ -145,12 +150,13 @@
         {% for point in historical_values %}
         <tr>
           <td>{{ point.timestamp }}</td>
-          <td>{{ point.quantity }}</td>
+          <td>{{ point.quantity|floatformat:"-3" }}</td>
           <td>{{ point.avg_buy_price|format_money }}</td>
           <td>{{ point.current_investment|format_money }}</td>
           <td>{{ point.price_per_unit|format_money }}</td>
           <td>{{ point.market_value|format_money }}</td>
-          <td>{{ point.mwrr }}</td>
+          <td>{{ point.simple_roi|floatformat:"-2" }}</td>
+          <td>{{ point.mwrr|floatformat:"-2" }}</td>
         </tr>
         {% endfor %}
       </tbody>

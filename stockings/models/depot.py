@@ -19,7 +19,7 @@ from stockings.exceptions import StockingsModelException
 from stockings.models.portfolio import Portfolio
 from stockings.models.stock import StockItem
 from stockings.services.data import StockingsMoney
-from stockings.services.roi import mwrr
+from stockings.services.roi import mwrr, simple_roi
 
 # get a module-level logger
 logger = logging.getLogger(__name__)
@@ -471,6 +471,19 @@ class DepotItem(models.Model):
         :attr:`~stockings.models.depot.DepotItem.market_value`.
         """
         return mwrr(self.cashflows.order_by("timestamp"), self.market_value)
+
+    @property
+    def simple_roi(self):
+        """Provide a simpe return on invest.
+
+        Notes
+        -----
+        This attribute is not stored in the database. Instead, it's dynamically
+        determined using :func:`~stockings.services.roi.simple_roi` based on
+        :attr:`~stockings.models.depot.DepotItem.active_investment` and the
+        current :attr:`~stockings.models.depot.DepotItem.market_value`.
+        """
+        return simple_roi(self.market_value, self.active_investment)
 
     def _evaluate_cashflows(self):
         cashflows = self.cashflows.order_by("timestamp")
