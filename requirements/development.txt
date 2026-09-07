@@ -6,16 +6,16 @@
 #
 asgiref==3.11.1
     # via
-    #   -r requirements/common.txt
+    #   -r common.txt
     #   django
-django==6.0.6
+django==6.0.7
     # via
-    #   -r requirements/common.txt
+    #   -r common.txt
     #   django-debug-toolbar
 django-debug-toolbar==6.3.0
-    # via -r requirements/development.in
+    # via -r development.in
 sqlparse==0.5.5
     # via
-    #   -r requirements/common.txt
+    #   -r common.txt
     #   django
     #   django-debug-toolbar
